@@ -1,0 +1,79 @@
+// Prisma Schema for Fake Identity Screening
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  OFFICER
+  ADMIN
+}
+
+enum CaseStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  role      Role     @default(OFFICER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  cases     Case[]
+}
+
+model Case {
+  id          String      @id @default(uuid())
+  title       String
+  status      CaseStatus  @default(PENDING)
+  riskScore   Float       @default(0.0)
+  riskLevel   RiskLevel   @default(LOW)
+  officerId   String
+  officer     User        @relation(fields: [officerId], references: [id])
+  documents   Document[]
+  auditLogs   AuditLog[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Document {
+  id           String   @id @default(uuid())
+  caseId       String
+  case         Case     @relation(fields: [caseId], references: [id])
+  fileName     String
+  fileUrl      String
+  docType      String
+  sha256Hash   String
+  ocrData      Json?
+  tamperResult Json?
+  faceResult   Json?
+  createdAt    DateTime @default(now())
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  caseId        String
+  case          Case     @relation(fields: [caseId], references: [id])
+  action        String
+  actorId       String
+  details       Json
+  eventHash     String
+  txId          String?  // Hyperledger Fabric Transaction ID
+  blockNumber   Int?
+  createdAt     DateTime @default(now())
+}

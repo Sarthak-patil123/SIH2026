@@ -1,0 +1,17 @@
+{
+  "name": "audit-contract",
+  "version": "1.0.0",
+  "description": "Hyperledger Fabric chaincode for immutable audit logs",
+  "main": "dist/audit-contract.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "fabric-chaincode-node start"
+  },
+  "dependencies": {
+    "fabric-contract-api": "^2.5.0",
+    "fabric-shim": "^2.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

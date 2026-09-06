@@ -1,0 +1,7 @@
+version: "3.8"
+services:
+  ca_org1:
+    image: hyperledger/fabric-ca:1.5
+    container_name: ca_org1
+    ports:
+      - "7054:7054"
