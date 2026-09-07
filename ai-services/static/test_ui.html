@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Services — Component Diagnostics & Test Suite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0a0d14;
+      --bg-surface: #111726;
+      --bg-card: #161f33;
+      --bg-card-hover: #1c2742;
+      --bg-input: #0e1422;
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(56, 189, 248, 0.3);
+      --accent-cyan: #06b6d4;
+      --accent-sky: #38bdf8;
+      --accent-indigo: #6366f1;
+      --accent-violet: #8b5cf6;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-faint: #64748b;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.5;
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 85% 25%, rgba(6, 182, 212, 0.10) 0%, transparent 40%),
+        radial-gradient(circle at 50% 90%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    /* Header */
+    header {
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(17, 23, 38, 0.85);
+      backdrop-filter: blur(16px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+    }
+
+    .header-container {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.3rem;
+      font-weight: 800;
+      box-shadow: 0 4px 16px rgba(6, 182, 212, 0.35);
+    }
+
+    .brand-text h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #fff, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 0.78rem;
+      color: var(--text-faint);
+    }
+
+    .status-chips {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .dot.online { background: var(--accent-emerald); box-shadow: 0 0 8px var(--accent-emerald); }
+    .dot.disabled { background: var(--accent-amber); box-shadow: 0 0 6px var(--accent-amber); }
+    .dot.error { background: var(--accent-rose); }
+
+    /* Navigation Tabs */
+    .tabs-nav-wrapper {
+      background: rgba(14, 20, 34, 0.7);
+      border-bottom: 1px solid var(--border-subtle);
+      overflow-x: auto;
+    }
+
+    .tabs-nav {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0.25rem;
+      padding: 0.5rem 2rem;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 0.6rem 1.1rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-sky);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    /* Layout & Grid */
+    main {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.25s ease forwards;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 1.75rem;
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+    }
+
+    /* Upload Zone */
+    .dropzone {
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-md);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      background: var(--bg-input);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent-sky);
+      background: rgba(56, 189, 248, 0.05);
+    }
+
+    .dropzone input[type="file"] {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .dropzone-icon {
+      font-size: 2.2rem;
+      margin-bottom: 0.5rem;
+      color: var(--accent-sky);
+    }
+
+    .dropzone-text {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .dropzone-hint {
+      font-size: 0.75rem;
+      color: var(--text-faint);
+      margin-top: 0.25rem;
+    }
+
+    .preview-box {
+      margin-top: 1rem;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      max-height: 240px;
+      display: none;
+      background: #000;
+    }
+
+    .preview-box img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: contain;
+      max-height: 240px;
+    }
+
+    /* Controls & Buttons */
+    .form-group {
+      margin-top: 1.2rem;
+    }
+
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      display: block;
+    }
+
+    .form-select, .form-input {
+      width: 100%;
+      padding: 0.65rem 0.9rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-select:focus, .form-input:focus {
+      border-color: var(--accent-sky);
+    }
+
+    .btn-primary {
+      width: 100%;
+      margin-top: 1.5rem;
+      padding: 0.75rem 1.25rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--accent-sky), var(--accent-indigo));
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35);
+      transition: transform 0.15s, opacity 0.2s;
+    }
+
+    .btn-primary:hover {
+      opacity: 0.94;
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Result Panels */
+    .results-empty {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-faint);
+    }
+
+    .results-empty-icon {
+      font-size: 3rem;
+      margin-bottom: 0.75rem;
+      opacity: 0.5;
+    }
+
+    .results-content {
+      display: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-success { background: rgba(16, 185, 129, 0.18); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-warning { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-danger { background: rgba(244, 63, 94, 0.18); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-info { background: rgba(56, 189, 248, 0.18); color: var(--accent-sky); border: 1px solid rgba(56, 189, 248, 0.3); }
+
+    /* Tables */
+    .data-table-wrapper {
+      margin-top: 1rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: var(--bg-card);
+      padding: 0.75rem 1rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-main);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Metric Cards Row */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+    }
+
+    .metric-label {
+      font-size: 0.72rem;
+      color: var(--text-faint);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+      font-size: 1.3rem;
+      font-weight: 800;
+      margin-top: 0.25rem;
+      color: #fff;
+    }
+
+    /* Crops Display */
+    .crops-strip {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .crop-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem;
+      width: 130px;
+      text-align: center;
+    }
+
+    .crop-card img {
+      width: 100%;
+      height: 100px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: #000;
+    }
+
+    .crop-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 0.4rem;
+    }
+
+    /* JSON Box */
+    .json-wrapper {
+      margin-top: 1.5rem;
+    }
+
+    .json-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    .btn-copy {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .btn-copy:hover {
+      color: #fff;
+      border-color: var(--accent-sky);
+    }
+
+    pre.json-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      max-height: 320px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #cbd5e1;
+    }
+
+    /* Canvas visualizer */
+    .canvas-container {
+      position: relative;
+      margin-top: 1rem;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      background: #05070d;
+      text-align: center;
+    }
+
+    .canvas-container img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* Alerts */
+    .alert {
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .alert-info {
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      color: var(--accent-sky);
+    }
+
+    .alert-warning {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: var(--accent-amber);
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">AI</div>
+        <div class="brand-text">
+          <h1>Identity Verification AI Services</h1>
+          <p>PaddleOCR • YOLO Layout • ArcFace Biometrics Diagnostics Console</p>
+        </div>
+      </div>
+      <div class="status-chips">
+        <div class="status-chip"><span class="dot online"></span> PaddleOCR 2.7+</div>
+        <div class="status-chip"><span class="dot online"></span> YOLO Layout</div>
+        <div class="status-chip"><span class="dot online"></span> ArcFace 1:1</div>
+        <div class="status-chip" title="LLM extraction is inactive in this stage"><span class="dot disabled"></span> LLM: Inactive (Phase 2)</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs-nav-wrapper">
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('pipeline')">🚀 Full Pipeline</button>
+      <button class="tab-btn" onclick="switchTab('preprocess')">🖼️ Preprocessing</button>
+      <button class="tab-btn" onclick="switchTab('layout')">📐 Layout Detection</button>
+      <button class="tab-btn" onclick="switchTab('ocr')">🔍 PaddleOCR Raw</button>
+      <button class="tab-btn" onclick="switchTab('classifier')">🏷️ Doc Classifier</button>
+      <button class="tab-btn" onclick="switchTab('mrz')">🛂 MRZ Parser</button>
+      <button class="tab-btn" onclick="switchTab('extractors')">📋 Rule Extractors</button>
+      <button class="tab-btn" onclick="switchTab('biometrics')">👤 Biometrics 1:1</button>
+    </div>
+  </div>
+
+  <main>
+    <!-- TAB 1: FULL PIPELINE -->
+    <section id="tab-pipeline" class="tab-content active">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">Document Extraction Pipeline</h2>
+          <p class="card-subtitle">Executes preprocessing, YOLO layout detection, PaddleOCR, MRZ parsing, and rule extraction.</p>
+          
+          <div class="dropzone" id="pipeline-dropzone">
+            <input type="file" id="pipeline-file" accept="image/*">
+            <div class="dropzone-icon">📁</div>
+            <div class="dropzone-text">Drop Document Image or Click</div>
+            <div class="dropzone-hint">PNG, JPG, JPEG, WebP, HEIC supported</div>
+          </div>
+          <div class="preview-box" id="pipeline-preview"><img id="pipeline-preview-img"></div>
+
+          <div class="form-group">
+            <label class="form-label" for="pipeline-doctype">Document Type Hint (Optional)</label>
+            <select class="form-select" id="pipeline-doctype">
+              <option value="">Auto-Detect (Recommended)</option>
+              <option value="passport">Passport</option>
+              <option value="national_id">National ID / Aadhaar</option>
+              <option value="driving_license">Driving Licence</option>
+              <option value="pan">PAN Card</option>
+              <option value="voter_id">Voter ID</option>
+            </select>
+          </div>
+
+          <button class="btn-primary" id="pipeline-btn" onclick="runPipeline()">
+            <span>Run Complete Pipeline</span>
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Pipeline Results</span>
+            <span id="pipeline-status-badge" class="badge badge-info">Awaiting Input</span>
+          </div>
+          <p class="card-subtitle">Detailed extraction output and parsed field attributes.</p>
+
+          <div id="pipeline-empty" class="results-empty">
+            <div class="results-empty-icon">⚡</div>
+            <p>Upload a document and run the pipeline to see extraction results.</p>
+          </div>
+
+          <div id="pipeline-results" class="results-content">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Detected Type</div>
+                <div class="metric-value" id="pipe-type" style="font-size:1.05rem">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Overall Conf</div>
+                <div class="metric-value" id="pipe-conf" style="color:var(--accent-emerald)">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Execution Time</div>
+                <div class="metric-value" id="pipe-time">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Blur Score</div>
+                <div class="metric-value" id="pipe-blur">-</div>
+              </div>
+            </div>
+
+            <!-- Visual Crops -->
+            <div class="card-title" style="font-size:0.95rem; margin-top:1rem;">Extracted Layout Regions</div>
+            <div class="crops-strip" id="pipe-crops"></div>
+
+            <!-- Extracted Fields Table -->
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.5rem;">Extracted Fields</div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Field</th>
+                    <th>Value</th>
+                    <th>Source</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody id="pipe-fields-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- JSON Output -->
+            <div class="json-wrapper">
+              <div class="json-header">
+                <span class="form-label" style="margin:0">Complete JSON Response</span>
+                <button class="btn-copy" onclick="copyJson('pipe-json')">Copy JSON</button>
+              </div>
+              <pre class="json-box" id="pipe-json"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: PREPROCESSING -->
+    <section id="tab-preprocess" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">Image Preprocessing Inspector</h2>
+          <p class="card-subtitle">Tests resolution checks, Laplacian blur score, HSV glare threshold, and quad detection.</p>
+          
+          <div class="dropzone" id="prep-dropzone">
+            <input type="file" id="prep-file" accept="image/*">
+            <div class="dropzone-icon">🖼️</div>
+            <div class="dropzone-text">Upload Document Photo</div>
+            <div class="dropzone-hint">Evaluates quality and corrects skew</div>
+          </div>
+          <div class="preview-box" id="prep-preview"><img id="prep-preview-img"></div>
+
+          <button class="btn-primary" id="prep-btn" onclick="runPreprocess()">Run Preprocessing</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Preprocessing Diagnostics</span>
+            <span id="prep-badge" class="badge badge-info">Idle</span>
+          </div>
+          <p class="card-subtitle">Quality measurements and normalized output image.</p>
+
+          <div id="prep-empty" class="results-empty">
+            <div class="results-empty-icon">📊</div>
+            <p>Upload an image to inspect blur, glare, and perspective adjustments.</p>
+          </div>
+
+          <div id="prep-results" class="results-content">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Blur Score</div>
+                <div class="metric-value" id="prep-blur">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Glare Status</div>
+                <div class="metric-value" id="prep-glare">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Original Res</div>
+                <div class="metric-value" id="prep-orig-res" style="font-size:0.95rem">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Normalized Res</div>
+                <div class="metric-value" id="prep-norm-res" style="font-size:0.95rem">-</div>
+              </div>
+            </div>
+
+            <div id="prep-warnings" style="margin-top:1rem;"></div>
+
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Processed Output</div>
+            <div class="canvas-container">
+              <img id="prep-processed-img" alt="Processed Document">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: LAYOUT DETECTION -->
+    <section id="tab-layout" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">YOLO Layout Detection</h2>
+          <p class="card-subtitle">Isolates portrait photo, handwritten signature, and MRZ machine-readable zones.</p>
+
+          <div class="dropzone">
+            <input type="file" id="layout-file" accept="image/*">
+            <div class="dropzone-icon">📐</div>
+            <div class="dropzone-text">Upload Document Image</div>
+          </div>
+          <div class="preview-box" id="layout-preview"><img id="layout-preview-img"></div>
+
+          <button class="btn-primary" id="layout-btn" onclick="runLayout()">Detect Layout Regions</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Layout Bounding Boxes</div>
+          <p class="card-subtitle">Annotated image and isolated cropped visual elements.</p>
+
+          <div id="layout-empty" class="results-empty">
+            <div class="results-empty-icon">🔍</div>
+            <p>Upload an image to detect bounding boxes for photo, signature, and MRZ.</p>
+          </div>
+
+          <div id="layout-results" class="results-content">
+            <div class="card-title" style="font-size:0.95rem">Extracted Element Crops</div>
+            <div class="crops-strip" id="layout-crops"></div>
+
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.5rem;">Annotated Document</div>
+            <div class="canvas-container">
+              <img id="layout-annotated-img" alt="Annotated Layout">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: PADDLEOCR RAW -->
+    <section id="tab-ocr" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">PaddleOCR Raw Text Inspector</h2>
+          <p class="card-subtitle">Direct PaddleOCR inference showing all text polygons, lines, and confidence scores.</p>
+
+          <div class="dropzone">
+            <input type="file" id="ocr-file" accept="image/*">
+            <div class="dropzone-icon">🔤</div>
+            <div class="dropzone-text">Upload Any Document / Crop</div>
+          </div>
+          <div class="preview-box" id="ocr-preview"><img id="ocr-preview-img"></div>
+
+          <div class="form-group">
+            <label class="form-label" for="ocr-lang">Language / Script</label>
+            <select class="form-select" id="ocr-lang">
+              <option value="en">English (Default)</option>
+              <option value="devanagari">Devanagari (Hindi / Marathi)</option>
+              <option value="latin">Latin</option>
+            </select>
+          </div>
+
+          <button class="btn-primary" id="ocr-btn" onclick="runRawOCR()">Run PaddleOCR</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">OCR Text Regions</div>
+          <p class="card-subtitle">Visual polygon overlays and detected text lines.</p>
+
+          <div id="ocr-empty" class="results-empty">
+            <div class="results-empty-icon">📝</div>
+            <p>Upload an image to extract text blocks with bounding boxes.</p>
+          </div>
+
+          <div id="ocr-results" class="results-content">
+            <div class="canvas-container">
+              <img id="ocr-annotated-img" alt="OCR Polygon Overlay">
+            </div>
+
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.5rem;">Detected Blocks</div>
+            <div class="data-table-wrapper" style="max-height: 350px; overflow-y:auto;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Text</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody id="ocr-blocks-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: CLASSIFIER -->
+    <section id="tab-classifier" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">Document Classifier</h2>
+          <p class="card-subtitle">Classifies document type using OCR keyword cues, identifiers (PAN/Aadhaar/DL/EPIC), and MRZ presence.</p>
+
+          <div class="dropzone">
+            <input type="file" id="clf-file" accept="image/*">
+            <div class="dropzone-icon">🏷️</div>
+            <div class="dropzone-text">Upload Document Image</div>
+          </div>
+          <div class="preview-box" id="clf-preview"><img id="clf-preview-img"></div>
+
+          <button class="btn-primary" id="clf-btn" onclick="runClassifier()">Classify Document</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Classification Decision</div>
+          <p class="card-subtitle">Predicted document category, confidence score, and matching reasoning.</p>
+
+          <div id="clf-empty" class="results-empty">
+            <div class="results-empty-icon">🎯</div>
+            <p>Upload an image to test document-type auto-detection.</p>
+          </div>
+
+          <div id="clf-results" class="results-content">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Document Type</div>
+                <div class="metric-value" id="clf-doc" style="color:var(--accent-sky)">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Confidence</div>
+                <div class="metric-value" id="clf-conf" style="color:var(--accent-emerald)">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Text Regions</div>
+                <div class="metric-value" id="clf-count">-</div>
+              </div>
+            </div>
+
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Matched Signals & Reasons</div>
+            <ul id="clf-reasons" style="list-style:disc; margin-left:1.5rem; color:var(--text-muted); font-size:0.88rem;"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: MRZ PARSER -->
+    <section id="tab-mrz" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">MRZ Parser & Checksum Tester</h2>
+          <p class="card-subtitle">Accepts full passports or cropped MRZ zones. Parses TD3 (2x44) and TD1 (3x30) with ICAO check digits.</p>
+
+          <div class="dropzone">
+            <input type="file" id="mrz-file" accept="image/*">
+            <div class="dropzone-icon">🛂</div>
+            <div class="dropzone-text">Upload Passport or MRZ Crop</div>
+          </div>
+          <div class="preview-box" id="mrz-preview"><img id="mrz-preview-img"></div>
+
+          <button class="btn-primary" id="mrz-btn" onclick="runMRZ()">Parse MRZ Zone</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Parsed MRZ Fields & Checksums</div>
+          <p class="card-subtitle">Verified ICAO 9303 checksums and extracted identity tokens.</p>
+
+          <div id="mrz-empty" class="results-empty">
+            <div class="results-empty-icon">🛡️</div>
+            <p>Upload a passport image or cropped MRZ band to parse check digits.</p>
+          </div>
+
+          <div id="mrz-results" class="results-content">
+            <div class="card-title" style="font-size:0.95rem">Raw MRZ Lines</div>
+            <pre class="json-box" id="mrz-raw-lines" style="max-height:80px; margin-bottom:1rem;"></pre>
+
+            <div class="card-title" style="font-size:0.95rem">Checksum Validations</div>
+            <div id="mrz-checksums-pills" style="display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.5rem 0 1.25rem 0;"></div>
+
+            <div class="card-title" style="font-size:0.95rem">Fields</div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody id="mrz-fields-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: RULE EXTRACTORS -->
+    <section id="tab-extractors" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">Rule-Based Field Extractors</h2>
+          <p class="card-subtitle">Runs targeted regex/label extractors for specific national ID formats.</p>
+
+          <div class="dropzone">
+            <input type="file" id="ext-file" accept="image/*">
+            <div class="dropzone-icon">📋</div>
+            <div class="dropzone-text">Upload Document Image</div>
+          </div>
+          <div class="preview-box" id="ext-preview"><img id="ext-preview-img"></div>
+
+          <div class="form-group">
+            <label class="form-label" for="ext-doctype">Select Specific Extractor</label>
+            <select class="form-select" id="ext-doctype">
+              <option value="aadhaar">Indian Aadhaar (UIDAI)</option>
+              <option value="pan">Indian PAN Card (ITD)</option>
+              <option value="driving_licence">Indian Driving Licence (Sarathi)</option>
+              <option value="voter_id">Indian Voter ID (EPIC / ECI)</option>
+              <option value="passport">Passport Visual Fields</option>
+            </select>
+          </div>
+
+          <button class="btn-primary" id="ext-btn" onclick="runExtractor()">Extract Fields</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Extracted Document Data</div>
+          <p class="card-subtitle">Structured field values and attributes extracted by rule logic.</p>
+
+          <div id="ext-empty" class="results-empty">
+            <div class="results-empty-icon">📑</div>
+            <p>Select an extractor and upload an image to inspect field extraction.</p>
+          </div>
+
+          <div id="ext-results" class="results-content">
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead><tr><th>Field Name</th><th>Extracted Value</th></tr></thead>
+                <tbody id="ext-fields-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 8: BIOMETRICS -->
+    <section id="tab-biometrics" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">ArcFace 1:1 Face Verification</h2>
+          <p class="card-subtitle">Matches portrait from document against live selfie using SCRFD face detection and ArcFace ResNet-100 embeddings.</p>
+
+          <div class="form-group">
+            <label class="form-label">1. Document Portrait or Full Document</label>
+            <div class="dropzone" id="bio-doc-dropzone">
+              <input type="file" id="bio-doc-file" accept="image/*">
+              <div class="dropzone-icon" style="font-size:1.5rem">📄</div>
+              <div class="dropzone-text" style="font-size:0.85rem">Upload Document Photo</div>
+            </div>
+            <div class="preview-box" id="bio-doc-preview"><img id="bio-doc-preview-img"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">2. Live Selfie Photo (Single Face)</label>
+            <div class="dropzone" id="bio-live-dropzone">
+              <input type="file" id="bio-live-file" accept="image/*">
+              <div class="dropzone-icon" style="font-size:1.5rem">🤳</div>
+              <div class="dropzone-text" style="font-size:0.85rem">Upload Live Camera Selfie</div>
+            </div>
+            <div class="preview-box" id="bio-live-preview"><img id="bio-live-preview-img"></div>
+          </div>
+
+          <button class="btn-primary" id="bio-btn" onclick="runBiometrics()">Execute 1:1 Match</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Biometric Comparison Verdict</div>
+          <p class="card-subtitle">Cosine similarity score and verification decision.</p>
+
+          <div id="bio-empty" class="results-empty">
+            <div class="results-empty-icon">👥</div>
+            <p>Upload both a document photo and a live selfie to perform facial verification.</p>
+          </div>
+
+          <div id="bio-results" class="results-content">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Verdict</div>
+                <div class="metric-value" id="bio-verdict">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Cosine Similarity</div>
+                <div class="metric-value" id="bio-score" style="color:var(--accent-sky)">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Threshold</div>
+                <div class="metric-value" id="bio-thresh">-</div>
+              </div>
+            </div>
+
+            <div class="json-wrapper">
+              <div class="json-header">
+                <span class="form-label" style="margin:0">Biometric Verification Diagnostics</span>
+              </div>
+              <pre class="json-box" id="bio-json"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (activeBtn) activeBtn.classList.add('active');
+      
+      const targetContent = document.getElementById(`tab-${tabId}`);
+      if (targetContent) targetContent.classList.add('active');
+    }
+
+    // Helper: Wire up dropzone preview
+    function setupDropzone(inputId, previewBoxId, previewImgId) {
+      const input = document.getElementById(inputId);
+      const box = document.getElementById(previewBoxId);
+      const img = document.getElementById(previewImgId);
+
+      input.addEventListener('change', () => {
+        const file = input.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = e => {
+            img.src = e.target.result;
+            box.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    setupDropzone('pipeline-file', 'pipeline-preview', 'pipeline-preview-img');
+    setupDropzone('prep-file', 'prep-preview', 'prep-preview-img');
+    setupDropzone('layout-file', 'layout-preview', 'layout-preview-img');
+    setupDropzone('ocr-file', 'ocr-preview', 'ocr-preview-img');
+    setupDropzone('clf-file', 'clf-preview', 'clf-preview-img');
+    setupDropzone('mrz-file', 'mrz-preview', 'mrz-preview-img');
+    setupDropzone('ext-file', 'ext-preview', 'ext-preview-img');
+    setupDropzone('bio-doc-file', 'bio-doc-preview', 'bio-doc-preview-img');
+    setupDropzone('bio-live-file', 'bio-live-preview', 'bio-live-preview-img');
+
+    function copyJson(elementId) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text);
+      alert('JSON copied to clipboard!');
+    }
+
+    // TAB 1: RUN PIPELINE
+    async function runPipeline() {
+      const fileInput = document.getElementById('pipeline-file');
+      if (!fileInput.files[0]) return alert('Please select an image first.');
+
+      const btn = document.getElementById('pipeline-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Running Pipeline...';
+
+      const formData = new FormData();
+      formData.append('document', fileInput.files[0]);
+      const docType = document.getElementById('pipeline-doctype').value;
+      if (docType) formData.append('doc_type', docType);
+
+      try {
+        const res = await fetch('/ocr/extract', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail?.error || data.detail || 'Extraction failed');
+
+        document.getElementById('pipeline-empty').style.display = 'none';
+        document.getElementById('pipeline-results').style.display = 'block';
+
+        const badge = document.getElementById('pipeline-status-badge');
+        badge.className = 'badge badge-success';
+        badge.innerText = 'Completed';
+
+        document.getElementById('pipe-type').innerText = (data.document_metadata?.detected_type || 'Unknown').toUpperCase();
+        document.getElementById('pipe-conf').innerText = `${Math.round((data.pipeline_summary?.overall_confidence || 0) * 100)}%`;
+        document.getElementById('pipe-time').innerText = `${data.pipeline_summary?.execution_time_ms || 0} ms`;
+        document.getElementById('pipe-blur').innerText = data.quality_assessment?.blur_score || 'N/A';
+
+        // Render crops
+        const cropsContainer = document.getElementById('pipe-crops');
+        cropsContainer.innerHTML = '';
+        const coords = data.layout_coordinates || {};
+        ['photo', 'signature', 'mrz_region'].forEach(k => {
+          if (coords[k]?.image_base64) {
+            const card = document.createElement('div');
+            card.className = 'crop-card';
+            card.innerHTML = `<img src="data:image/jpeg;base64,${coords[k].image_base64}"><div class="crop-title">${k.toUpperCase()}</div>`;
+            cropsContainer.appendChild(card);
+          }
+        });
+
+        // Render fields
+        const tbody = document.getElementById('pipe-fields-tbody');
+        tbody.innerHTML = '';
+        const fields = data.extracted_data?.rule_extracted_fields || {};
+        for (const [k, v] of Object.entries(fields)) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${k}</strong></td>
+            <td>${v.value || '-'}</td>
+            <td><span class="badge badge-info">${v.source || 'ocr'}</span></td>
+            <td>${Math.round((v.confidence || 0) * 100)}%</td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        document.getElementById('pipe-json').innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        alert('Pipeline Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Run Complete Pipeline</span>';
+      }
+    }
+
+    // TAB 2: PREPROCESS
+    async function runPreprocess() {
+      const fileInput = document.getElementById('prep-file');
+      if (!fileInput.files[0]) return alert('Please select an image.');
+
+      const btn = document.getElementById('prep-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Processing...';
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const res = await fetch('/test/preprocess', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Preprocessing error');
+
+        document.getElementById('prep-empty').style.display = 'none';
+        document.getElementById('prep-results').style.display = 'block';
+
+        document.getElementById('prep-blur').innerText = data.blur_score;
+        document.getElementById('prep-glare').innerText = data.glare_detected ? '⚠️ Yes' : '✅ Clear';
+        document.getElementById('prep-orig-res').innerText = `${data.original_dimensions.width} × ${data.original_dimensions.height}`;
+        document.getElementById('prep-norm-res').innerText = `${data.processed_dimensions.width} × ${data.processed_dimensions.height}`;
+
+        const warnDiv = document.getElementById('prep-warnings');
+        warnDiv.innerHTML = '';
+        (data.warnings || []).forEach(w => {
+          warnDiv.innerHTML += `<div class="alert alert-warning">ℹ️ ${w}</div>`;
+        });
+
+        document.getElementById('prep-processed-img').src = `data:image/jpeg;base64,${data.processed_image_base64}`;
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Run Preprocessing';
+      }
+    }
+
+    // TAB 3: LAYOUT
+    async function runLayout() {
+      const fileInput = document.getElementById('layout-file');
+      if (!fileInput.files[0]) return alert('Please select an image.');
+
+      const btn = document.getElementById('layout-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Detecting...';
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const res = await fetch('/test/layout', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Layout detection error');
+
+        document.getElementById('layout-empty').style.display = 'none';
+        document.getElementById('layout-results').style.display = 'block';
+
+        const cropsDiv = document.getElementById('layout-crops');
+        cropsDiv.innerHTML = '';
+        for (const [name, b64] of Object.entries(data.crops_base64 || {})) {
+          cropsDiv.innerHTML += `
+            <div class="crop-card">
+              <img src="data:image/jpeg;base64,${b64}">
+              <div class="crop-title">${name.toUpperCase()}</div>
+            </div>
+          `;
+        }
+
+        document.getElementById('layout-annotated-img').src = `data:image/jpeg;base64,${data.annotated_image_base64}`;
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Detect Layout Regions';
+      }
+    }
+
+    // TAB 4: RAW OCR
+    async function runRawOCR() {
+      const fileInput = document.getElementById('ocr-file');
+      if (!fileInput.files[0]) return alert('Please select an image.');
+
+      const btn = document.getElementById('ocr-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> OCR Running...';
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('lang', document.getElementById('ocr-lang').value);
+
+      try {
+        const res = await fetch('/test/ocr-raw', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'OCR error');
+
+        document.getElementById('ocr-empty').style.display = 'none';
+        document.getElementById('ocr-results').style.display = 'block';
+
+        document.getElementById('ocr-annotated-img').src = `data:image/jpeg;base64,${data.annotated_image_base64}`;
+
+        const tbody = document.getElementById('ocr-blocks-tbody');
+        tbody.innerHTML = '';
+        (data.blocks || []).forEach(b => {
+          tbody.innerHTML += `
+            <tr>
+              <td>${b.id}</td>
+              <td>${b.text}</td>
+              <td><span class="badge badge-info">${Math.round(b.confidence * 100)}%</span></td>
+            </tr>
+          `;
+        });
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Run PaddleOCR';
+      }
+    }
+
+    // TAB 5: CLASSIFIER
+    async function runClassifier() {
+      const fileInput = document.getElementById('clf-file');
+      if (!fileInput.files[0]) return alert('Please select an image.');
+
+      const btn = document.getElementById('clf-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Classifying...';
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const res = await fetch('/test/classify', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Classifier error');
+
+        document.getElementById('clf-empty').style.display = 'none';
+        document.getElementById('clf-results').style.display = 'block';
+
+        document.getElementById('clf-doc').innerText = data.detected_type.toUpperCase();
+        document.getElementById('clf-conf').innerText = `${Math.round(data.confidence * 100)}%`;
+        document.getElementById('clf-count').innerText = data.total_ocr_regions;
+
+        const ul = document.getElementById('clf-reasons');
+        ul.innerHTML = '';
+        (data.reasons || []).forEach(r => {
+          ul.innerHTML += `<li>${r}</li>`;
+        });
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Classify Document';
+      }
+    }
+
+    // TAB 6: MRZ
+    async function runMRZ() {
+      const fileInput = document.getElementById('mrz-file');
+      if (!fileInput.files[0]) return alert('Please select an image.');
+
+      const btn = document.getElementById('mrz-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Parsing MRZ...';
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const res = await fetch('/test/mrz', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'MRZ parsing error');
+
+        if (data.status === 'failed') {
+          alert('No MRZ detected: ' + (data.message || ''));
+          return;
+        }
+
+        document.getElementById('mrz-empty').style.display = 'none';
+        document.getElementById('mrz-results').style.display = 'block';
+
+        document.getElementById('mrz-raw-lines').innerText = (data.raw_lines || []).join('\n');
+
+        const pillsDiv = document.getElementById('mrz-checksums-pills');
+        pillsDiv.innerHTML = '';
+        for (const [chk, ok] of Object.entries(data.checksums || data.checks || {})) {
+          const cls = ok ? 'badge-success' : 'badge-danger';
+          const icon = ok ? '✅' : '❌';
+          pillsDiv.innerHTML += `<span class="badge ${cls}">${icon} ${chk}</span>`;
+        }
+
+        const tbody = document.getElementById('mrz-fields-tbody');
+        tbody.innerHTML = '';
+        for (const [k, v] of Object.entries(data.fields || {})) {
+          if (v) {
+            tbody.innerHTML += `<tr><td><strong>${k}</strong></td><td>${v}</td></tr>`;
+          }
+        }
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Parse MRZ Zone';
+      }
+    }
+
+    // TAB 7: EXTRACTOR
+    async function runExtractor() {
+      const fileInput = document.getElementById('ext-file');
+      if (!fileInput.files[0]) return alert('Please select an image.');
+
+      const btn = document.getElementById('ext-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Extracting...';
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('doc_type', document.getElementById('ext-doctype').value);
+
+      try {
+        const res = await fetch('/test/extractor', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Extractor error');
+
+        document.getElementById('ext-empty').style.display = 'none';
+        document.getElementById('ext-results').style.display = 'block';
+
+        const tbody = document.getElementById('ext-fields-tbody');
+        tbody.innerHTML = '';
+        for (const [k, v] of Object.entries(data.extracted_fields || {})) {
+          tbody.innerHTML += `
+            <tr>
+              <td><strong>${k}</strong></td>
+              <td>${v !== null && v !== undefined ? v : '<span style="color:var(--text-faint)">None</span>'}</td>
+            </tr>
+          `;
+        }
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Extract Fields';
+      }
+    }
+
+    // TAB 8: BIOMETRICS
+    async function runBiometrics() {
+      const docFile = document.getElementById('bio-doc-file').files[0];
+      const liveFile = document.getElementById('bio-live-file').files[0];
+      if (!docFile || !liveFile) return alert('Please upload both document photo and live selfie.');
+
+      const btn = document.getElementById('bio-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Verifying Faces...';
+
+      const formData = new FormData();
+      formData.append('document', docFile);
+      formData.append('selfie', liveFile);
+
+      try {
+        const res = await fetch('/biometrics/verify', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail?.message || data.detail?.error || 'Biometric match failed');
+
+        document.getElementById('bio-empty').style.display = 'none';
+        document.getElementById('bio-results').style.display = 'block';
+
+        const statusEl = document.getElementById('bio-verdict');
+        statusEl.innerText = data.status;
+        if (data.status === 'VERIFIED') statusEl.style.color = 'var(--accent-emerald)';
+        else if (data.status === 'REVIEW_REQUIRED') statusEl.style.color = 'var(--accent-amber)';
+        else statusEl.style.color = 'var(--accent-rose)';
+
+        document.getElementById('bio-score').innerText = `${Math.round((data.match_score || 0) * 100)}%`;
+        document.getElementById('bio-thresh').innerText = `${Math.round((data.decision_threshold || 0.65) * 100)}%`;
+        document.getElementById('bio-json').innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Execute 1:1 Match';
+      }
+    }
+  </script>
+</body>
+</html>

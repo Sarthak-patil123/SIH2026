@@ -247,6 +247,11 @@ def preprocess(
 
     # Always emit numeric blur score so the router can surface it
     warnings.append(f"BLUR_SCORE:{blur_score:.2f}")
+    if blur_score < 70.0:
+        warnings.append("LOW_SHARPNESS_WARNING")
+
+    if min(img.shape[:2]) < 600:
+        warnings.append("SUBOPTIMAL_RESOLUTION_WARNING")
 
     if glare_warning:
         warnings.append(glare_warning)

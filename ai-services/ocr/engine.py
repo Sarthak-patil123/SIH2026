@@ -36,13 +36,15 @@ class OCRModelInitError(OCREngineError):
 # Singleton OCR instance
 # ---------------------------------------------------------------------------
 
+import cv2
+
 _lock = threading.Lock()
 _ocr_instances: dict[str, object] = {}
 
 _LANG_MAP = {
     "en": "en",
     "latin": "latin",
-    "hi": "hi",
+    "hi": "devanagari",
     "devanagari": "devanagari",
     "ta": "ta",
     "te": "te",
@@ -208,6 +210,18 @@ def run_ocr(
     Returns:
         List of TextRegion with text, bounding box, and confidence.
     """
+    if image is None or not isinstance(image, np.ndarray) or image.size == 0:
+        return []
+
+    # Ensure 3-channel BGR format for PaddleOCR
+    if len(image.shape) == 2:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    elif len(image.shape) == 3 and image.shape[2] == 4:
+        image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+    elif len(image.shape) != 3 or image.shape[2] != 3:
+        logger.warning("Unsupported image shape for OCR: %s", getattr(image, "shape", None))
+        return []
+
     use_lang = lang or "en"
     ocr = _get_ocr(use_lang)
 
@@ -221,6 +235,70 @@ def run_ocr(
 
     # Auto-detect non-Latin and retry with multilingual/devanagari
     if lang is None and _is_likely_non_latin(regions):
-        return run_ocr(image, lang="devanagari")
+        try:
+            return run_ocr(image, lang="devanagari")
+        except Exception as exc:
+            logger.warning("Fallback to devanagari OCR failed: %s; keeping latin results", exc)
+            return regions
 
     return regions
+
+
+def cluster_regions_by_line(
+    regions: list[TextRegion],
+    *,
+    y_overlap_ratio: float = 0.5,
+) -> list[list[TextRegion]]:
+    """Cluster TextRegions that share the same horizontal text line.
+
+    Useful when PaddleOCR breaks a continuous line (such as an MRZ or name)
+    into multiple neighboring bounding boxes.
+
+    Returns:
+        List of lines (each line is a list of TextRegions sorted left-to-right).
+    """
+    if not regions:
+        return []
+
+    # Sort primarily by vertical center
+    def _box_center_y(r: TextRegion) -> float:
+        if not r.bbox:
+            return 0.0
+        ys = [p[1] for p in r.bbox]
+        return (min(ys) + max(ys)) / 2.0
+
+    def _box_height(r: TextRegion) -> float:
+        if not r.bbox:
+            return 1.0
+        ys = [p[1] for p in r.bbox]
+        return max(max(ys) - min(ys), 1.0)
+
+    sorted_regions = sorted(regions, key=_box_center_y)
+    lines: list[list[TextRegion]] = []
+
+    for reg in sorted_regions:
+        cy = _box_center_y(reg)
+        h = _box_height(reg)
+        placed = False
+
+        for line in lines:
+            line_cy = sum(_box_center_y(r) for r in line) / len(line)
+            line_h = sum(_box_height(r) for r in line) / len(line)
+            tol = max(h, line_h) * y_overlap_ratio
+
+            if abs(cy - line_cy) <= tol:
+                line.append(reg)
+                placed = True
+                break
+
+        if not placed:
+            lines.append([reg])
+
+    # Sort each line left-to-right
+    for line in lines:
+        line.sort(key=lambda r: min(p[0] for p in r.bbox) if r.bbox else 0)
+
+    # Sort lines top-to-bottom
+    lines.sort(key=lambda line: sum(_box_center_y(r) for r in line) / len(line))
+    return lines
+

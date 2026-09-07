@@ -258,4 +258,16 @@ def extract_aadhaar(regions: list[TextRegion]) -> AadhaarFields:
         pincode = _PINCODE_RE.search(address)
         fields.pincode = pincode.group(1) if pincode else None
 
+    if fields.pincode is None:
+        for r in reversed(regions):
+            m = _PINCODE_RE.search(r.text)
+            if m:
+                cand = m.group(1)
+                # Ensure it's not a portion of the Aadhaar number
+                if not (fields.aadhaar_number and cand in fields.aadhaar_number.replace(" ", "")):
+                    # Indian PIN codes start with digits 1-9
+                    if cand[0] in "123456789":
+                        fields.pincode = cand
+                        break
+
     return fields

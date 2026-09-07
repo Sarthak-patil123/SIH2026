@@ -7,8 +7,8 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Config:
     # ── Preprocessing (mirrors document-ocr-main/core/preprocessor.py constants) ──
-    MIN_RESOLUTION_PX: int = 600
-    BLUR_THRESHOLD: float = 80.0
+    MIN_RESOLUTION_PX: int = 400
+    BLUR_THRESHOLD: float = 30.0
     GLARE_V_THRESHOLD: int = 250
     GLARE_MAX_PIXEL_RATIO: float = 0.15
     TARGET_WIDTH_PX: int = 1600

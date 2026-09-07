@@ -32,7 +32,11 @@ def _get_app() -> Any:
             name=CFG.INSIGHTFACE_MODEL_PACK,
             allowed_modules=["detection", "recognition"],
         )
-        _app.prepare(ctx_id=0, det_size=CFG.FACE_DET_SIZE)
+        try:
+            _app.prepare(ctx_id=0, det_size=CFG.FACE_DET_SIZE)
+        except Exception as exc:
+            logger.info("GPU unavailable for ArcFace (%s); falling back to CPU (ctx_id=-1)", exc)
+            _app.prepare(ctx_id=-1, det_size=CFG.FACE_DET_SIZE)
         logger.info("ArcFace loaded.")
     return _app
 

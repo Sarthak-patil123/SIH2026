@@ -10,6 +10,7 @@ from .driving_licence import DrivingLicenceFields, extract_driving_licence
 from .aadhaar import AadhaarFields, extract_aadhaar
 from .pan import PanFields, extract_pan
 from .voter_id import VoterIdFields, extract_voter_id
+from .passport import PassportVisualFields, extract_passport
 
 __all__ = [
     "DrivingLicenceFields",
@@ -20,4 +21,6 @@ __all__ = [
     "extract_pan",
     "VoterIdFields",
     "extract_voter_id",
+    "PassportVisualFields",
+    "extract_passport",
 ]

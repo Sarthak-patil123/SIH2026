@@ -1,10 +1,16 @@
 """FastAPI application — unified entrypoint for the identity document verification service."""
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+
+from core.logger import get_logger
 from router.ocr_router import router as ocr_router
 from router.biometric_router import router as biometric_router
-from core.logger import get_logger
+from router.test_router import router as test_router
 
 logger = get_logger(__name__)
 
@@ -52,8 +58,36 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# CORS middleware for testing from browser or remote origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Core production routers
 app.include_router(ocr_router)
 app.include_router(biometric_router)
+
+# Component diagnostics and test suite router
+app.include_router(test_router)
+
+# Mount static folder
+static_dir = Path(__file__).parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+
+@app.get("/", response_class=HTMLResponse)
+@app.get("/test", response_class=HTMLResponse)
+async def serve_test_ui():
+    """Serve the single-page HTML testbed for checking every component."""
+    html_path = static_dir / "test_ui.html"
+    if html_path.exists():
+        return FileResponse(str(html_path))
+    return HTMLResponse("<h2>Test UI not found in static folder.</h2>", status_code=404)
 
 
 @app.get("/health")

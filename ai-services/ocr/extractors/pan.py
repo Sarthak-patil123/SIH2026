@@ -132,6 +132,34 @@ def _resolve_names(regions: list[TextRegion]) -> tuple[Optional[str], Optional[s
         if name_label is None or name_label is father_label:
             name_value = None
 
+    # Fallback: if name_value is None, search above father_name/DOB
+    if name_value is None and regions:
+        boundary_label = find_visual_field(regions, _FATHER_LABELS) or find_visual_field(regions, _DOB_LABELS)
+        bound_top = min(p[1] for p in boundary_label.bbox) if boundary_label and boundary_label.bbox else 9999
+
+        pan_stopwords = {
+            "INCOME", "TAX", "DEPARTMENT", "GOVT", "INDIA", "GOVERNMENT",
+            "PERMANENT", "ACCOUNT", "NUMBER", "CARD", "PAN", "SIGNATURE",
+        }
+        candidates = []
+        for r in regions:
+            txt = r.text.strip()
+            if not txt or len(txt) < 3 or any(ch.isdigit() for ch in txt):
+                continue
+            r_top = min(p[1] for p in r.bbox) if r.bbox else 0
+            if r_top >= bound_top - 5:
+                continue
+            words = set(re.sub(r"[^A-Z]", " ", txt.upper()).split())
+            if not words or (words & pan_stopwords):
+                continue
+            if re.fullmatch(r"[A-Za-z\s.]+", txt):
+                candidates.append((r_top, txt))
+
+        if candidates:
+            # Pick the lowest candidate above the father label (nearest to it)
+            candidates.sort(key=lambda x: x[0])
+            name_value = candidates[-1][1]
+
     return name_value, father_value
 
 

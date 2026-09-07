@@ -18,7 +18,7 @@ from ocr import run_ocr
 from ocr.mrz import extract_mrz
 from ocr.shared import classify_document
 from ocr.extractors import (
-    extract_aadhaar, extract_driving_licence, extract_pan, extract_voter_id,
+    extract_aadhaar, extract_driving_licence, extract_pan, extract_voter_id, extract_passport,
 )
 from preprocessing import preprocess
 from schemas.response import (
@@ -242,14 +242,26 @@ async def extract_document(
         return out
 
     # Passport / national_id with MRZ → populate from MRZ first
+    # Passport / national_id with MRZ → populate from MRZ first
     if _normalised_type in ("passport", "national_id") and mrz_data and mrz_data.fields:
         f = mrz_data.fields
         for key, val in f.model_dump().items():
             if val:
                 rule_fields[key] = FieldValue(value=val, confidence=mrz_data.confidence, source="mrz")
 
+    # If passport, supplement visual fields from the biodata page (place of birth, issue date, etc.)
+    if _normalised_type == "passport":
+        try:
+            pass_visual = extract_passport(ocr_regions)
+            visual_dict = _fields_from_dataclass(pass_visual, 0.8, "ocr")
+            for k, fv in visual_dict.items():
+                if k not in rule_fields:  # Don't overwrite MRZ validated fields
+                    rule_fields[k] = fv
+        except Exception as exc:
+            logger.warning("Passport visual extractor failed: %s", exc)
+
     # Driving licence — use normalised type to catch both spellings
-    if _normalised_type == "driving_licence":
+    elif _normalised_type == "driving_licence":
         try:
             dl = extract_driving_licence(ocr_regions)
             rule_fields.update(_fields_from_dataclass(dl, 0.8, "ocr"))
@@ -285,10 +297,12 @@ async def extract_document(
     elapsed_ms = (time.monotonic() - t_start) * 1000
     overall_conf = round((ocr_conf_mean * 0.35) + (layout_conf_mean * 0.15) + 0.5, 3)
 
-    # Populate country from MRZ if available
+    # Populate country from MRZ if available, or infer from document type
     doc_country: str | None = None
     if mrz_data and mrz_data.fields and mrz_data.fields.country_code:
         doc_country = mrz_data.fields.country_code
+    elif _normalised_type in ("aadhaar", "pan", "driving_licence", "voter_id"):
+        doc_country = "IND"
 
     return VerificationResponse(
         request_id=request_id,

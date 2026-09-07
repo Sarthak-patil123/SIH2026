@@ -37,9 +37,29 @@ def _extract_identifier(text: str, pattern: re.Pattern[str]) -> str | None:
     return re.sub(r"[ \t-]", "", match.group(0)) if match else None
 
 
+_TO_LETTER = str.maketrans({"0": "O", "1": "I", "2": "Z", "8": "B", "5": "S"})
+_TO_DIGIT = str.maketrans({"O": "0", "D": "0", "Q": "0", "I": "1", "L": "1", "Z": "2", "B": "8", "S": "5"})
+
+
 def normalize_pan(text: str) -> str | None:
     """Extract a PAN-shaped token from noisy OCR text, or None."""
-    return _extract_identifier(text, _PAN_RE)
+    extracted = _extract_identifier(text, _PAN_RE)
+    if extracted:
+        return extracted
+
+    # OCR character repair for candidate 10-char tokens
+    cleaned = re.sub(r"[ \t-]", "", text.upper())
+    for candidate in re.findall(r"\b[A-Z0-9]{10}\b", cleaned):
+        # Letters in positions 0..4 and 9; digits in 5..8
+        repaired = (
+            candidate[0:5].translate(_TO_LETTER)
+            + candidate[5:9].translate(_TO_DIGIT)
+            + candidate[9:10].translate(_TO_LETTER)
+        )
+        if re.fullmatch(r"[A-Z]{5}[0-9]{4}[A-Z]", repaired) and repaired[3] in _PAN_HOLDER_TYPES:
+            return repaired
+
+    return None
 
 
 def is_valid_pan(text: str) -> bool:
@@ -70,13 +90,13 @@ def is_valid_epic(text: str) -> bool:
 # ---------------------------------------------------------------------------
 # Driving Licence
 # Format varies by state, but most follow: 2-letter state code, 2-digit RTO,
-# optional space, then 11 digits (often YYYY + 7-digit serial), e.g.
+# optional space, then 11 to 13 digits (often YYYY + 7-digit serial), e.g.
 #   MH1220110012345, DL0420110149646, HR-06 19850034761.
-# We accept a loose shape and surface the compact form.
+# We accept a loose shape (11 to 15 digits) and surface the compact form.
 # ---------------------------------------------------------------------------
 
 _DL_RE = re.compile(
-    r"(?<![A-Z0-9])(?:[A-Z][ \t-]*){2}(?:[0-9][ \t-]*){12}[0-9](?![A-Z0-9])"
+    r"(?<![A-Z0-9])(?:[A-Z][ \t-]*){2}(?:[0-9][ \t-]*){10,14}[0-9](?![A-Z0-9])"
 )
 
 

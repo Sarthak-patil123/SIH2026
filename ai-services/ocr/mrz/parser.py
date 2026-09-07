@@ -149,27 +149,57 @@ def _clean_mrz_text(raw: str) -> str:
     """Clean OCR text for MRZ matching — fix common substitution errors."""
     text = re.sub(r"\s+", "", raw.upper())
     # Common OCR substitutions for the '<' filler character
-    text = text.replace("«", "<").replace("‹", "<").replace(">", "<")
+    text = (
+        text.replace("«", "<")
+        .replace("‹", "<")
+        .replace(">", "<")
+        .replace("{", "<")
+        .replace("(", "<")
+    )
+    # Filter non-MRZ characters
+    text = re.sub(r"[^A-Z0-9<]", "", text)
     return text
 
 
 def _find_mrz_lines(regions: list[TextRegion]) -> Optional[tuple[str, str]]:
-    """Identify the two MRZ lines from OCR output."""
-    mrz_regions: list[tuple[int, str]] = []
+    """Identify the two MRZ lines from OCR output, handling fragmented PaddleOCR boxes."""
+    from ocr.engine import cluster_regions_by_line
+
+    candidates: list[tuple[float, str]] = []
+
+    # Check individual regions
     for region in regions:
         text = _clean_mrz_text(region.text)
         if _MRZ_PATTERN.fullmatch(text):
-            y_pos = max(p[1] for p in region.bbox) if region.bbox else 0
-            mrz_regions.append((y_pos, text))
+            y_pos = min((p[1] for p in region.bbox), default=0) if region.bbox else 0
+            candidates.append((float(y_pos), text))
 
-    mrz_regions.sort(key=lambda x: x[0])
-    # Anchor the pair to a TD3 passport header. A footer or OCR duplicate below
-    # the MRZ must not displace the actual first line.
-    for index in range(len(mrz_regions) - 2, -1, -1):
-        line1 = mrz_regions[index][1]
-        line2 = mrz_regions[index + 1][1]
+    # Also check horizontally clustered lines (crucial when PaddleOCR splits an MRZ line)
+    clustered = cluster_regions_by_line(regions)
+    for line in clustered:
+        joined_raw = "".join(r.text for r in line)
+        joined_clean = _clean_mrz_text(joined_raw)
+        if _MRZ_PATTERN.fullmatch(joined_clean):
+            y_pos = min((p[1] for r in line for p in r.bbox), default=0)
+            if not any(c[1] == joined_clean for c in candidates):
+                candidates.append((float(y_pos), joined_clean))
+
+    candidates.sort(key=lambda x: x[0])
+
+    # Look for matching line 1 & line 2 pair
+    for index in range(len(candidates) - 1):
+        line1 = candidates[index][1]
+        line2 = candidates[index + 1][1]
         if _MRZ_LINE1_PATTERN.fullmatch(line1) and not _MRZ_LINE1_PATTERN.fullmatch(line2):
             return (_pad_to_44(line1), _pad_to_44(line2))
+
+    # Fallback: if line1 starts with 'P' and both are 40-44 chars
+    for index in range(len(candidates) - 1):
+        line1 = candidates[index][1]
+        line2 = candidates[index + 1][1]
+        if line1.startswith("P") and len(line1) >= 40 and len(line2) >= 40:
+            return (_pad_to_44(line1), _pad_to_44(line2))
+
     return None
 
 
@@ -245,9 +275,11 @@ def parse_mrz(regions: list[TextRegion]) -> Optional[MRZResult]:
     pn_valid = verify_check_digit(pn_raw, pn_check)
     dob_valid = verify_check_digit(dob_raw, dob_check)
     expiry_valid = verify_check_digit(expiry_raw, expiry_check)
-    # ICAO Doc 9303-4 permits '<' instead of zero for unused optional data.
+    # ICAO Doc 9303-4 permits '<' or '0' instead of zero for unused optional data.
     personal_valid = (
-        personal_raw == "<" * 14 and personal_check == "<"
+        personal_raw == "<" * 14 and personal_check in ("<", "0")
+    ) or (
+        "<" in personal_raw and personal_check in ("<", "0")
     ) or verify_check_digit(personal_raw, personal_check)
 
     # Overall check digit: computed over passport_number + check + DOB + check + expiry + check + personal + check

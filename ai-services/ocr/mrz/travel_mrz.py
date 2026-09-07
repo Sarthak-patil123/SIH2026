@@ -52,13 +52,32 @@ def _evidence(regions: list[TextRegion]) -> list[dict]:
 
 def parse_travel_mrz(regions: list[TextRegion]) -> TravelMRZResult | None:
     """Parse a supported exact-width MRZ without padding or guessed characters."""
+    from ocr.engine import cluster_regions_by_line
+
     candidates: list[tuple[int, str, TextRegion]] = []
     for region in regions:
         for line in region.text.splitlines():
             text = re.sub(r"\s+", "", line.upper()).replace("«", "<").replace("‹", "<").replace(">", "<")
+            text = re.sub(r"[^A-Z0-9<]", "", text)
             if re.fullmatch(r"[A-Z0-9<]{30}|[A-Z0-9<]{36}|[A-Z0-9<]{44}", text):
                 y = min((point[1] for point in region.bbox), default=0)
                 candidates.append((y, text, region))
+
+    clustered = cluster_regions_by_line(regions)
+    for line in clustered:
+        joined_raw = "".join(r.text for r in line)
+        text = re.sub(r"\s+", "", joined_raw.upper()).replace("«", "<").replace("‹", "<").replace(">", "<")
+        text = re.sub(r"[^A-Z0-9<]", "", text)
+        if re.fullmatch(r"[A-Z0-9<]{30}|[A-Z0-9<]{36}|[A-Z0-9<]{44}", text):
+            y = min((p[1] for r in line for p in r.bbox), default=0)
+            if not any(c[1] == text for c in candidates):
+                rep_region = TextRegion(
+                    text=text,
+                    bbox=line[0].bbox,
+                    confidence=sum(r.confidence for r in line) / len(line),
+                )
+                candidates.append((y, text, rep_region))
+
     candidates.sort(key=lambda candidate: candidate[0])
     parsed: list[TravelMRZResult] = []
     for index, (_, first, region) in enumerate(candidates):
