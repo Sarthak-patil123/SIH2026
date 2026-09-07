@@ -616,12 +616,14 @@
   <div class="tabs-nav-wrapper">
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('pipeline')">🚀 Full Pipeline</button>
+      <button class="tab-btn" onclick="switchTab('docproc')">📁 Doc Processors</button>
       <button class="tab-btn" onclick="switchTab('preprocess')">🖼️ Preprocessing</button>
       <button class="tab-btn" onclick="switchTab('layout')">📐 Layout Detection</button>
       <button class="tab-btn" onclick="switchTab('ocr')">🔍 PaddleOCR Raw</button>
       <button class="tab-btn" onclick="switchTab('classifier')">🏷️ Doc Classifier</button>
       <button class="tab-btn" onclick="switchTab('mrz')">🛂 MRZ Parser</button>
       <button class="tab-btn" onclick="switchTab('extractors')">📋 Rule Extractors</button>
+      <button class="tab-btn" onclick="switchTab('tampering')">🛡️ Tampering / ELA</button>
       <button class="tab-btn" onclick="switchTab('biometrics')">👤 Biometrics 1:1</button>
     </div>
   </div>
@@ -1090,6 +1092,116 @@
         </div>
       </div>
     </section>
+    <!-- TAB: DOC FOLDER PROCESSORS -->
+    <section id="tab-docproc" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">Document Folder Processors</h2>
+          <p class="card-subtitle">Directly tests the standalone processor pipelines for each document folder (ocr/passport, ocr/national_id, ocr/driving_license, ocr/dob_proof, ocr/visa).</p>
+
+          <div class="dropzone">
+            <input type="file" id="docproc-file" accept="image/*">
+            <div class="dropzone-icon">📁</div>
+            <div class="dropzone-text">Upload Document Image</div>
+          </div>
+          <div class="preview-box" id="docproc-preview"><img id="docproc-preview-img"></div>
+
+          <div class="form-group">
+            <label class="form-label" for="docproc-type">Select Document Folder Pipeline</label>
+            <select class="form-select" id="docproc-type">
+              <option value="passport">Passport (ocr/passport/processor.py)</option>
+              <option value="national_id">National ID: Aadhaar / PAN / Voter (ocr/national_id/processor.py)</option>
+              <option value="driving_license">Driving Licence (ocr/driving_license/processor.py)</option>
+              <option value="dob_proof">DOB Proof / Birth Cert (ocr/dob_proof/processor.py)</option>
+              <option value="visa">Travel Visa Sticker (ocr/visa/processor.py)</option>
+            </select>
+          </div>
+
+          <button class="btn-primary" id="docproc-btn" onclick="runDocProc()">Process Document via Folder Pipeline</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Processor Results</div>
+          <p class="card-subtitle">Structured field outputs and prepared LLM payload.</p>
+
+          <div id="docproc-empty" class="results-empty">
+            <div class="results-empty-icon">📂</div>
+            <p>Upload an image and run the folder pipeline.</p>
+          </div>
+
+          <div id="docproc-results" class="results-content">
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead><tr><th>Field Name</th><th>Extracted Value</th></tr></thead>
+                <tbody id="docproc-fields-tbody"></tbody>
+              </table>
+            </div>
+
+            <div class="json-wrapper">
+              <div class="json-header">
+                <span class="form-label" style="margin:0">Full Processor Output (including LLM schema & status)</span>
+                <button class="btn-copy" onclick="copyJson('docproc-json')">Copy JSON</button>
+              </div>
+              <pre class="json-box" id="docproc-json"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: TAMPERING & ELA -->
+    <section id="tab-tampering" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">Forgery & Tampering Detection</h2>
+          <p class="card-subtitle">Error Level Analysis (ELA), copy-move cloning detection, and compression anomaly mapping.</p>
+
+          <div class="dropzone">
+            <input type="file" id="tamp-file" accept="image/*">
+            <div class="dropzone-icon">🛡️</div>
+            <div class="dropzone-text">Upload Document Image</div>
+          </div>
+          <div class="preview-box" id="tamp-preview"><img id="tamp-preview-img"></div>
+
+          <button class="btn-primary" id="tamp-btn" onclick="runTampering()">Analyze Forgery & Compression</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Tampering Assessment</div>
+          <p class="card-subtitle">Forgery score, diagnostic reasons, and visual explanation heatmap.</p>
+
+          <div id="tamp-empty" class="results-empty">
+            <div class="results-empty-icon">🔬</div>
+            <p>Upload an image to inspect ELA compression patterns and clone detection.</p>
+          </div>
+
+          <div id="tamp-results" class="results-content">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Verdict</div>
+                <div class="metric-value" id="tamp-verdict">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Tamper Score</div>
+                <div class="metric-value" id="tamp-score" style="color:var(--accent-sky)">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Threshold</div>
+                <div class="metric-value" id="tamp-thresh">-</div>
+              </div>
+            </div>
+
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Visual Explanation Heatmap (ELA)</div>
+            <div class="canvas-container">
+              <img id="tamp-heatmap-img" alt="Tamper Heatmap">
+            </div>
+
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Detected Signals</div>
+            <ul id="tamp-reasons" style="list-style:disc; margin-left:1.5rem; color:var(--text-muted); font-size:0.88rem;"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script>
@@ -1097,10 +1209,10 @@
     function switchTab(tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      
+
       const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
       if (activeBtn) activeBtn.classList.add('active');
-      
+
       const targetContent = document.getElementById(`tab-${tabId}`);
       if (targetContent) targetContent.classList.add('active');
     }
@@ -1125,14 +1237,101 @@
     }
 
     setupDropzone('pipeline-file', 'pipeline-preview', 'pipeline-preview-img');
+    setupDropzone('docproc-file', 'docproc-preview', 'docproc-preview-img');
     setupDropzone('prep-file', 'prep-preview', 'prep-preview-img');
     setupDropzone('layout-file', 'layout-preview', 'layout-preview-img');
     setupDropzone('ocr-file', 'ocr-preview', 'ocr-preview-img');
     setupDropzone('clf-file', 'clf-preview', 'clf-preview-img');
     setupDropzone('mrz-file', 'mrz-preview', 'mrz-preview-img');
     setupDropzone('ext-file', 'ext-preview', 'ext-preview-img');
+    setupDropzone('tamp-file', 'tamp-preview', 'tamp-preview-img');
     setupDropzone('bio-doc-file', 'bio-doc-preview', 'bio-doc-preview-img');
     setupDropzone('bio-live-file', 'bio-live-preview', 'bio-live-preview-img');
+
+    function copyJson(elementId) {
+      const text = document.getElementById(elementId).innerText;
+      navigator.clipboard.writeText(text);
+      alert('JSON copied to clipboard!');
+    }
+
+    // TAB: DOC PROCESSOR
+    async function runDocProc() {
+      const fileInput = document.getElementById('docproc-file');
+      if (!fileInput.files[0]) return alert('Please select an image.');
+
+      const btn = document.getElementById('docproc-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Processing...';
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+      formData.append('doc_type', document.getElementById('docproc-type').value);
+
+      try {
+        const res = await fetch('/test/doc-processor', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Processing failed');
+
+        document.getElementById('docproc-empty').style.display = 'none';
+        document.getElementById('docproc-results').style.display = 'block';
+
+        const tbody = document.getElementById('docproc-fields-tbody');
+        tbody.innerHTML = '';
+        const fields = data.fields || {};
+        for (const [k, v] of Object.entries(fields)) {
+          tbody.innerHTML += `<tr><td><strong>${k}</strong></td><td>${v || '-'}</td></tr>`;
+        }
+
+        document.getElementById('docproc-json').innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Process Document via Folder Pipeline';
+      }
+    }
+
+    // TAB: TAMPERING
+    async function runTampering() {
+      const fileInput = document.getElementById('tamp-file');
+      if (!fileInput.files[0]) return alert('Please select an image.');
+
+      const btn = document.getElementById('tamp-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Analyzing ELA...';
+
+      const formData = new FormData();
+      formData.append('file', fileInput.files[0]);
+
+      try {
+        const res = await fetch('/test/tampering', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Tampering analysis failed');
+
+        document.getElementById('tamp-empty').style.display = 'none';
+        document.getElementById('tamp-results').style.display = 'block';
+
+        const verdEl = document.getElementById('tamp-verdict');
+        verdEl.innerText = data.is_tampered ? '⚠️ TAMPERED' : '✅ AUTHENTIC';
+        verdEl.style.color = data.is_tampered ? 'var(--accent-rose)' : 'var(--accent-emerald)';
+
+        document.getElementById('tamp-score').innerText = `${Math.round(data.tamper_score * 100)}%`;
+        document.getElementById('tamp-thresh').innerText = `${Math.round(data.threshold * 100)}%`;
+
+        document.getElementById('tamp-heatmap-img').src = `data:image/jpeg;base64,${data.heatmap_base64}`;
+
+        const ul = document.getElementById('tamp-reasons');
+        ul.innerHTML = '';
+        (data.reasons || []).forEach(r => {
+          ul.innerHTML += `<li>${r}</li>`;
+        });
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Analyze Forgery & Compression';
+      }
+    }
 
     function copyJson(elementId) {
       const text = document.getElementById(elementId).innerText;

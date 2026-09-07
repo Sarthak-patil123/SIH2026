@@ -329,3 +329,57 @@ async def test_extractor(
     except Exception as exc:
         logger.exception("Extractor test failed")
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/doc-processor")
+async def test_doc_processor(
+    file: UploadFile = File(..., description="Document image to process"),
+    doc_type: str = Form(..., description="passport | national_id | driving_license | dob_proof | visa"),
+) -> dict:
+    """Test dedicated document processors (calls respective ocr/<doc_type>/processor.py)."""
+    data = await file.read()
+    norm_type = doc_type.lower().strip().replace("driving_licence", "driving_license")
+
+    from ocr.passport import process_passport
+    from ocr.national_id import process_national_id
+    from ocr.driving_license import process_driving_license
+    from ocr.dob_proof import process_dob_proof
+    from ocr.visa import process_visa
+
+    try:
+        if norm_type == "passport":
+            return process_passport(data)
+        elif norm_type in ("national_id", "aadhaar", "pan", "voter_id"):
+            sub = "auto" if norm_type == "national_id" else norm_type
+            return process_national_id(data, id_type=sub)
+        elif norm_type == "driving_license":
+            return process_driving_license(data)
+        elif norm_type == "dob_proof":
+            return process_dob_proof(data)
+        elif norm_type == "visa":
+            return process_visa(data)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown doc_type '{doc_type}'. Use: passport, national_id, driving_license, dob_proof, visa",
+            )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Doc processor failed")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.post("/tampering")
+async def test_tampering_endpoint(
+    file: UploadFile = File(..., description="Document image to analyze for tampering"),
+) -> dict:
+    """Test Error Level Analysis (ELA), copy-move and forgery detection."""
+    from tampering.inference import detect_tampering
+
+    data = await file.read()
+    try:
+        return detect_tampering(data)
+    except Exception as exc:
+        logger.exception("Tampering detection failed")
+        raise HTTPException(status_code=400, detail=str(exc))
