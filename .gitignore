@@ -11,3 +11,26 @@ storage/*
 !storage/.gitkeep
 postgres_data/
 coverage/
+
+# External models / tools / OCR repositories
+document-ocr-main/
+document-ocr*/
+*document-ocr*/
+MRZ_Passport_Reader_From_Image-main/
+mrz_passport_Reader_from_image/
+*MRZ_Passport_Reader*/
+*mrz_passport_Reader*/
+*mrz_passport*/
+*MRZ_Passport*/
+PaddleOCR-main/
+paddleocr/
+PaddleOCR/
+*PaddleOCR*/
+*paddleocr*/
+insightface-master/
+insightface/
+*insightface*/
+Passport-Verification-System-main/
+passport-verification-system-main/
+*Passport-Verification-System*/
+*passport-verification-system*/

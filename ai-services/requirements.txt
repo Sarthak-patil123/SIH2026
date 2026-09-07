@@ -1,10 +1,30 @@
-fastapi==0.110.0
-uvicorn==0.29.0
-pydantic==2.6.4
-opencv-python-headless==4.9.0.80
-numpy==1.26.4
-pytesseract==0.3.10
-pillow==10.3.0
-torch==2.2.2
-torchvision==0.17.2
+# Web framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
 python-multipart==0.0.9
+pydantic==2.7.0
+
+# Image processing
+opencv-python-headless==4.10.0.84
+Pillow==10.4.0
+pillow-heif==0.16.0
+numpy==1.26.4
+scikit-image==0.24.0
+
+# OCR — PP-OCRv5 via ONNX, zero PaddlePaddle
+rapidocr-onnxruntime==1.4.4
+
+# Layout detection
+ultralytics==8.2.90
+
+# Face recognition
+insightface==0.7.3
+onnxruntime==1.18.1
+
+# Fuzzy string match (used by validator.py from document-ocr-main)
+rapidfuzz==3.9.3
+
+# Utilities
+python-dateutil==2.9.0
+pycountry==24.6.1
+
