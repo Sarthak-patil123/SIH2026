@@ -20,9 +20,9 @@ async def lifespan(app: FastAPI):
         from ocr.engine import run_ocr
         dummy = np.zeros((32, 200, 3), dtype=np.uint8)
         run_ocr(dummy)
-        logger.info("RapidOCR warmed up.")
+        logger.info("PaddleOCR warmed up.")
     except Exception as exc:
-        logger.warning("RapidOCR warm-up failed (non-fatal): %s", exc)
+        logger.warning("PaddleOCR warm-up failed (non-fatal): %s", exc)
 
     # Warm up YOLO layout detector
     try:
@@ -47,7 +47,7 @@ app = FastAPI(
     version="1.0.0",
     description=(
         "AI pipeline: image preprocessing -> YOLO layout detection -> "
-        "RapidOCR text extraction -> ICAO MRZ parsing -> ArcFace 1:1 biometric verification."
+        "PaddleOCR text extraction -> ICAO MRZ parsing -> ArcFace 1:1 biometric verification."
     ),
     lifespan=lifespan,
 )

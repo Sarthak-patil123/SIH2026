@@ -522,18 +522,18 @@ if "signature" in regions:
 
 ## Stage 4A — OCR Engine
 
-**Goal:** Thread-safe RapidOCR singleton that returns `TextRegion` objects.  
-**Approach:** Direct copy, zero changes.
+**Goal:** Thread-safe PaddleOCR singleton that returns `TextRegion` objects.  
+**Approach:** Built using official `PaddleOCR-main` engine with support for both 2.x and 3.x result formats.
 
 ### What to do
 
-**Copy the file:**
+**Engine:**
 ```
-SOURCE: document-ocr-main/document-ocr-main/core/ocr_engine.py
+SOURCE: PaddleOCR-main
 DEST:   ai-services/ocr/engine.py
 ```
 
-**Zero changes.** The file already imports `rapidocr` correctly and exposes `run_ocr()` and `TextRegion`.
+Exposes `run_ocr()`, `TextRegion`, and `OCRModelInitError`, wrapping PaddleOCR with text detection, angle classification, and recognition. Standardizes parsed regions to `TextRegion(text, bbox, confidence)`.
 
 **Create `ocr/__init__.py`:**
 ```python

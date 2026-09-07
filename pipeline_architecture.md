@@ -73,8 +73,8 @@ A critical inspection of the reference repositories in the workspace was conduct
 | **Deployment Fit** | Difficult in slim Docker containers; Python package conflicts. | Extremely portable, headless, microservice-friendly. |
 | **Extraction Features** | Raw OCR, table recognition, layout parsing. | End-to-end KYC document pipelines, validators, and field extractors. |
 
-* **Architectural Verdict:** **Adopt `document-ocr-main` with RapidOCR / ONNX Runtime.**  
-  Full `PaddleOCR` brings massive dependency bloat without runtime accuracy advantages over ONNX-quantized PP-OCR models. `document-ocr-main` provides enterprise-grade input handling, EXIF correction, resolution checks, and battle-tested Indian & global KYC extractors (Aadhaar, DL, PAN, Passport).
+* **Architectural Verdict:** **Adopt `PaddleOCR-main` (PaddleOCR) for Text Recognition.**  
+  While ONNX models were evaluated, real-world document text recognition quality with the official PaddleOCR engine provides superior word accuracy, robust orientation classification, and multilingual capability across complex national IDs and passports. Downstream rule-based KYC extractors and validators consume standardized `TextRegion` outputs from PaddleOCR.
 
 ---
 

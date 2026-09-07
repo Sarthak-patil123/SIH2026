@@ -1,7 +1,7 @@
 """
-RapidOCR wrapper. Accepts a preprocessed image, returns detected text regions.
+PaddleOCR wrapper. Accepts a preprocessed image, returns detected text regions.
 
-Uses PP-OCRv5 models via ONNX Runtime — no PaddlePaddle dependency.
+Uses PaddleOCR models with text detection, angle classification, and recognition.
 """
 
 from __future__ import annotations
@@ -29,12 +29,7 @@ class TextRegion:
 
 
 class OCRModelInitError(OCREngineError):
-    """Raised when the RapidOCR models cannot be initialised.
-
-    Surfaces a clear, actionable error instead of letting the first request
-    hang until timeout when the model source (ModelScope) is unreachable or
-    the local model cache cannot be written (e.g. disk full / read-only FS).
-    """
+    """Raised when the PaddleOCR models cannot be initialised."""
 
 
 # ---------------------------------------------------------------------------
@@ -44,60 +39,61 @@ class OCRModelInitError(OCREngineError):
 _lock = threading.Lock()
 _ocr_instances: dict[str, object] = {}
 
+_LANG_MAP = {
+    "en": "en",
+    "latin": "latin",
+    "hi": "hi",
+    "devanagari": "devanagari",
+    "ta": "ta",
+    "te": "te",
+    "ar": "ar",
+    "arabic": "ar",
+    "cyrillic": "cyrillic",
+    "ru": "cyrillic",
+    "ch": "ch",
+    "chinese": "ch",
+    "japan": "japan",
+    "korean": "korean",
+}
+
 
 def _get_ocr(lang: str = "en"):
-    """Get or create a cached RapidOCR instance.
+    """Get or create a cached PaddleOCR instance.
 
     Raises:
-        OCRModelInitError: if RapidOCR model initialisation fails. A failed
-            instance is never cached, so a subsequent call can retry once the
-            underlying problem (network / disk) is resolved.
+        OCRModelInitError: if PaddleOCR model initialisation fails. A failed
+            instance is never cached, so a subsequent call can retry.
     """
     if lang in _ocr_instances:
         return _ocr_instances[lang]
 
     try:
-        from rapidocr import LangRec, ModelType, OCRVersion, RapidOCR
+        from paddleocr import PaddleOCR
     except Exception as exc:  # pragma: no cover - import failure is environmental
-        logger.exception("Failed to import rapidocr")
-        raise OCRModelInitError(f"MODEL_INIT_FAILED: rapidocr import failed: {exc}") from exc
-
-    # Map string language codes to RapidOCR Enum values
-    _lang_map = {
-        "en": LangRec.EN,
-        "latin": LangRec.LATIN,
-        "ch": LangRec.CH,
-        "chinese_cht": LangRec.CHINESE_CHT,
-        "japan": LangRec.JAPAN,
-        "korean": LangRec.KOREAN,
-        "arabic": LangRec.ARABIC,
-        "cyrillic": LangRec.CYRILLIC,
-        "devanagari": LangRec.DEVANAGARI,
-        "ka": LangRec.KA,
-        "ta": LangRec.TA,
-        "te": LangRec.TE,
-    }
+        logger.exception("Failed to import paddleocr")
+        raise OCRModelInitError(f"MODEL_INIT_FAILED: paddleocr import failed: {exc}") from exc
 
     with _lock:
         # Re-check under the lock — another thread may have built it.
         if lang in _ocr_instances:
             return _ocr_instances[lang]
 
-        rec_lang = _lang_map.get(lang, LangRec.EN)
+        paddle_lang = _LANG_MAP.get(lang, "en")
         try:
-            instance = RapidOCR(params={
-                "Global.use_cls": False,
-                "Det.model_type": ModelType.MOBILE,
-                "Det.ocr_version": OCRVersion.PPOCRV5,
-                "Rec.lang_type": rec_lang,
-                "Rec.model_type": ModelType.MOBILE,
-                "Rec.ocr_version": OCRVersion.PPOCRV5,
-            })
+            instance = PaddleOCR(use_angle_cls=True, lang=paddle_lang)
+        except TypeError:
+            try:
+                instance = PaddleOCR(lang=paddle_lang)
+            except Exception as exc:
+                logger.exception("PaddleOCR model initialisation failed (lang=%s)", lang)
+                raise OCRModelInitError(
+                    f"MODEL_INIT_FAILED: could not initialise PaddleOCR models for lang={lang}: {exc}"
+                ) from exc
         except Exception as exc:
             # Do NOT cache — leave the slot empty so a later call can retry.
-            logger.exception("RapidOCR model initialisation failed (lang=%s)", lang)
+            logger.exception("PaddleOCR model initialisation failed (lang=%s)", lang)
             raise OCRModelInitError(
-                f"MODEL_INIT_FAILED: could not initialise OCR models for lang={lang}: {exc}"
+                f"MODEL_INIT_FAILED: could not initialise PaddleOCR models for lang={lang}: {exc}"
             ) from exc
 
         _ocr_instances[lang] = instance
@@ -105,22 +101,75 @@ def _get_ocr(lang: str = "en"):
     return _ocr_instances[lang]
 
 
+def _call_paddleocr(ocr_instance, image: np.ndarray):
+    """Execute OCR inference on an image array."""
+    try:
+        return ocr_instance.ocr(image, cls=True)
+    except TypeError:
+        return ocr_instance.ocr(image)
+
+
 # ---------------------------------------------------------------------------
 # Result parsing
 # ---------------------------------------------------------------------------
 
-def _parse_rapidocr_results(result) -> list[TextRegion]:
-    """Parse RapidOCR output into TextRegion list."""
-    regions: list[TextRegion] = []
+def _parse_paddleocr_results(result) -> list[TextRegion]:
+    """Parse PaddleOCR output into TextRegion list.
 
-    if result.boxes is None or result.txts is None or result.scores is None:
+    Supports:
+    - PaddleOCR 2.x nested list format: [[[bbox, (text, score)], ...]]
+    - PaddleOCR 3.x / PaddleX dict format: [{'dt_polys': [...], 'rec_texts': [...], 'rec_scores': [...]}]
+    """
+    regions: list[TextRegion] = []
+    if not result:
         return regions
 
-    for box, txt, score in zip(result.boxes, result.txts, result.scores):
-        text = str(txt).strip()
-        if text:
-            bbox = [[int(pt[0]), int(pt[1])] for pt in box]
-            regions.append(TextRegion(text=text, bbox=bbox, confidence=float(score)))
+    # Extract primary item (first image/page result)
+    item = result[0] if isinstance(result, list) and len(result) > 0 else result
+    if item is None:
+        return regions
+
+    # Format 1: Dictionary output (PaddleOCR 3.x / PaddleX)
+    if isinstance(item, dict):
+        boxes = item.get("dt_polys") or item.get("rec_boxes") or item.get("dt_boxes") or []
+        texts = item.get("rec_texts") or item.get("rec_text") or []
+        scores = item.get("rec_scores") or item.get("rec_score") or []
+
+        for box, txt, score in zip(boxes, texts, scores):
+            text = str(txt).strip()
+            if text:
+                try:
+                    bbox = [[int(round(pt[0])), int(round(pt[1]))] for pt in box]
+                    confidence = float(score)
+                    regions.append(TextRegion(text=text, bbox=bbox, confidence=confidence))
+                except (ValueError, TypeError, IndexError):
+                    continue
+        return regions
+
+    # Format 2: Classic PaddleOCR 2.x list of lines
+    if isinstance(item, list):
+        for line in item:
+            if not line or len(line) < 2:
+                continue
+            box, text_info = line[0], line[1]
+            if isinstance(text_info, (tuple, list)) and len(text_info) >= 2:
+                text = str(text_info[0]).strip()
+                try:
+                    score = float(text_info[1])
+                except (ValueError, TypeError):
+                    score = 1.0
+            elif isinstance(text_info, str):
+                text = text_info.strip()
+                score = 1.0
+            else:
+                continue
+
+            if text:
+                try:
+                    bbox = [[int(round(pt[0])), int(round(pt[1]))] for pt in box]
+                    regions.append(TextRegion(text=text, bbox=bbox, confidence=score))
+                except (ValueError, TypeError, IndexError):
+                    continue
 
     return regions
 
@@ -131,7 +180,7 @@ def _parse_rapidocr_results(result) -> list[TextRegion]:
 
 def _is_likely_non_latin(regions: list[TextRegion]) -> bool:
     """Heuristic: if > 40% of characters in detected text are non-ASCII, re-run
-    with multilingual model."""
+    with multilingual / devanagari model."""
     all_text = "".join(r.text for r in regions)
     if not all_text:
         return False
@@ -149,12 +198,12 @@ def run_ocr(
     lang: Optional[str] = None,
 ) -> list[TextRegion]:
     """
-    Run OCR on a preprocessed image.
+    Run PaddleOCR on a preprocessed image.
 
     Args:
         image: BGR numpy array (preprocessed).
         lang: Force a language. If None, starts with 'en' and falls back to
-              'latin' if non-Latin script is detected.
+              'devanagari' if non-Latin script is detected.
 
     Returns:
         List of TextRegion with text, bounding box, and confidence.
@@ -162,11 +211,16 @@ def run_ocr(
     use_lang = lang or "en"
     ocr = _get_ocr(use_lang)
 
-    result = ocr(image)
-    regions = _parse_rapidocr_results(result)
+    try:
+        result = _call_paddleocr(ocr, image)
+    except Exception as exc:
+        logger.exception("PaddleOCR inference failed (lang=%s)", use_lang)
+        raise OCREngineError(f"OCR_INFERENCE_FAILED: {exc}") from exc
 
-    # Auto-detect non-Latin and retry with multilingual
+    regions = _parse_paddleocr_results(result)
+
+    # Auto-detect non-Latin and retry with multilingual/devanagari
     if lang is None and _is_likely_non_latin(regions):
-        return run_ocr(image, lang="latin")
+        return run_ocr(image, lang="devanagari")
 
     return regions

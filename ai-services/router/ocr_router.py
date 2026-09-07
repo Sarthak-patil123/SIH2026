@@ -32,7 +32,7 @@ logger = get_logger(__name__)
 
 
 def _bbox_to_rect(bbox: list[list[int]]) -> list[int]:
-    """Convert RapidOCR quadrilateral bbox to [x1,y1,x2,y2] rectangle."""
+    """Convert PaddleOCR quadrilateral bbox to [x1,y1,x2,y2] rectangle."""
     xs = [p[0] for p in bbox]
     ys = [p[1] for p in bbox]
     return [min(xs), min(ys), max(xs), max(ys)]

@@ -57,7 +57,7 @@ class MRZData(BaseModel):
 
 
 class OCRTextBlock(BaseModel):
-    """A single detected text region from RapidOCR."""
+    """A single detected text region from PaddleOCR."""
     text: str
     polygon: list[list[int]]   # [[x,y],[x,y],[x,y],[x,y]] — quadrilateral
     confidence: float

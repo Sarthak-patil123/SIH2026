@@ -32,4 +32,4 @@ class MRZParseError(PipelineError):
 
 
 class OCREngineError(PipelineError):
-    """RapidOCR model failed to initialise or run."""
+    """PaddleOCR model failed to initialise or run."""
