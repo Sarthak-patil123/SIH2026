@@ -29,30 +29,33 @@ export default function Tabs({ tabs, defaultTab, onChange, className, children }
   return (
     <div className={cn('flex flex-col', className)}>
       {/* Tab Bar */}
-      <div className="flex border-b border-navy-600 overflow-x-auto scrollbar-none">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => handleChange(tab.id)}
-            className={cn(
-              'flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors duration-150',
-              activeTab === tab.id
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-navy-500'
-            )}
-          >
-            {tab.icon && <span className="w-4 h-4">{tab.icon}</span>}
-            {tab.label}
-            {tab.badge !== undefined && (
-              <span className={cn(
-                'inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold',
-                activeTab === tab.id ? 'bg-blue-500 text-white' : 'bg-navy-600 text-slate-400'
-              )}>
-                {tab.badge}
-              </span>
-            )}
-          </button>
-        ))}
+      <div className="flex border-b border-slate-200 gap-1 overflow-x-auto scrollbar-none">
+        {tabs.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => handleChange(tab.id)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-all duration-150',
+                isActive
+                  ? 'border-blue-600 text-blue-600 font-semibold'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              )}
+            >
+              {tab.icon && <span className="w-4 h-4 flex items-center justify-center">{tab.icon}</span>}
+              <span>{tab.label}</span>
+              {tab.badge !== undefined && (
+                <span className={cn(
+                  'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-xs font-semibold',
+                  isActive ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'
+                )}>
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Content */}

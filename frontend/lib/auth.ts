@@ -1,5 +1,45 @@
 import { User, LoginCredentials } from '@/types';
-import { mockUsers } from './mock-data';
+export const mockUsers: User[] = [
+  {
+    id: 'officer-1',
+    email: 'officer@ssb.gov.in',
+    name: 'Rajesh Kumar',
+    role: 'OFFICER',
+    employeeId: 'OFC-2024-001',
+    department: 'Border Security Force',
+    username: 'rajesh.kumar',
+    accountStatus: 'ACTIVE',
+    lastLogin: '2026-09-07T18:00:00Z',
+    createdAt: '2024-01-15T09:00:00Z',
+    updatedAt: '2026-09-07T18:00:00Z',
+  },
+  {
+    id: 'officer-2',
+    email: 'officer2@ssb.gov.in',
+    name: 'Priya Sharma',
+    role: 'OFFICER',
+    employeeId: 'OFC-2024-002',
+    department: 'Border Security Force',
+    username: 'priya.sharma',
+    accountStatus: 'ACTIVE',
+    lastLogin: '2026-09-07T17:30:00Z',
+    createdAt: '2024-02-10T09:00:00Z',
+    updatedAt: '2026-09-07T17:30:00Z',
+  },
+  {
+    id: 'admin-1',
+    email: 'admin@ssb.gov.in',
+    name: 'Anil Sharma',
+    role: 'ADMIN',
+    employeeId: 'ADM-2024-001',
+    department: 'Security Review Division',
+    username: 'anil.sharma',
+    accountStatus: 'ACTIVE',
+    lastLogin: '2026-09-07T18:30:00Z',
+    createdAt: '2023-11-01T09:00:00Z',
+    updatedAt: '2026-09-07T18:30:00Z',
+  },
+];
 
 // Demo credentials
 const CREDENTIALS: Record<string, { password: string; userId: string }> = {

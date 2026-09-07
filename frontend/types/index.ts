@@ -111,6 +111,8 @@ export interface Case {
   riskLevel: RiskLevel;
   officerId: string;
   officerName: string;
+  applicantName?: string;
+  applicantDob?: string;
   documents: Document[];
   flagReason?: string;
   officerObservations?: string;

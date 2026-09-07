@@ -3,21 +3,18 @@
 import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import {
-  Upload, Camera, FileText, CheckCircle, AlertTriangle, ChevronRight,
-  ChevronLeft, RotateCcw, ZoomIn, Hash, Shield, User, Eye, Loader2,
-  Check, X, ScanLine,
+  Upload, Camera, FileText, CheckCircle2, AlertTriangle, ChevronRight,
+  ChevronLeft, RotateCcw, Hash, Shield, User, Eye, Loader2,
+  Check, X, ScanLine, ArrowLeft, AlertCircle, ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockCases, updateMockCase } from '@/lib/mock-data';
-import { cn, formatFileSize, getConfidenceClasses, getConfidenceBgClasses, truncateHash } from '@/lib/utils';
+import { mockCases } from '@/lib/mock-data';
+import { cn, formatFileSize, truncateHash } from '@/lib/utils';
 import Card, { CardHeader, CardTitle } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { Select, Textarea } from '@/components/ui/Input';
-
-// ── Types ──────────────────────────────────────────────────────
+import ConfidenceBar from '@/components/ui/ConfidenceBar';
 
 type Step = 1 | 2 | 3 | 4 | 5;
-
 type DocType = 'PASSPORT' | 'NATIONAL_ID' | 'VISA_STAMP' | 'DRIVING_LICENSE' | 'DOB_PROOF';
 
 interface OCRField {
@@ -33,51 +30,57 @@ interface UploadedFile {
   size: number;
   sha256: string;
   type: DocType;
+  preview?: string;
 }
-
-// ── Step Indicator ─────────────────────────────────────────────
 
 const STEPS = [
   { num: 1, label: 'Document' },
-  { num: 2, label: 'OCR' },
-  { num: 3, label: 'Face Verification' },
+  { num: 2, label: 'OCR Analysis' },
+  { num: 3, label: 'Face Match' },
   { num: 4, label: 'Review' },
-  { num: 5, label: 'Submit' },
+  { num: 5, label: 'Submitted' },
 ];
 
 function StepIndicator({ current }: { current: Step }) {
   return (
-    <div className="flex items-center">
+    <div className="flex items-center justify-between w-full max-w-2xl mx-auto py-2">
       {STEPS.map((step, idx) => (
         <React.Fragment key={step.num}>
           <div className="flex flex-col items-center">
-            <div className={cn(
-              'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all',
-              current === step.num
-                ? 'bg-blue-600 border-blue-600 text-white shadow-glow-blue'
-                : current > step.num
-                ? 'bg-success border-success text-white'
-                : 'bg-navy-700 border-navy-500 text-slate-400'
-            )}>
+            <div
+              className={cn(
+                'w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200',
+                current === step.num
+                  ? 'bg-blue-600 text-white shadow-sm ring-4 ring-blue-50'
+                  : current > step.num
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-slate-100 text-slate-400 border border-slate-200'
+              )}
+            >
               {current > step.num ? <Check size={14} /> : step.num}
             </div>
-            <span className={cn(
-              'text-[10px] font-medium mt-1.5 hidden sm:block whitespace-nowrap',
-              current === step.num ? 'text-blue-400' : current > step.num ? 'text-success' : 'text-slate-500'
-            )}>
+            <span
+              className={cn(
+                'text-[11px] font-medium mt-1.5 hidden sm:block whitespace-nowrap',
+                current === step.num ? 'text-blue-600 font-semibold' : current > step.num ? 'text-slate-700' : 'text-slate-400'
+              )}
+            >
               {step.label}
             </span>
           </div>
           {idx < STEPS.length - 1 && (
-            <div className={cn('flex-1 h-0.5 mx-1 transition-colors', current > step.num ? 'bg-success' : 'bg-navy-600')} />
+            <div
+              className={cn(
+                'flex-1 h-[2px] mx-2 transition-colors duration-200',
+                current > step.num ? 'bg-emerald-500' : 'bg-slate-200'
+              )}
+            />
           )}
         </React.Fragment>
       ))}
     </div>
   );
 }
-
-// ── Mock OCR Data ──────────────────────────────────────────────
 
 const MOCK_OCR_FIELDS: OCRField[] = [
   { label: 'Full Name', value: 'RAJESH KUMAR', confidence: 98.4 },
@@ -89,8 +92,6 @@ const MOCK_OCR_FIELDS: OCRField[] = [
   { label: 'Date of Expiry', value: '14 JAN 2030', confidence: 94.8 },
   { label: 'Place of Issue', value: 'NEW DELHI', confidence: 93.2 },
 ];
-
-// ── Main Page ──────────────────────────────────────────────────
 
 export default function OfficerVerifyPage() {
   const { user } = useAuth();
@@ -115,10 +116,7 @@ export default function OfficerVerifyPage() {
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
   const [flagReason, setFlagReason] = useState('');
   const [flagObservations, setFlagObservations] = useState('');
-  const [submitted, setSubmitted] = useState(false);
   const [submittedCaseId, setSubmittedCaseId] = useState('');
-
-  // ── Handlers ────────────────────────────────────────────────
 
   function handleFileDrop(e: React.DragEvent) {
     e.preventDefault();
@@ -144,14 +142,14 @@ export default function OfficerVerifyPage() {
   async function runOCR() {
     setOcrLoading(true);
     setStep(2);
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 1400));
     setOcrLoading(false);
     setOcrDone(true);
   }
 
   async function runFace() {
     setFaceStep('loading');
-    await new Promise((r) => setTimeout(r, 2500));
+    await new Promise((r) => setTimeout(r, 1800));
     setFaceStep('done');
   }
 
@@ -167,7 +165,6 @@ export default function OfficerVerifyPage() {
   }
 
   function handleSubmit(finalDecision: 'pass' | 'flag') {
-    // Create a new case in mock data
     const caseNumber = `SSB-10${30 + Math.floor(Math.random() * 10)}`;
     const caseId = `case-new-${Date.now()}`;
     const newCase = {
@@ -179,7 +176,25 @@ export default function OfficerVerifyPage() {
       riskLevel: (finalDecision === 'flag' ? 'HIGH' : 'LOW') as any,
       officerId: user?.id ?? '',
       officerName: user?.name ?? '',
-      documents: [],
+      applicantName: ocrFields.find((f) => f.label === 'Full Name')?.value ?? 'Rajesh Kumar',
+      applicantDob: ocrFields.find((f) => f.label === 'Date of Birth')?.value ?? '12/05/1998',
+      documents: [
+        {
+          id: `doc-${Date.now()}`,
+          caseId,
+          fileName: uploadedFile?.name ?? 'document.pdf',
+          fileUrl: uploadedFile?.preview ?? '/samples/passport-sample.png',
+          fileSize: uploadedFile?.size ?? 1024000,
+          mimeType: 'image/jpeg',
+          storagePath: '/uploads/doc.jpg',
+          sha256Hash: uploadedFile?.sha256 ?? 'a82f9c3d1e74b2f8912c45d6e7890123',
+          docType,
+          status: 'PROCESSED' as any,
+          ocrConfidence: 97.5,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ],
       flagReason: finalDecision === 'flag' ? flagReason : undefined,
       officerObservations: finalDecision === 'flag' ? flagObservations : undefined,
       createdAt: new Date().toISOString(),
@@ -188,7 +203,6 @@ export default function OfficerVerifyPage() {
     mockCases.unshift(newCase);
     setSubmittedCaseId(caseId);
     setDecision(finalDecision);
-    setSubmitted(true);
     setStep(5);
   }
 
@@ -196,114 +210,117 @@ export default function OfficerVerifyPage() {
 
   function renderStep1() {
     return (
-      <div className="space-y-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold text-slate-100">Document Verification</h2>
-            <p className="text-sm text-slate-400 mt-0.5">Upload an identity document to begin verification</p>
-          </div>
+      <div className="space-y-6">
+        <div>
+          <h2 className="font-heading text-lg font-bold text-slate-900">Step 1: Upload Identity Document</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Select document category and submit image or scan for digital processing</p>
         </div>
 
-        {/* Document type selector */}
-        <Card>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Select Document Type</p>
-          <div className="flex flex-wrap gap-2">
+        {/* Document Type Selector */}
+        <div className="bg-white border border-slate-200/90 rounded-card p-5 shadow-card space-y-3">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Document Classification</p>
+          <div className="flex flex-wrap gap-2.5">
             {([
               ['PASSPORT', 'Passport'],
-              ['NATIONAL_ID', 'National ID'],
-              ['VISA_STAMP', 'Visa Stamp'],
+              ['NATIONAL_ID', 'National ID / Aadhaar'],
+              ['VISA_STAMP', 'Entry Visa Stamp'],
               ['DRIVING_LICENSE', 'Driving License'],
-              ['DOB_PROOF', 'DOB Proof'],
+              ['DOB_PROOF', 'Birth Proof'],
             ] as [DocType, string][]).map(([val, label]) => (
               <button
                 key={val}
+                type="button"
                 onClick={() => setDocType(val)}
                 className={cn(
-                  'px-4 py-2 rounded-lg text-sm font-medium border transition-all',
+                  'px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all duration-150',
                   docType === val
-                    ? 'bg-blue-600/20 border-blue-500 text-blue-300'
-                    : 'bg-navy-700 border-navy-600 text-slate-400 hover:border-navy-500 hover:text-slate-300'
+                    ? 'bg-blue-50 border-blue-600 text-blue-700 shadow-subtle'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900'
                 )}
               >
                 {label}
               </button>
             ))}
           </div>
-        </Card>
+        </div>
 
-        {/* Upload area */}
+        {/* Drag and Drop Zone */}
         {!uploadedFile ? (
           <div
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleFileDrop}
             className={cn(
-              'border-2 border-dashed rounded-xl p-12 flex flex-col items-center gap-4 text-center transition-all duration-150',
-              dragging ? 'border-blue-500 bg-blue-500/10' : 'border-navy-500 hover:border-navy-400 bg-navy-800'
+              'border-2 border-dashed rounded-2xl p-12 flex flex-col items-center gap-4 text-center transition-all duration-150',
+              dragging ? 'border-blue-500 bg-blue-50/50' : 'border-slate-200 hover:border-slate-300 bg-white shadow-card'
             )}
           >
-            <div className="w-16 h-16 bg-navy-700 rounded-2xl flex items-center justify-center">
-              <Upload size={28} className="text-slate-400" />
+            <div className="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500">
+              <Upload size={24} />
             </div>
             <div>
-              <p className="text-base font-semibold text-slate-300">Upload Document</p>
-              <p className="text-sm text-slate-500 mt-1">Drag & drop your document here, or</p>
+              <p className="font-heading text-sm font-bold text-slate-900">Upload Identity Document</p>
+              <p className="text-xs text-slate-400 mt-1">Drag and drop document files, or choose from your computer</p>
             </div>
-            <div className="flex gap-3">
-              <button
+
+            <div className="flex items-center gap-3">
+              <Button
+                variant="primary"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-colors"
+                icon={<FileText size={15} />}
               >
-                <FileText size={15} /> Choose File
-              </button>
-              <button
-                onClick={() => processFile(new File(['mock'], 'passport_sample.jpg', { type: 'image/jpeg' }))}
-                className="flex items-center gap-2 px-4 py-2 bg-navy-700 hover:bg-navy-600 text-slate-300 text-sm font-medium rounded-lg border border-navy-500 transition-colors"
+                Select File
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => processFile(new File(['mock'], 'sample_passport.jpg', { type: 'image/jpeg' }))}
+                icon={<Camera size={15} />}
               >
-                <Camera size={15} /> Use Camera
-              </button>
+                Use Camera Capture
+              </Button>
             </div>
-            <p className="text-xs text-slate-600">Supported: JPG, PNG, PDF · Max 10MB</p>
+            <p className="text-[11px] text-slate-400">Supported formats: JPG, PNG, PDF · Maximum size: 15MB</p>
             <input ref={fileInputRef} type="file" accept="image/*,.pdf" className="hidden" onChange={handleFileSelect} />
           </div>
         ) : (
-          <Card>
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center justify-center flex-shrink-0">
-                <FileText size={22} className="text-blue-400" />
-              </div>
-              <div className="flex-1 space-y-1">
-                <p className="text-sm font-bold text-slate-100">{uploadedFile.name}</p>
-                <div className="flex gap-4 text-xs text-slate-400">
-                  <span>Type: <span className="text-slate-200">{docType}</span></span>
-                  <span>Size: <span className="text-slate-200">{formatFileSize(uploadedFile.size)}</span></span>
+          <div className="bg-white border border-slate-200/90 rounded-card p-6 shadow-card space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-blue-50 border border-blue-200/80 rounded-xl flex items-center justify-center text-blue-600 shrink-0">
+                  <FileText size={22} />
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
-                  <Hash size={11} />
-                  <span className="font-mono">{truncateHash(uploadedFile.sha256)}</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-success mt-1">
-                  <CheckCircle size={12} /> Upload successful
+                <div>
+                  <p className="text-sm font-bold font-heading text-slate-900">{uploadedFile.name}</p>
+                  <p className="text-xs text-slate-500">{docType.replace(/_/g, ' ')} · {formatFileSize(uploadedFile.size)}</p>
+                  <div className="flex items-center gap-1.5 text-xs font-mono text-slate-400 mt-1">
+                    <Hash size={12} />
+                    <span>{truncateHash(uploadedFile.sha256, 10)}</span>
+                  </div>
                 </div>
               </div>
-              <button onClick={() => setUploadedFile(null)} className="text-slate-500 hover:text-slate-300">
-                <X size={16} />
+              <button
+                onClick={() => setUploadedFile(null)}
+                className="text-slate-400 hover:text-rose-600 p-1 rounded-lg hover:bg-slate-50"
+              >
+                <X size={18} />
               </button>
             </div>
 
-            {/* Mock document preview */}
-            <div className="mt-4 bg-navy-900/50 rounded-lg h-40 flex items-center justify-center border border-navy-600">
-              <div className="flex flex-col items-center gap-2 text-slate-600">
-                <FileText size={36} />
-                <p className="text-xs">Document Preview</p>
-                <p className="text-[10px] font-mono text-slate-700">{uploadedFile.name}</p>
-              </div>
+            {/* Document Preview Box */}
+            <div className="bg-slate-50 rounded-xl p-8 border border-slate-200/80 flex flex-col items-center justify-center text-center">
+              <FileText size={36} className="text-slate-400 mb-2" />
+              <p className="text-xs font-semibold text-slate-700">{uploadedFile.name}</p>
+              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium mt-2">
+                <CheckCircle2 size={13} /> SHA-256 Hash Generated · Ready for OCR
+              </span>
             </div>
 
-            <div className="mt-4 pt-4 border-t border-navy-600 flex justify-end">
-              <Button onClick={runOCR} icon={<ScanLine size={15} />}>Run OCR</Button>
+            <div className="flex justify-end pt-2">
+              <Button variant="primary" onClick={runOCR} icon={<ScanLine size={15} />}>
+                Execute OCR Analysis
+              </Button>
             </div>
-          </Card>
+          </div>
         )}
       </div>
     );
@@ -311,113 +328,92 @@ export default function OfficerVerifyPage() {
 
   function renderStep2() {
     return (
-      <div className="space-y-5">
+      <div className="space-y-6">
         <div>
-          <h2 className="text-lg font-bold text-slate-100">OCR Extraction</h2>
-          <p className="text-sm text-slate-400 mt-0.5">Extracting identity information from document</p>
+          <h2 className="font-heading text-lg font-bold text-slate-900">Step 2: Optical Character Recognition</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Automated text parsing and document security features inspection</p>
         </div>
 
         {ocrLoading ? (
-          <div className="flex flex-col items-center gap-4 py-16">
-            <Loader2 size={40} className="text-blue-400 animate-spin" />
-            <div className="text-center">
-              <p className="text-base font-semibold text-slate-200">Extracting identity information...</p>
-              <p className="text-sm text-slate-400 mt-1">This may take a moment</p>
-            </div>
-            <div className="space-y-1 text-xs text-slate-500 text-center">
-              <p>✓ Document format validated</p>
-              <p>✓ Image quality verified</p>
-              <p className="text-blue-400 animate-pulse">⟳ Running OCR engine...</p>
+          <div className="bg-white border border-slate-200/90 rounded-card p-16 shadow-card flex flex-col items-center gap-4 text-center">
+            <Loader2 size={36} className="text-blue-600 animate-spin" />
+            <div>
+              <p className="font-heading text-base font-bold text-slate-900">Parsing Identity Fields...</p>
+              <p className="text-xs text-slate-400 mt-1">Running deep learning OCR and MRZ verification models</p>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Document preview */}
-            <Card>
-              <CardHeader><CardTitle>Document Preview</CardTitle></CardHeader>
-              <div className="bg-navy-900/50 rounded-lg h-64 flex items-center justify-center border border-navy-600">
-                <div className="flex flex-col items-center gap-2 text-slate-600">
-                  <FileText size={48} />
-                  <p className="text-sm">{uploadedFile?.name ?? 'Document'}</p>
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Document Preview */}
+            <div className="bg-white border border-slate-200/90 rounded-card p-5 shadow-card space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h4 className="font-heading text-xs font-bold text-slate-900 uppercase tracking-wide">Document Scan</h4>
+                <span className="text-[11px] font-mono text-slate-400">{uploadedFile?.name}</span>
               </div>
-              <div className="mt-3 p-2 bg-navy-700/50 rounded flex items-center gap-2 text-xs text-slate-500">
-                <Hash size={11} />
-                <span className="font-mono">{truncateHash(uploadedFile?.sha256 ?? 'a82f...91bc')}</span>
-              </div>
-            </Card>
-
-            {/* OCR Fields */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Extracted Information</CardTitle>
-                <span className="text-xs font-semibold text-success">
-                  {(ocrFields.reduce((s, f) => s + f.confidence, 0) / ocrFields.length).toFixed(1)}% avg
+              <div className="bg-slate-900 rounded-xl h-64 flex flex-col items-center justify-center text-white border border-slate-800">
+                <FileText size={40} className="text-blue-400 mb-2" />
+                <p className="text-xs font-semibold text-slate-200">{uploadedFile?.name ?? 'Document Scan'}</p>
+                <span className="text-[10px] text-slate-400 font-mono mt-1">
+                  SHA: {truncateHash(uploadedFile?.sha256 ?? 'a82f9c3d1e', 6)}
                 </span>
-              </CardHeader>
-              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+              </div>
+            </div>
+
+            {/* Extracted Fields */}
+            <div className="bg-white border border-slate-200/90 rounded-card p-5 shadow-card space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h4 className="font-heading text-xs font-bold text-slate-900 uppercase tracking-wide">Extracted Data</h4>
+                <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  {(ocrFields.reduce((s, f) => s + f.confidence, 0) / ocrFields.length).toFixed(1)}% Avg Confidence
+                </span>
+              </div>
+
+              <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
                 {ocrFields.map((field, idx) => (
-                  <div key={field.label} className="space-y-1">
+                  <div key={field.label} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] text-slate-500 uppercase tracking-wide">{field.label}</p>
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{field.label}</span>
                       <button
+                        type="button"
                         onClick={() => setEditingIdx(editingIdx === idx ? null : idx)}
-                        className="text-[10px] text-blue-400 hover:text-blue-300"
+                        className="text-[11px] font-semibold text-blue-600 hover:underline"
                       >
                         {editingIdx === idx ? 'Cancel' : 'Edit'}
                       </button>
                     </div>
+
                     {editingIdx === idx ? (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 pt-1">
                         <input
-                          className="flex-1 bg-navy-700 border border-blue-500 text-slate-100 rounded px-2 py-1 text-xs"
+                          className="flex-1 bg-white border border-blue-500 text-slate-900 rounded-lg px-2.5 py-1 text-xs focus:outline-none"
                           value={field.editValue}
-                          onChange={(e) => setOcrFields((f) => f.map((x, i) => i === idx ? { ...x, editValue: e.target.value } : x))}
+                          onChange={(e) =>
+                            setOcrFields((f) => f.map((x, i) => (i === idx ? { ...x, editValue: e.target.value } : x)))
+                          }
                         />
-                        <button onClick={() => saveEdit(idx)} className="text-success hover:text-emerald-400">
-                          <Check size={14} />
-                        </button>
+                        <Button size="xs" variant="primary" onClick={() => saveEdit(idx)}>Save</Button>
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-bold text-slate-100">
+                        <p className="text-xs font-bold text-slate-900 font-mono">
                           {field.value}
                           {field.manuallyModified && (
-                            <span className="ml-2 text-[10px] text-warning font-normal">manually modified</span>
+                            <span className="ml-2 text-[10px] text-amber-600 font-sans font-normal">(modified)</span>
                           )}
                         </p>
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 h-1 bg-navy-600 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${getConfidenceBgClasses(field.confidence)}`}
-                              style={{ width: `${field.confidence}%` }}
-                            />
-                          </div>
-                          <span className={`text-[10px] font-medium ${getConfidenceClasses(field.confidence)}`}>
-                            {field.confidence.toFixed(1)}%
-                          </span>
-                        </div>
+                        <ConfidenceBar value={field.confidence} segmentsCount={8} />
                       </div>
                     )}
-                    <div className="h-px bg-navy-600/50" />
                   </div>
                 ))}
               </div>
 
-              {/* Warnings */}
-              {ocrFields.some((f) => f.confidence < 70) && (
-                <div className="mt-3 flex items-start gap-2 p-2.5 bg-warning/10 border border-warning/30 rounded text-xs text-warning">
-                  <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
-                  Some fields have low confidence. Please verify manually.
-                </div>
-              )}
-            </Card>
-          </div>
-        )}
-
-        {ocrDone && (
-          <div className="flex justify-end">
-            <Button onClick={() => setStep(3)}>Continue <ChevronRight size={15} /></Button>
+              <div className="flex justify-end pt-3 border-t border-slate-100">
+                <Button variant="primary" onClick={() => setStep(3)}>
+                  Proceed to Face Match <ChevronRight size={15} />
+                </Button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -425,130 +421,92 @@ export default function OfficerVerifyPage() {
   }
 
   function renderStep3() {
-    const faceStatusConfig = {
-      MATCH: { color: 'text-success', bg: 'bg-success/10 border-success/30', label: '✓ MATCH' },
-      REVIEW: { color: 'text-warning', bg: 'bg-warning/10 border-warning/30', label: '⚠ REVIEW' },
-      NO_MATCH: { color: 'text-danger', bg: 'bg-danger/10 border-danger/30', label: '✕ NO MATCH' },
-    };
-    const config = faceStatusConfig[faceResult.status];
-
     return (
-      <div className="space-y-5">
+      <div className="space-y-6">
         <div>
-          <h2 className="text-lg font-bold text-slate-100">Face Verification</h2>
-          <p className="text-sm text-slate-400 mt-0.5">
-            Compare the photograph on the identity document with a live face capture
-          </p>
+          <h2 className="font-heading text-lg font-bold text-slate-900">Step 3: Biometric Face Verification</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Compare live facial capture with document photograph</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Document Face */}
-          <Card>
-            <CardHeader><CardTitle>Document Face</CardTitle></CardHeader>
-            <div className="bg-navy-900/50 rounded-lg h-48 flex items-center justify-center border border-navy-600">
-              <div className="flex flex-col items-center gap-3 text-slate-500">
-                <div className="w-24 h-24 rounded-full bg-navy-700 border-2 border-navy-500 flex items-center justify-center">
-                  <User size={36} className="text-slate-500" />
-                </div>
-                <p className="text-xs">Document Photo</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Document Photo */}
+          <div className="bg-white border border-slate-200/90 rounded-card p-5 shadow-card space-y-3">
+            <h4 className="font-heading text-xs font-bold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-2">
+              Document Photo
+            </h4>
+            <div className="bg-slate-50 rounded-xl h-48 flex flex-col items-center justify-center text-slate-400 border border-slate-100">
+              <div className="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center mb-2">
+                <User size={32} className="text-slate-500" />
               </div>
+              <p className="text-xs font-semibold text-slate-700">Archived ID Photo</p>
             </div>
-          </Card>
+          </div>
 
           {/* Live Capture */}
-          <Card>
-            <CardHeader><CardTitle>Live Capture</CardTitle></CardHeader>
-            <div className="bg-navy-900/50 rounded-lg h-48 flex items-center justify-center border border-navy-600 relative overflow-hidden">
+          <div className="bg-white border border-slate-200/90 rounded-card p-5 shadow-card space-y-3">
+            <h4 className="font-heading text-xs font-bold text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-2">
+              Live Camera Capture
+            </h4>
+            <div className="bg-slate-50 rounded-xl h-48 flex flex-col items-center justify-center text-slate-400 border border-slate-100">
               {faceStep === 'idle' ? (
-                <div className="flex flex-col items-center gap-3">
-                  <Camera size={36} className="text-slate-600" />
-                  <Button size="sm" variant="secondary" onClick={() => {}} icon={<Camera size={14} />}>Start Camera</Button>
+                <div className="flex flex-col items-center gap-2">
+                  <Camera size={32} className="text-slate-400" />
+                  <p className="text-xs text-slate-500">Camera ready</p>
                 </div>
               ) : faceStep === 'loading' ? (
-                <div className="flex flex-col items-center gap-4 text-center px-4">
-                  <div className="w-20 h-20 rounded-full bg-navy-700 border-2 border-blue-500/50 flex items-center justify-center relative">
-                    <User size={28} className="text-slate-400" />
-                    <div className="absolute inset-0 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-                  </div>
-                  <div className="space-y-1 text-xs text-slate-400">
-                    <p className="text-blue-400 animate-pulse">⟳ Detecting face...</p>
-                    <p className="text-success">✓ Liveness check</p>
-                    <p className="text-success">✓ Face captured</p>
-                  </div>
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 size={32} className="text-blue-600 animate-spin" />
+                  <p className="text-xs font-semibold text-slate-700">Scanning live liveness...</p>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-24 h-24 rounded-full bg-navy-600 border-2 border-success/50 flex items-center justify-center">
-                    <User size={36} className="text-slate-400" />
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-500 flex items-center justify-center">
+                    <User size={32} className="text-emerald-600" />
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-success">
-                    <CheckCircle size={13} /> Face captured
-                  </div>
+                  <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
+                    <CheckCircle2 size={13} /> Face Captured
+                  </span>
                 </div>
               )}
             </div>
-            <div className="mt-3 flex gap-2">
-              {faceStep === 'idle' && (
-                <Button size="sm" variant="secondary" fullWidth icon={<Camera size={14} />} onClick={runFace}>
-                  Capture Face
+
+            <div className="pt-2">
+              {faceStep === 'idle' ? (
+                <Button fullWidth variant="primary" onClick={runFace} icon={<Camera size={15} />}>
+                  Run Biometric Match
                 </Button>
-              )}
-              {faceStep === 'loading' && (
-                <Button size="sm" variant="secondary" fullWidth loading>Processing...</Button>
-              )}
-              {faceStep === 'done' && (
-                <Button size="sm" variant="secondary" fullWidth icon={<RotateCcw size={14} />} onClick={() => setFaceStep('idle')}>
-                  Retake
+              ) : faceStep === 'loading' ? (
+                <Button fullWidth variant="secondary" loading>Comparing features...</Button>
+              ) : (
+                <Button fullWidth variant="secondary" onClick={() => setFaceStep('idle')} icon={<RotateCcw size={15} />}>
+                  Retake Picture
                 </Button>
               )}
             </div>
-          </Card>
+          </div>
         </div>
 
-        {/* Run Verification Button */}
-        {faceStep !== 'done' && faceStep !== 'loading' && (
-          <Button fullWidth onClick={runFace} icon={<ScanLine size={15} />} variant="primary">
-            Run Verification
-          </Button>
-        )}
-
-        {/* Result */}
         {faceStep === 'done' && (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader><CardTitle>Verification Results</CardTitle></CardHeader>
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                {[
-                  { label: 'Face Similarity', value: `${faceResult.similarity}%`, score: faceResult.similarity },
-                  { label: 'Liveness Score', value: `${faceResult.liveness}%`, score: faceResult.liveness },
-                  { label: 'Result', value: faceResult.status, isStatus: true },
-                ].map((item) => (
-                  <div key={item.label} className="text-center">
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">{item.label}</p>
-                    {item.isStatus ? (
-                      <span className={`text-sm font-bold px-3 py-1 rounded-full border ${config.bg} ${config.color}`}>
-                        {config.label}
-                      </span>
-                    ) : (
-                      <p className={`text-2xl font-bold ${getConfidenceClasses(item.score!)}`}>{item.value}</p>
-                    )}
-                  </div>
-                ))}
+          <div className="bg-white border border-slate-200/90 rounded-card p-6 shadow-card space-y-5 animate-fade-in">
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div className="p-3 bg-slate-50 rounded-xl">
+                <span className="text-[10px] font-bold uppercase text-slate-400">Similarity</span>
+                <p className="font-heading text-xl font-bold text-emerald-600 mt-0.5">{faceResult.similarity}%</p>
               </div>
-
-              {/* Match banner */}
-              <div className={cn('p-4 rounded-lg border text-center', config.bg)}>
-                <p className={cn('text-xl font-bold', config.color)}>{config.label}</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  {faceResult.status === 'MATCH' ? 'Face successfully verified against document.' :
-                   faceResult.status === 'REVIEW' ? 'Similarity is borderline. Manual review recommended.' :
-                   'Face does not match document. Flag for admin review.'}
-                </p>
+              <div className="p-3 bg-slate-50 rounded-xl">
+                <span className="text-[10px] font-bold uppercase text-slate-400">Liveness</span>
+                <p className="font-heading text-xl font-bold text-emerald-600 mt-0.5">{faceResult.liveness}%</p>
               </div>
-            </Card>
+              <div className="p-3 bg-slate-50 rounded-xl">
+                <span className="text-[10px] font-bold uppercase text-slate-400">Result</span>
+                <p className="font-heading text-xl font-bold text-emerald-600 mt-0.5">MATCH</p>
+              </div>
+            </div>
 
             <div className="flex justify-end">
-              <Button onClick={() => setStep(4)}>Continue <ChevronRight size={15} /></Button>
+              <Button variant="primary" onClick={() => setStep(4)}>
+                Review Findings <ChevronRight size={15} />
+              </Button>
             </div>
           </div>
         )}
@@ -557,117 +515,102 @@ export default function OfficerVerifyPage() {
   }
 
   function renderStep4() {
-    const overallOCRConf = (ocrFields.reduce((s, f) => s + f.confidence, 0) / ocrFields.length).toFixed(1);
-    const riskScore = faceResult.status === 'MATCH' ? 18 : faceResult.status === 'REVIEW' ? 54 : 78;
-
     return (
-      <div className="space-y-5">
+      <div className="space-y-6">
         <div>
-          <h2 className="text-lg font-bold text-slate-100">Verification Review</h2>
-          <p className="text-sm text-slate-400 mt-0.5">Review all verification results before submitting</p>
+          <h2 className="font-heading text-lg font-bold text-slate-900">Step 4: Officer Review &amp; Decision</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Validate AI screening observations before saving the official record</p>
         </div>
 
-        <Card>
-          <CardHeader><CardTitle>Verification Summary</CardTitle></CardHeader>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {[
-              { label: 'Document Type', value: docType.replace(/_/g, ' ') },
-              { label: 'OCR Status', value: 'COMPLETED', color: 'text-success' },
-              { label: 'OCR Confidence', value: `${overallOCRConf}%`, color: parseFloat(overallOCRConf) >= 85 ? 'text-success' : 'text-warning' },
-              { label: 'Face Match', value: faceResult.status, color: faceResult.status === 'MATCH' ? 'text-success' : faceResult.status === 'REVIEW' ? 'text-warning' : 'text-danger' },
-              { label: 'Face Similarity', value: `${faceResult.similarity}%`, color: getConfidenceClasses(faceResult.similarity) },
-              { label: 'Liveness', value: `${faceResult.liveness}%`, color: getConfidenceClasses(faceResult.liveness) },
-              { label: 'Risk Score', value: riskScore.toString(), color: riskScore <= 30 ? 'text-success' : riskScore <= 60 ? 'text-warning' : 'text-danger' },
-              { label: 'Risk Level', value: riskScore <= 30 ? 'LOW' : riskScore <= 60 ? 'MEDIUM' : 'HIGH', color: riskScore <= 30 ? 'text-success' : riskScore <= 60 ? 'text-warning' : 'text-danger' },
-              { label: 'Officer', value: user?.name ?? 'Unknown' },
-            ].map((item) => (
-              <div key={item.label} className="bg-navy-700/50 rounded-lg p-3">
-                <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">{item.label}</p>
-                <p className={cn('text-sm font-bold', item.color ?? 'text-slate-200')}>{item.value}</p>
-              </div>
-            ))}
+        {/* Screening Decision Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div
+            onClick={() => handleSubmit('pass')}
+            className="p-6 bg-white border border-slate-200/90 hover:border-emerald-500 rounded-card shadow-card cursor-pointer transition-all hover:shadow-card-hover group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <CheckCircle2 size={20} />
+            </div>
+            <h4 className="font-heading text-base font-bold text-slate-900 group-hover:text-emerald-700">
+              Pass Initial Screening
+            </h4>
+            <p className="text-xs text-slate-500 mt-1">
+              All credentials match verified thresholds. Record passes to standard pipeline.
+            </p>
           </div>
-        </Card>
 
-        <Card>
-          <CardTitle className="mb-4">Initial Screening Decision</CardTitle>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button
-              onClick={() => handleSubmit('pass')}
-              className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-success/40 bg-success/5 hover:bg-success/10 hover:border-success transition-all group"
-            >
-              <CheckCircle size={36} className="text-success" />
-              <div className="text-center">
-                <p className="text-base font-bold text-success">Pass Initial Screening</p>
-                <p className="text-xs text-slate-400 mt-1">Case passes officer-level verification</p>
-              </div>
-            </button>
-            <button
-              onClick={() => setFlagDialogOpen(true)}
-              className="flex flex-col items-center gap-3 p-6 rounded-xl border-2 border-danger/40 bg-danger/5 hover:bg-danger/10 hover:border-danger transition-all group"
-            >
-              <AlertTriangle size={36} className="text-danger" />
-              <div className="text-center">
-                <p className="text-base font-bold text-danger">Flag for Admin Review</p>
-                <p className="text-xs text-slate-400 mt-1">Refer suspicious case to admin</p>
-              </div>
-            </button>
+          <div
+            onClick={() => setFlagDialogOpen(true)}
+            className="p-6 bg-white border border-slate-200/90 hover:border-rose-500 rounded-card shadow-card cursor-pointer transition-all hover:shadow-card-hover group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <ShieldAlert size={20} />
+            </div>
+            <h4 className="font-heading text-base font-bold text-slate-900 group-hover:text-rose-700">
+              Flag for Admin Review
+            </h4>
+            <p className="text-xs text-slate-500 mt-1">
+              Escalate to security supervisor due to potential tampering or biometric discrepancy.
+            </p>
           </div>
-        </Card>
+        </div>
 
-        {/* Flag Dialog */}
+        {/* Flag Modal Dialog */}
         {flagDialogOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-navy-950/80 backdrop-blur-sm" onClick={() => setFlagDialogOpen(false)} />
-            <div className="relative w-full max-w-md bg-navy-800 border border-navy-500 rounded-xl shadow-2xl p-6 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-slate-100">Flag for Admin Review</h3>
-                <button onClick={() => setFlagDialogOpen(false)} className="text-slate-400 hover:text-white"><X size={16} /></button>
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setFlagDialogOpen(false)} />
+            <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-modal p-6 space-y-4 animate-fade-in">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="font-heading text-base font-bold text-slate-900">Escalate Case to Admin</h3>
+                <button onClick={() => setFlagDialogOpen(false)} className="text-slate-400 hover:text-slate-700 p-1">
+                  <X size={16} />
+                </button>
               </div>
 
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-medium text-slate-400 uppercase tracking-wide block mb-1.5">Flag Reason</label>
-                  <div className="space-y-1.5">
-                    {['Face mismatch', 'OCR inconsistency', 'Document issue', 'Suspicious identity', 'Other'].map((r) => (
-                      <label key={r} className="flex items-center gap-2.5 cursor-pointer">
+                  <label className="text-xs font-semibold text-slate-700 block mb-1.5">Trigger Reason</label>
+                  <div className="space-y-2">
+                    {['Face mismatch', 'OCR inconsistency', 'Document alteration', 'Suspicious identity', 'Other'].map((r) => (
+                      <label key={r} className="flex items-center gap-2.5 text-xs text-slate-700 cursor-pointer">
                         <input
                           type="radio"
                           name="flagReason"
                           value={r}
                           checked={flagReason === r}
                           onChange={(e) => setFlagReason(e.target.value)}
-                          className="accent-blue-500"
+                          className="accent-blue-600"
                         />
-                        <span className="text-sm text-slate-300">{r}</span>
+                        <span>{r}</span>
                       </label>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-slate-400 uppercase tracking-wide block mb-1.5">Officer Observations</label>
+                  <label className="text-xs font-semibold text-slate-700 block mb-1.5">Officer Observation Notes</label>
                   <textarea
                     value={flagObservations}
                     onChange={(e) => setFlagObservations(e.target.value)}
-                    placeholder="Describe the reason for flagging..."
+                    placeholder="Provide specific notes for the investigating admin..."
                     rows={3}
-                    className="w-full bg-navy-700 border border-navy-600 text-slate-100 rounded-md px-3 py-2 text-sm placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                    className="w-full bg-white border border-slate-200 text-slate-900 rounded-xl p-3 text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setFlagDialogOpen(false)} className="flex-1 px-4 py-2 bg-navy-700 hover:bg-navy-600 text-slate-300 rounded-lg text-sm font-medium border border-navy-500 transition-colors">
+              <div className="flex gap-2.5 pt-2">
+                <Button variant="secondary" fullWidth onClick={() => setFlagDialogOpen(false)}>
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="danger"
+                  fullWidth
                   disabled={!flagReason}
                   onClick={() => { setFlagDialogOpen(false); handleSubmit('flag'); }}
-                  className="flex-1 px-4 py-2 bg-danger hover:bg-red-500 disabled:bg-danger/40 text-white rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed"
                 >
-                  Submit to Admin
-                </button>
+                  Confirm Escalation
+                </Button>
               </div>
             </div>
           </div>
@@ -679,99 +622,65 @@ export default function OfficerVerifyPage() {
   function renderStep5() {
     const isPass = decision === 'pass';
     return (
-      <div className="space-y-5">
-        <div className={cn(
-          'rounded-2xl p-8 flex flex-col items-center gap-4 text-center border',
-          isPass ? 'bg-success/5 border-success/30' : 'bg-warning/5 border-warning/30'
-        )}>
-          <div className={cn('w-20 h-20 rounded-full flex items-center justify-center', isPass ? 'bg-success/20' : 'bg-warning/20')}>
-            {isPass ? <CheckCircle size={40} className="text-success" /> : <AlertTriangle size={40} className="text-warning" />}
-          </div>
-          <div>
-            <h2 className={cn('text-xl font-bold', isPass ? 'text-success' : 'text-warning')}>
-              {isPass ? '✓ Initial Screening Passed' : '⚠ Case Referred to Admin'}
-            </h2>
-            <p className="text-sm text-slate-400 mt-2 max-w-md">
-              {isPass
-                ? 'Case has successfully passed the Officer\'s initial screening and is now pending system review.'
-                : 'Anomaly detected. The case has been submitted for manual verification by the Admin.'}
-            </p>
-          </div>
+      <div className="bg-white border border-slate-200/90 rounded-card p-10 shadow-card text-center space-y-6 max-w-xl mx-auto">
+        <div className={cn('w-16 h-16 rounded-2xl mx-auto flex items-center justify-center', isPass ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600')}>
+          {isPass ? <CheckCircle2 size={32} /> : <ShieldAlert size={32} />}
         </div>
 
-        <Card>
-          <CardHeader><CardTitle>Case Details</CardTitle></CardHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Officer</p>
-              <p className="text-sm font-semibold text-slate-200">{user?.name}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Status</p>
-              <p className={cn('text-sm font-bold', isPass ? 'text-success' : 'text-warning')}>
-                {isPass ? 'PENDING' : 'FLAGGED'}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Risk Level</p>
-              <p className={cn('text-sm font-bold', isPass ? 'text-success' : 'text-danger')}>
-                {isPass ? 'LOW' : 'HIGH'}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Document Type</p>
-              <p className="text-sm font-semibold text-slate-200">{docType.replace(/_/g, ' ')}</p>
-            </div>
-          </div>
-        </Card>
+        <div className="space-y-1">
+          <h2 className="font-heading text-2xl font-bold text-slate-900">
+            {isPass ? 'Verification Record Created' : 'Case Flagged for Admin Oversight'}
+          </h2>
+          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            {isPass
+              ? 'The applicant document passed initial screening and has been registered.'
+              : 'The case has been escalated to the security review division.'}
+          </p>
+        </div>
 
-        <div className="flex gap-3">
+        <div className="flex items-center justify-center gap-3 pt-4">
           {submittedCaseId && (
-            <Link href={`/officer/cases/${submittedCaseId}`} className="flex-1">
-              <Button fullWidth variant="secondary">View Case</Button>
+            <Link href={`/officer/cases/${submittedCaseId}`}>
+              <Button variant="secondary">Inspect Case</Button>
             </Link>
           )}
-          <Link href="/officer/cases" className="flex-1">
-            <Button fullWidth>Back to My Cases</Button>
+          <Link href="/officer/cases">
+            <Button variant="primary">Return to My Cases</Button>
           </Link>
         </div>
       </div>
     );
   }
 
-  // ── Main render ──────────────────────────────────────────────
-
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 lg:p-8 max-w-5xl mx-auto space-y-8 animate-fade-in">
       <div>
-        <h1 className="text-xl font-bold text-slate-100">New Verification</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Identity document screening workflow</p>
+        <h1 className="font-heading text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+          New Document Verification
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">Multi-stage document screening and identity extraction terminal</p>
       </div>
 
-      {/* Stepper */}
-      <Card>
+      {/* Stepper Card */}
+      <div className="bg-white border border-slate-200/90 rounded-card p-4 shadow-card">
         <StepIndicator current={step} />
-      </Card>
-
-      {/* Step Content */}
-      <div>
-        {step === 1 && renderStep1()}
-        {step === 2 && renderStep2()}
-        {step === 3 && renderStep3()}
-        {step === 4 && renderStep4()}
-        {step === 5 && renderStep5()}
       </div>
 
-      {/* Navigation (steps 2-4) */}
+      {/* Content */}
+      {step === 1 && renderStep1()}
+      {step === 2 && renderStep2()}
+      {step === 3 && renderStep3()}
+      {step === 4 && renderStep4()}
+      {step === 5 && renderStep5()}
+
       {step > 1 && step < 5 && (
-        <div className="flex justify-start">
-          <button
-            onClick={() => setStep((s) => Math.max(1, s - 1) as Step)}
-            className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors"
-          >
-            <ChevronLeft size={15} /> Previous Step
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setStep((s) => Math.max(1, s - 1) as Step)}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+        >
+          <ChevronLeft size={15} /> Previous Step
+        </button>
       )}
     </div>
   );

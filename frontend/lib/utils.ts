@@ -71,57 +71,57 @@ export function getCaseStatusLabel(status: CaseStatus): string {
 
 export function getCaseStatusClasses(status: CaseStatus): string {
   const map: Record<CaseStatus, string> = {
-    APPROVED: 'bg-success/20 text-success border border-success/30',
-    PENDING: 'bg-info/20 text-info border border-info/30',
-    UNDER_REVIEW: 'bg-warning/20 text-warning border border-warning/30',
-    FLAGGED: 'bg-danger/20 text-danger border border-danger/30',
-    REJECTED: 'bg-danger/20 text-danger border border-danger/30',
+    APPROVED: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80',
+    PENDING: 'bg-slate-100 text-slate-700 border border-slate-200',
+    UNDER_REVIEW: 'bg-amber-50 text-amber-700 border border-amber-200/80',
+    FLAGGED: 'bg-rose-50 text-rose-700 border border-rose-200/80',
+    REJECTED: 'bg-rose-50 text-rose-700 border border-rose-200/80',
   };
   return map[status];
 }
 
 export function getRiskLevelClasses(level: RiskLevel): string {
   const map: Record<RiskLevel, string> = {
-    LOW: 'bg-success/20 text-success',
-    MEDIUM: 'bg-warning/20 text-warning',
-    HIGH: 'bg-danger/20 text-danger',
+    LOW: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80',
+    MEDIUM: 'bg-amber-50 text-amber-700 border border-amber-200/80',
+    HIGH: 'bg-rose-50 text-rose-700 border border-rose-200/80',
   };
   return map[level];
 }
 
 export function getRiskScoreColor(score: number): string {
-  if (score <= 30) return 'text-success';
-  if (score <= 60) return 'text-warning';
-  return 'text-danger';
+  if (score <= 30) return 'text-emerald-600';
+  if (score <= 60) return 'text-amber-600';
+  return 'text-rose-600';
 }
 
 export function getConfidenceClasses(confidence: number): string {
-  if (confidence >= 85) return 'text-success';
-  if (confidence >= 65) return 'text-warning';
-  return 'text-danger';
+  if (confidence >= 85) return 'text-emerald-700';
+  if (confidence >= 65) return 'text-amber-700';
+  return 'text-rose-700';
 }
 
 export function getConfidenceBgClasses(confidence: number): string {
-  if (confidence >= 85) return 'bg-success';
-  if (confidence >= 65) return 'bg-warning';
-  return 'bg-danger';
+  if (confidence >= 85) return 'bg-emerald-500';
+  if (confidence >= 65) return 'bg-amber-500';
+  return 'bg-rose-500';
 }
 
 export function getFaceResultClasses(status: 'MATCH' | 'REVIEW' | 'NO_MATCH'): string {
   const map = {
-    MATCH: 'bg-success/20 text-success border border-success/30',
-    REVIEW: 'bg-warning/20 text-warning border border-warning/30',
-    NO_MATCH: 'bg-danger/20 text-danger border border-danger/30',
+    MATCH: 'bg-emerald-50 text-emerald-700 border border-emerald-200/80',
+    REVIEW: 'bg-amber-50 text-amber-700 border border-amber-200/80',
+    NO_MATCH: 'bg-rose-50 text-rose-700 border border-rose-200/80',
   };
   return map[status];
 }
 
 export function getAlertSeverityClasses(severity: AlertSeverity): string {
   const map: Record<AlertSeverity, string> = {
-    LOW: 'bg-info/20 text-info border border-info/30',
-    MEDIUM: 'bg-warning/20 text-warning border border-warning/30',
-    HIGH: 'bg-danger/20 text-danger border border-danger/30',
-    CRITICAL: 'bg-danger/30 text-danger border border-danger/50',
+    LOW: 'bg-blue-50 text-blue-700 border border-blue-200/80',
+    MEDIUM: 'bg-amber-50 text-amber-700 border border-amber-200/80',
+    HIGH: 'bg-rose-50 text-rose-700 border border-rose-200/80',
+    CRITICAL: 'bg-rose-100 text-rose-800 border border-rose-300 font-bold',
   };
   return map[severity];
 }

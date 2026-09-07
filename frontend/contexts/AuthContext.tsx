@@ -8,7 +8,7 @@ interface AuthContextValue {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>;
+  login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
 }
 
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (result.success && result.user) {
       setUser(result.user);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(result.user));
-      return { success: true };
+      return { success: true, user: result.user };
     }
     return { success: false, error: result.error };
   }, []);

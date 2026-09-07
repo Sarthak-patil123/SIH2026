@@ -14,7 +14,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
 
   return (
     <ToastProvider>
-      <div className="flex h-screen overflow-hidden bg-navy-900">
+      <div className="flex h-screen overflow-hidden bg-slate-50">
         {/* Desktop Sidebar */}
         <Sidebar />
 
@@ -24,7 +24,7 @@ export default function DashboardShell({ children }: DashboardShellProps) {
         {/* Main Content Area */}
         <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <Header onMobileMenuOpen={() => setMobileMenuOpen(true)} />
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto bg-slate-50">
             {children}
           </main>
         </div>

@@ -7,18 +7,22 @@ import { getCaseStatusClasses, getCaseStatusLabel, getRiskLevelClasses } from '@
 interface BadgeProps {
   children: React.ReactNode;
   className?: string;
-  variant?: 'default' | 'outline';
+  variant?: 'default' | 'outline' | 'dot';
+  dotColor?: string;
 }
 
-export function Badge({ children, className, variant = 'default' }: BadgeProps) {
+export function Badge({ children, className, variant = 'default', dotColor }: BadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wide',
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium',
         variant === 'outline' && 'bg-transparent',
         className
       )}
     >
+      {variant === 'dot' && (
+        <span className={cn('w-1.5 h-1.5 rounded-full', dotColor || 'bg-current')} />
+      )}
       {children}
     </span>
   );
@@ -31,10 +35,25 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
+  const dotColors: Record<CaseStatus, string> = {
+    APPROVED: 'bg-emerald-500',
+    PENDING: 'bg-slate-400',
+    UNDER_REVIEW: 'bg-amber-500',
+    FLAGGED: 'bg-rose-500',
+    REJECTED: 'bg-rose-500',
+  };
+
   return (
-    <Badge className={cn(getCaseStatusClasses(status), className)}>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium',
+        getCaseStatusClasses(status),
+        className
+      )}
+    >
+      <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', dotColors[status])} />
       {getCaseStatusLabel(status)}
-    </Badge>
+    </span>
   );
 }
 
@@ -45,14 +64,21 @@ interface RiskBadgeProps {
 }
 
 export function RiskBadge({ level, className }: RiskBadgeProps) {
+  const dotColors: Record<RiskLevel, string> = {
+    LOW: 'bg-emerald-500',
+    MEDIUM: 'bg-amber-500',
+    HIGH: 'bg-rose-500',
+  };
+
   return (
     <span
       className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wide',
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
         getRiskLevelClasses(level),
         className
       )}
     >
+      <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', dotColors[level])} />
       {level}
     </span>
   );
@@ -62,25 +88,45 @@ export function RiskBadge({ level, className }: RiskBadgeProps) {
 type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 const severityClasses: Record<Severity, string> = {
-  LOW: 'bg-info/20 text-info border border-info/30',
-  MEDIUM: 'bg-warning/20 text-warning border border-warning/30',
-  HIGH: 'bg-danger/20 text-danger border border-danger/30',
-  CRITICAL: 'bg-danger/30 text-danger border border-danger/50',
+  LOW: 'bg-blue-50 text-blue-700 border border-blue-200/80',
+  MEDIUM: 'bg-amber-50 text-amber-700 border border-amber-200/80',
+  HIGH: 'bg-rose-50 text-rose-700 border border-rose-200/80',
+  CRITICAL: 'bg-rose-100 text-rose-800 border border-rose-300 font-bold',
+};
+
+const severityDots: Record<Severity, string> = {
+  LOW: 'bg-blue-500',
+  MEDIUM: 'bg-amber-500',
+  HIGH: 'bg-rose-500',
+  CRITICAL: 'bg-rose-600',
 };
 
 export function SeverityBadge({ severity }: { severity: Severity }) {
   return (
-    <Badge className={severityClasses[severity]}>
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium',
+        severityClasses[severity]
+      )}
+    >
+      <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', severityDots[severity])} />
       {severity}
-    </Badge>
+    </span>
   );
 }
 
 // ── Role Badge ─────────────────────────────────────────────────
 export function RoleBadge({ role }: { role: 'OFFICER' | 'ADMIN' }) {
   return (
-    <Badge className={role === 'ADMIN' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}>
+    <span
+      className={cn(
+        'inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wider',
+        role === 'ADMIN'
+          ? 'bg-purple-50 text-purple-700 border border-purple-200/80'
+          : 'bg-blue-50 text-blue-700 border border-blue-200/80'
+      )}
+    >
       {role}
-    </Badge>
+    </span>
   );
 }
