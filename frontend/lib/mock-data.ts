@@ -5,7 +5,7 @@
 
 import {
   User, Case, Document, Alert, AuditLog, Notification,
-  OCRData, FaceResult, TamperResult,
+  OCRData, FaceResult, TamperResult, CaseTimelineEvent,
 } from '@/types';
 
 // ── Users ──────────────────────────────────────────────────────
@@ -196,6 +196,56 @@ export let mockCases: Case[] = [
     officerId: 'officer-1',
     officerName: 'Rajesh Kumar',
     documents: mockDocuments.filter((d) => d.caseId === 'case-SSB1021'),
+    timeline: [
+      {
+        id: 'tl-1021-6',
+        type: 'CASE_APPROVED',
+        title: 'Verification Completed',
+        description: 'Case successfully verified and approved.',
+        timestamp: '2026-09-07T17:15:00Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1021-5',
+        type: 'RISK_ASSESSMENT_COMPLETED',
+        title: 'Risk Assessment Completed',
+        description: 'Low-risk profile confirmed (Score: 12/100).',
+        timestamp: '2026-09-07T17:12:00Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1021-4',
+        type: 'FACE_VERIFICATION_COMPLETED',
+        title: 'Face Verification Completed',
+        description: 'Face similarity: 97.8% (Matched). Liveness check passed.',
+        timestamp: '2026-09-07T17:08:00Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1021-3',
+        type: 'OCR_COMPLETED',
+        title: 'OCR Completed',
+        description: 'Document information extracted successfully (96.8% confidence).',
+        timestamp: '2026-09-07T17:04:00Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1021-2',
+        type: 'DOCUMENT_UPLOADED',
+        title: 'Passport Uploaded',
+        description: 'Passport document added to this case.',
+        timestamp: '2026-09-07T17:02:00Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1021-1',
+        type: 'CASE_CREATED',
+        title: 'Case Created',
+        description: 'Verification case created.',
+        timestamp: '2026-09-07T17:01:00Z',
+        status: 'completed',
+      },
+    ],
     createdAt: '2026-09-07T17:01:00Z',
     updatedAt: '2026-09-07T17:15:00Z',
   },
@@ -214,6 +264,64 @@ export let mockCases: Case[] = [
     flagReason: 'FACE_MISMATCH',
     officerObservations:
       'Face similarity is critically low (38.2%). Possible document forgery. Passport metadata shows anomalies. Immediate admin review required.',
+    timeline: [
+      {
+        id: 'tl-1025-7',
+        type: 'SUBMITTED_FOR_ADMIN_REVIEW',
+        title: 'Submitted for Admin Review',
+        description: 'Case has been referred for manual verification by an administrator.',
+        timestamp: '2026-09-07T18:05:00Z',
+        status: 'current',
+      },
+      {
+        id: 'tl-1025-6',
+        type: 'CASE_FLAGGED',
+        title: 'Case Flagged',
+        description: 'Verification requires additional review: Low face similarity & metadata anomaly.',
+        timestamp: '2026-09-07T18:02:18Z',
+        status: 'warning',
+      },
+      {
+        id: 'tl-1025-5',
+        type: 'RISK_ASSESSMENT_COMPLETED',
+        title: 'Risk Assessment Completed',
+        description: 'High-risk indicators detected (Risk Score: 78/100).',
+        timestamp: '2026-09-07T17:46:00Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1025-4',
+        type: 'FACE_VERIFICATION_COMPLETED',
+        title: 'Face Verification Completed',
+        description: 'Face similarity: 38.2% (Discrepancy flagged).',
+        timestamp: '2026-09-07T17:45:10Z',
+        status: 'warning',
+      },
+      {
+        id: 'tl-1025-3',
+        type: 'OCR_COMPLETED',
+        title: 'OCR Completed',
+        description: 'Document information extracted with warnings (62.4% confidence).',
+        timestamp: '2026-09-07T17:41:20Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1025-2',
+        type: 'DOCUMENT_UPLOADED',
+        title: 'Passport Uploaded',
+        description: 'Passport document (passport_arjun_verma.jpg) added to this case.',
+        timestamp: '2026-09-07T17:40:48Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1025-1',
+        type: 'CASE_CREATED',
+        title: 'Case Created',
+        description: 'Verification case created by Officer Rajesh Kumar.',
+        timestamp: '2026-09-07T17:40:00Z',
+        status: 'completed',
+      },
+    ],
     createdAt: '2026-09-07T17:40:00Z',
     updatedAt: '2026-09-07T18:02:18Z',
   },
@@ -231,6 +339,56 @@ export let mockCases: Case[] = [
     documents: mockDocuments.filter((d) => d.caseId === 'case-SSB1028'),
     flagReason: 'OCR_INCONSISTENCY',
     officerObservations: 'OCR confidence score is borderline. Face match is in review zone. Referred for secondary review.',
+    timeline: [
+      {
+        id: 'tl-1028-6',
+        type: 'ADMIN_REVIEW_IN_PROGRESS',
+        title: 'Admin Review in Progress',
+        description: 'Supervisory administration is reviewing border screening records.',
+        timestamp: '2026-09-07T16:45:00Z',
+        status: 'current',
+      },
+      {
+        id: 'tl-1028-5',
+        type: 'SUBMITTED_FOR_ADMIN_REVIEW',
+        title: 'Submitted for Admin Review',
+        description: 'Referred for manual review due to OCR inconsistency.',
+        timestamp: '2026-09-07T16:42:00Z',
+        status: 'warning',
+      },
+      {
+        id: 'tl-1028-4',
+        type: 'RISK_ASSESSMENT_COMPLETED',
+        title: 'Risk Assessment Completed',
+        description: 'Medium risk score evaluated (54/100).',
+        timestamp: '2026-09-07T16:38:00Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1028-3',
+        type: 'FACE_VERIFICATION_COMPLETED',
+        title: 'Face Verification Completed',
+        description: 'Face similarity: 82.5% (Borderline review required).',
+        timestamp: '2026-09-07T16:35:00Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1028-2',
+        type: 'OCR_COMPLETED',
+        title: 'OCR Completed',
+        description: 'Document information extracted with minor confidence warnings.',
+        timestamp: '2026-09-07T16:30:00Z',
+        status: 'completed',
+      },
+      {
+        id: 'tl-1028-1',
+        type: 'CASE_CREATED',
+        title: 'Case Created',
+        description: 'Verification case created by Officer Priya Sharma.',
+        timestamp: '2026-09-07T16:25:00Z',
+        status: 'completed',
+      },
+    ],
     createdAt: '2026-09-07T16:25:00Z',
     updatedAt: '2026-09-07T16:45:00Z',
   },
@@ -567,3 +725,144 @@ export const mockAdminActivity: ActivityItem[] = [
   { id: 'act-a5', time: '13:00', description: 'Decision recorded — SSB-1023 REJECTED', type: 'DANGER' },
   { id: 'act-a6', time: '11:30', description: 'Case SSB-1024 approved', type: 'SUCCESS' },
 ];
+
+// ── Operational Officer Case Timeline Helper ──────────────────
+
+export function getCaseTimeline(caseData: Case): CaseTimelineEvent[] {
+  if (caseData.timeline && caseData.timeline.length > 0) {
+    return caseData.timeline;
+  }
+
+  const events: CaseTimelineEvent[] = [];
+  const primaryDoc = caseData.documents[0];
+  const createdTime = new Date(caseData.createdAt).getTime();
+
+  // 1. Current / terminal status
+  if (caseData.status === 'APPROVED') {
+    events.push({
+      id: `${caseData.id}-approved`,
+      type: 'CASE_APPROVED',
+      title: 'Verification Completed',
+      description: 'Case successfully verified and approved.',
+      timestamp: caseData.updatedAt || caseData.createdAt,
+      status: 'completed',
+    });
+  } else if (caseData.status === 'REJECTED') {
+    events.push({
+      id: `${caseData.id}-rejected`,
+      type: 'CASE_REJECTED',
+      title: 'Case Rejected',
+      description: 'Case rejected due to identity discrepancies or failed validation.',
+      timestamp: caseData.updatedAt || caseData.createdAt,
+      status: 'rejected',
+    });
+  } else if (caseData.status === 'FLAGGED') {
+    events.push({
+      id: `${caseData.id}-submitted`,
+      type: 'SUBMITTED_FOR_ADMIN_REVIEW',
+      title: 'Submitted for Admin Review',
+      description: 'Your case has been submitted for manual verification by an administrator.',
+      timestamp: caseData.updatedAt || caseData.createdAt,
+      status: 'current',
+    });
+    events.push({
+      id: `${caseData.id}-flagged`,
+      type: 'CASE_FLAGGED',
+      title: 'Case Flagged',
+      description: caseData.flagReason
+        ? `Verification requires additional review: ${caseData.flagReason.replace(/_/g, ' ')}.`
+        : 'Verification requires additional review.',
+      timestamp: new Date(createdTime + 4 * 60000).toISOString(),
+      status: 'warning',
+    });
+  } else if (caseData.status === 'UNDER_REVIEW') {
+    events.push({
+      id: `${caseData.id}-review`,
+      type: 'ADMIN_REVIEW_IN_PROGRESS',
+      title: 'Admin Review in Progress',
+      description: 'Supervisory administration is currently evaluating case evidence.',
+      timestamp: caseData.updatedAt || caseData.createdAt,
+      status: 'current',
+    });
+    events.push({
+      id: `${caseData.id}-submitted`,
+      type: 'SUBMITTED_FOR_ADMIN_REVIEW',
+      title: 'Submitted for Admin Review',
+      description: 'Referred for manual review.',
+      timestamp: new Date(createdTime + 4 * 60000).toISOString(),
+      status: 'warning',
+    });
+  } else {
+    // PENDING
+    events.push({
+      id: `${caseData.id}-pending`,
+      type: 'RISK_ASSESSMENT_COMPLETED',
+      title: 'Risk Assessment Completed',
+      description: `Risk score evaluated at ${caseData.riskScore}/100 (${caseData.riskLevel} Risk).`,
+      timestamp: caseData.updatedAt || caseData.createdAt,
+      status: 'current',
+    });
+  }
+
+  // 2. Risk assessment
+  if (caseData.status === 'APPROVED' || caseData.status === 'REJECTED') {
+    events.push({
+      id: `${caseData.id}-risk`,
+      type: 'RISK_ASSESSMENT_COMPLETED',
+      title: 'Risk Assessment Completed',
+      description: `${caseData.riskLevel === 'HIGH' ? 'High-risk' : caseData.riskLevel === 'MEDIUM' ? 'Moderate-risk' : 'Low-risk'} indicators evaluated (Score: ${caseData.riskScore}/100).`,
+      timestamp: new Date(createdTime + 3 * 60000).toISOString(),
+      status: caseData.riskLevel === 'HIGH' ? 'warning' : 'completed',
+    });
+  }
+
+  // 3. Face verification
+  if (primaryDoc?.faceResult) {
+    const isMatch = primaryDoc.faceResult.status === 'MATCH';
+    events.push({
+      id: `${caseData.id}-face`,
+      type: 'FACE_VERIFICATION_COMPLETED',
+      title: 'Face Verification Completed',
+      description: `Face similarity: ${primaryDoc.faceResult.similarity.toFixed(1)}%${isMatch ? ' (Matched)' : ' (Discrepancy flagged)'}.`,
+      timestamp: new Date(createdTime + 2 * 60000).toISOString(),
+      status: isMatch ? 'completed' : 'warning',
+    });
+  }
+
+  // 4. OCR
+  if (primaryDoc?.ocrData) {
+    events.push({
+      id: `${caseData.id}-ocr`,
+      type: 'OCR_COMPLETED',
+      title: 'OCR Completed',
+      description: `Document information extracted (${primaryDoc.ocrData.overallConfidence.toFixed(1)}% confidence).`,
+      timestamp: new Date(createdTime + 1 * 60000).toISOString(),
+      status: 'completed',
+    });
+  }
+
+  // 5. Document upload
+  if (primaryDoc) {
+    const docName = primaryDoc.docType ? primaryDoc.docType.replace(/_/g, ' ') : 'Document';
+    events.push({
+      id: `${caseData.id}-doc`,
+      type: 'DOCUMENT_UPLOADED',
+      title: `${docName} Uploaded`,
+      description: `${docName} document (${primaryDoc.fileName}) added to this case.`,
+      timestamp: new Date(createdTime + 30000).toISOString(),
+      status: 'completed',
+    });
+  }
+
+  // 6. Case created
+  events.push({
+    id: `${caseData.id}-created`,
+    type: 'CASE_CREATED',
+    title: 'Case Created',
+    description: `Verification case created by Officer ${caseData.officerName || 'Staff'}.`,
+    timestamp: caseData.createdAt,
+    status: 'completed',
+  });
+
+  return events;
+}

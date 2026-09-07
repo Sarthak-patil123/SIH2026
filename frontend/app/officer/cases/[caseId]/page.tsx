@@ -7,41 +7,58 @@ import {
   ArrowLeft, FileText, Eye, Clock, CheckCircle2, Flag, AlertTriangle,
   User, Hash, Shield, ShieldAlert, Cpu, Sparkles, Check, AlertCircle
 } from 'lucide-react';
-import { mockCases, mockAuditLogs } from '@/lib/mock-data';
+import { mockCases, getCaseTimeline } from '@/lib/mock-data';
 import {
   formatDate, formatDateTime, formatTime, getDocTypeLabel,
-  truncateHash, formatFileSize,
+  truncateHash, formatFileSize, cn,
 } from '@/lib/utils';
 import { StatusBadge, RiskBadge } from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import ConfidenceBar from '@/components/ui/ConfidenceBar';
 import Avatar from '@/components/ui/Avatar';
+import { TimelineEventStatus } from '@/types';
 
-const timelineIcons: Record<string, React.ReactNode> = {
-  CASE_CREATED: <FileText size={13} />,
-  DOCUMENT_UPLOADED: <FileText size={13} />,
-  OCR_COMPLETED: <Eye size={13} />,
-  FACE_VERIFICATION: <User size={13} />,
-  CASE_FLAGGED: <Flag size={13} />,
-  ADMIN_REVIEW_STARTED: <Clock size={13} />,
-  ADMIN_DECISION: <CheckCircle2 size={13} />,
-};
-
-const timelineColors: Record<string, string> = {
-  CASE_CREATED: 'bg-blue-50 text-blue-700 border-blue-200',
-  DOCUMENT_UPLOADED: 'bg-blue-50 text-blue-700 border-blue-200',
-  OCR_COMPLETED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  FACE_VERIFICATION: 'bg-purple-50 text-purple-700 border-purple-200',
-  CASE_FLAGGED: 'bg-rose-50 text-rose-700 border-rose-200',
-  ADMIN_REVIEW_STARTED: 'bg-amber-50 text-amber-700 border-amber-200',
-  ADMIN_DECISION: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-};
+function getTimelineMarker(status: TimelineEventStatus) {
+  if (status === 'completed') {
+    return (
+      <div className="w-6 h-6 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center shrink-0 shadow-subtle">
+        <Check size={12} strokeWidth={2.5} />
+      </div>
+    );
+  }
+  if (status === 'warning') {
+    return (
+      <div className="w-6 h-6 rounded-full bg-amber-50 border border-amber-300 text-amber-600 flex items-center justify-center shrink-0 shadow-subtle">
+        <AlertTriangle size={12} strokeWidth={2.5} />
+      </div>
+    );
+  }
+  if (status === 'rejected') {
+    return (
+      <div className="w-6 h-6 rounded-full bg-rose-50 border border-rose-300 text-rose-600 flex items-center justify-center shrink-0 shadow-subtle">
+        <AlertCircle size={12} strokeWidth={2.5} />
+      </div>
+    );
+  }
+  if (status === 'current') {
+    return (
+      <div className="w-6 h-6 rounded-full bg-blue-50 border-2 border-blue-600 text-blue-600 flex items-center justify-center shrink-0 ring-4 ring-blue-50">
+        <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+      </div>
+    );
+  }
+  return (
+    <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center shrink-0">
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+    </div>
+  );
+}
 
 export default function OfficerCaseDetailPage({ params }: { params: { caseId: string } }) {
   const caseData = mockCases.find((c) => c.id === params.caseId);
   if (!caseData) return notFound();
 
-  const auditLogs = mockAuditLogs.filter((l) => l.caseId === caseData.id);
+  const timeline = getCaseTimeline(caseData);
   const primaryDoc = caseData.documents[0];
 
   const isHighRisk = caseData.riskScore > 60;
@@ -268,36 +285,70 @@ export default function OfficerCaseDetailPage({ params }: { params: { caseId: st
           )}
         </div>
 
-        {/* Right Column: Audit Trail */}
+        {/* Right Column: Case Timeline (Officer-facing operational view) */}
         <div className="space-y-6">
-          <div className="bg-white border border-slate-200/90 rounded-card p-5 shadow-card">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <h3 className="font-heading text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Case Timeline
-              </h3>
-              <span className="text-[10px] text-slate-400 font-mono">Audit Chain</span>
+          <div className="bg-white border border-slate-200/90 rounded-card p-6 shadow-card">
+            <div className="pb-4 border-b border-slate-100 mb-5">
+              <div className="flex items-center justify-between">
+                <h3 className="font-heading text-sm font-bold text-slate-900 tracking-tight">
+                  Case Timeline
+                </h3>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                  {timeline.length} Steps
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Track the verification activity and current case status.
+              </p>
             </div>
 
-            <div className="space-y-4">
-              {auditLogs.map((log, idx) => (
-                <div key={log.id} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-6 h-6 rounded-lg border flex items-center justify-center shrink-0 ${timelineColors[log.action] ?? 'bg-slate-100 border-slate-200 text-slate-500'}`}>
-                      {timelineIcons[log.action] ?? <Clock size={12} />}
+            {/* Vertical timeline */}
+            <div className="relative pl-1">
+              {timeline.map((item, idx) => {
+                const isLast = idx === timeline.length - 1;
+                const isCurrent = item.status === 'current';
+
+                return (
+                  <div key={item.id} className="relative flex gap-3.5 group">
+                    {/* Marker & Vertical Connector */}
+                    <div className="flex flex-col items-center shrink-0">
+                      {getTimelineMarker(item.status)}
+                      {!isLast && (
+                        <div className="w-[1.5px] flex-1 bg-slate-200 my-1 group-hover:bg-slate-300 transition-colors" />
+                      )}
                     </div>
-                    {idx < auditLogs.length - 1 && <div className="w-[1.5px] flex-1 bg-slate-200 my-1" />}
-                  </div>
-                  <div className="pb-3 flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-900">{log.action.replace(/_/g, ' ')}</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{log.actorName} · {formatTime(log.createdAt)}</p>
-                    {log.txId && (
-                      <p className="text-[10px] text-slate-400 font-mono mt-1 truncate">
-                        TX: {log.txId.slice(0, 16)}...
+
+                    {/* Event Content */}
+                    <div className={cn('flex-1 min-w-0', !isLast ? 'pb-6' : 'pb-1')}>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className={cn(
+                            'text-xs',
+                            isCurrent ? 'text-blue-900 font-bold' :
+                            item.status === 'warning' ? 'text-amber-900 font-semibold' :
+                            item.status === 'rejected' ? 'text-rose-900 font-semibold' :
+                            'text-slate-800 font-semibold'
+                          )}>
+                            {item.title}
+                          </p>
+                          {isCurrent && (
+                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                              Current
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-slate-400 font-medium tabular-nums">
+                          {formatTime(item.timestamp)}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                        {item.description}
                       </p>
-                    )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

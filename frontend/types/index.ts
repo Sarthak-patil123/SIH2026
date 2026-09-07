@@ -102,6 +102,17 @@ export interface Document {
   createdAt: string;
 }
 
+export type TimelineEventStatus = 'completed' | 'current' | 'warning' | 'rejected' | 'pending';
+
+export interface CaseTimelineEvent {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  status: TimelineEventStatus;
+}
+
 export interface Case {
   id: string;
   caseNumber: string; // e.g. SSB-1025
@@ -114,6 +125,7 @@ export interface Case {
   applicantName?: string;
   applicantDob?: string;
   documents: Document[];
+  timeline?: CaseTimelineEvent[];
   flagReason?: string;
   officerObservations?: string;
   adminDecision?: AdminDecision;
