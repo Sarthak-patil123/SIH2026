@@ -11,3 +11,6 @@ storage/*
 !storage/.gitkeep
 postgres_data/
 coverage/
+
+# Python virtual environment
+ai-services/venv/
