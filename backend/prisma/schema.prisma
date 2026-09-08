@@ -28,13 +28,14 @@ enum RiskLevel {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  role      Role     @default(OFFICER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  cases     Case[]
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  role         Role     @default(OFFICER)
+  passwordHash String?  // bcrypt hash — nullable so legacy rows aren't broken
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  cases        Case[]
 }
 
 model Case {
