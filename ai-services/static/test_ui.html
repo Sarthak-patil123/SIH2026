@@ -617,6 +617,7 @@
     <div class="tabs-nav">
       <button class="tab-btn active" onclick="switchTab('pipeline')">🚀 Full Pipeline</button>
       <button class="tab-btn" onclick="switchTab('docproc')">📁 Doc Processors</button>
+      <button class="tab-btn" onclick="switchTab('adapter')">🔀 Adapter Layer</button>
       <button class="tab-btn" onclick="switchTab('preprocess')">🖼️ Preprocessing</button>
       <button class="tab-btn" onclick="switchTab('layout')">📐 Layout Detection</button>
       <button class="tab-btn" onclick="switchTab('ocr')">🔍 PaddleOCR Raw</button>
@@ -720,6 +721,150 @@
                 <button class="btn-copy" onclick="copyJson('pipe-json')">Copy JSON</button>
               </div>
               <pre class="json-box" id="pipe-json"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: DOC PROCESSORS -->
+    <section id="tab-docproc" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">Document Processor (Raw)</h2>
+          <p class="card-subtitle">Runs the full processor for the chosen doc type. Returns raw unformatted output from the OCR pipeline.</p>
+
+          <div class="dropzone" id="docproc-dropzone">
+            <input type="file" id="docproc-file" accept="image/*">
+            <div class="dropzone-icon">📄</div>
+            <div class="dropzone-text">Drop Document Image or Click</div>
+            <div class="dropzone-hint">Passport, Aadhaar, PAN, DL, Voter ID, DOB Proof, Visa</div>
+          </div>
+          <div class="preview-box" id="docproc-preview"><img id="docproc-preview-img"></div>
+
+          <div class="form-group">
+            <label class="form-label" for="docproc-type">Document Type</label>
+            <select class="form-select" id="docproc-type">
+              <option value="passport">Passport</option>
+              <option value="national_id">National ID (Auto)</option>
+              <option value="aadhaar">Aadhaar</option>
+              <option value="pan">PAN Card</option>
+              <option value="voter_id">Voter ID</option>
+              <option value="driving_license">Driving License</option>
+              <option value="dob_proof">DOB Proof / Birth Certificate</option>
+              <option value="visa">Visa</option>
+            </select>
+          </div>
+
+          <button class="btn-primary" id="docproc-btn" onclick="runDocProc()">
+            <span>Run Raw Processor</span>
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Raw Processor Output</span>
+            <span id="docproc-badge" class="badge badge-info">Idle</span>
+          </div>
+          <p class="card-subtitle">Unformatted output directly from the processor function.</p>
+
+          <div id="docproc-empty" class="results-empty">
+            <div class="results-empty-icon">📋</div>
+            <p>Select a document type and upload an image to see raw extraction results.</p>
+          </div>
+
+          <div id="docproc-results" class="results-content">
+            <div class="json-wrapper">
+              <div class="json-header">
+                <span class="form-label" style="margin:0">Raw Processor JSON</span>
+                <button class="btn-copy" onclick="copyJson('docproc-json')">Copy JSON</button>
+              </div>
+              <pre class="json-box" id="docproc-json"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: ADAPTER LAYER -->
+    <section id="tab-adapter" class="tab-content">
+      <div class="grid-2col">
+        <div class="card">
+          <h2 class="card-title">Adapter Layer — Canonical JSON</h2>
+          <p class="card-subtitle">Runs processor + adapter. Returns <strong>AdaptedResult</strong> with guaranteed fields, per-field confidence, and MRZ/OCR provenance. No LLM involved.</p>
+
+          <div class="dropzone" id="adapter-dropzone">
+            <input type="file" id="adapter-file" accept="image/*">
+            <div class="dropzone-icon">🔀</div>
+            <div class="dropzone-text">Drop Document Image or Click</div>
+            <div class="dropzone-hint">All document types supported</div>
+          </div>
+          <div class="preview-box" id="adapter-preview"><img id="adapter-preview-img"></div>
+
+          <div class="form-group">
+            <label class="form-label" for="adapter-type">Document Type</label>
+            <select class="form-select" id="adapter-type">
+              <option value="passport">Passport</option>
+              <option value="aadhaar">Aadhaar</option>
+              <option value="pan">PAN Card</option>
+              <option value="voter_id">Voter ID</option>
+              <option value="national_id">National ID (Auto)</option>
+              <option value="driving_license">Driving License</option>
+              <option value="dob_proof">DOB Proof / Birth Certificate</option>
+              <option value="visa">Visa</option>
+            </select>
+          </div>
+
+          <button class="btn-primary" id="adapter-btn" onclick="runAdapter()">
+            <span>Run Processor + Adapter</span>
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>Adapted Result</span>
+            <span id="adapter-badge" class="badge badge-info">Idle</span>
+          </div>
+          <p class="card-subtitle">Canonical fields with confidence scores and provenance (mrz / ocr / unknown).</p>
+
+          <div id="adapter-empty" class="results-empty">
+            <div class="results-empty-icon">🔀</div>
+            <p>Upload an image and run to see the canonical AdaptedResult.</p>
+          </div>
+
+          <div id="adapter-results" class="results-content">
+
+            <!-- Flat Fields Quick View -->
+            <div class="card-title" style="font-size:0.9rem; margin-bottom:0.5rem">📋 Flat Fields (value only)</div>
+            <div id="adapter-flat-table"></div>
+
+            <!-- Confidence + Stats -->
+            <div class="metrics-grid" style="margin-top:1rem">
+              <div class="metric-card">
+                <div class="metric-label">Aggregate Conf</div>
+                <div class="metric-value" id="adapter-conf" style="color:var(--accent-emerald)">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Fields Found</div>
+                <div class="metric-value" id="adapter-fields-found">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">MRZ Valid</div>
+                <div class="metric-value" id="adapter-mrz-valid">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">OCR Blocks</div>
+                <div class="metric-value" id="adapter-ocr-count">-</div>
+              </div>
+            </div>
+
+            <!-- Full JSON -->
+            <div class="json-wrapper" style="margin-top:1.25rem">
+              <div class="json-header">
+                <span class="form-label" style="margin:0">Full AdaptedResult JSON</span>
+                <button class="btn-copy" onclick="copyJson('adapter-json')">Copy JSON</button>
+              </div>
+              <pre class="json-box" id="adapter-json"></pre>
             </div>
           </div>
         </div>
@@ -1691,6 +1836,123 @@
       } finally {
         btn.disabled = false;
         btn.innerText = 'Execute 1:1 Match';
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // Doc Processor (Raw)
+    // ----------------------------------------------------------------
+    setupDropzone('docproc-dropzone', 'docproc-file', 'docproc-preview', 'docproc-preview-img');
+
+    async function runDocProc() {
+      const file = document.getElementById('docproc-file').files[0];
+      if (!file) { alert('Please upload a document image first.'); return; }
+      const docType = document.getElementById('docproc-type').value;
+      const btn = document.getElementById('docproc-btn');
+      const badge = document.getElementById('docproc-badge');
+
+      btn.disabled = true;
+      btn.innerText = 'Processing…';
+      badge.className = 'badge badge-info';
+      badge.innerText = 'Running';
+
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('doc_type', docType);
+
+      try {
+        const res = await fetch('/test/doc-processor', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        badge.className = 'badge badge-ok';
+        badge.innerText = 'Success';
+        document.getElementById('docproc-empty').style.display = 'none';
+        document.getElementById('docproc-results').style.display = 'block';
+        document.getElementById('docproc-json').innerText = JSON.stringify(data, null, 2);
+      } catch (err) {
+        badge.className = 'badge badge-error';
+        badge.innerText = 'Error';
+        alert('Doc Processor Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Run Raw Processor';
+      }
+    }
+
+    // ----------------------------------------------------------------
+    // Adapter Layer
+    // ----------------------------------------------------------------
+    setupDropzone('adapter-dropzone', 'adapter-file', 'adapter-preview', 'adapter-preview-img');
+
+    async function runAdapter() {
+      const file = document.getElementById('adapter-file').files[0];
+      if (!file) { alert('Please upload a document image first.'); return; }
+      const docType = document.getElementById('adapter-type').value;
+      const btn = document.getElementById('adapter-btn');
+      const badge = document.getElementById('adapter-badge');
+
+      btn.disabled = true;
+      btn.innerText = 'Processing…';
+      badge.className = 'badge badge-info';
+      badge.innerText = 'Running';
+
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('doc_type', docType);
+
+      try {
+        const res = await fetch('/test/adapted-doc-processor', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        const adapted = data.adapted || {};
+        const flat = data.flat_fields || {};
+
+        badge.className = 'badge badge-ok';
+        badge.innerText = 'Success';
+        document.getElementById('adapter-empty').style.display = 'none';
+        document.getElementById('adapter-results').style.display = 'block';
+
+        // Metrics
+        const conf = adapted.aggregate_confidence || 0;
+        document.getElementById('adapter-conf').innerText = `${(conf * 100).toFixed(1)}%`;
+        const fields = adapted.extracted_fields || {};
+        const fieldsFound = Object.values(fields).filter(f => f.value !== null).length;
+        document.getElementById('adapter-fields-found').innerText = `${fieldsFound} / ${Object.keys(fields).length}`;
+        const mrz = adapted.mrz;
+        document.getElementById('adapter-mrz-valid').innerText = mrz ? (mrz.is_valid ? '✅ Valid' : '❌ Invalid') : '—';
+        document.getElementById('adapter-ocr-count').innerText = adapted.raw_ocr_count ?? '—';
+
+        // Flat fields table
+        const tableEl = document.getElementById('adapter-flat-table');
+        let tableHtml = '<table style="width:100%; border-collapse:collapse; font-size:0.82rem;">';
+        tableHtml += '<tr style="border-bottom:1px solid rgba(255,255,255,0.1)"><th style="text-align:left;padding:4px 6px;color:var(--text-muted)">Field</th><th style="text-align:left;padding:4px 6px;color:var(--text-muted)">Value</th><th style="text-align:right;padding:4px 6px;color:var(--text-muted)">Conf</th><th style="text-align:left;padding:4px 6px;color:var(--text-muted)">Source</th></tr>';
+        for (const [k, fv] of Object.entries(fields)) {
+          const val = fv.value;
+          const conf = fv.confidence;
+          const src = fv.source;
+          const srcColor = src === 'mrz' ? 'var(--accent-emerald)' : src === 'ocr' ? 'var(--accent-sky)' : 'var(--text-faint)';
+          tableHtml += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">`;
+          tableHtml += `<td style="padding:4px 6px; color:var(--text-muted)">${k}</td>`;
+          tableHtml += `<td style="padding:4px 6px; color:${val ? 'var(--text-main)' : 'var(--text-faint)'}">${val ?? '<null>'}</td>`;
+          tableHtml += `<td style="padding:4px 6px; text-align:right; color:var(--text-muted)">${val ? (conf * 100).toFixed(0) + '%' : '—'}</td>`;
+          tableHtml += `<td style="padding:4px 6px; color:${srcColor}">${val ? src : '—'}</td>`;
+          tableHtml += `</tr>`;
+        }
+        tableHtml += '</table>';
+        tableEl.innerHTML = tableHtml;
+
+        // JSON
+        document.getElementById('adapter-json').innerText = JSON.stringify(adapted, null, 2);
+
+      } catch (err) {
+        badge.className = 'badge badge-error';
+        badge.innerText = 'Error';
+        alert('Adapter Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Run Processor + Adapter';
       }
     }
   </script>

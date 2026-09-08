@@ -383,3 +383,56 @@ async def test_tampering_endpoint(
     except Exception as exc:
         logger.exception("Tampering detection failed")
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/adapted-doc-processor")
+async def test_adapted_doc_processor(
+    file: UploadFile = File(..., description="Document image to process"),
+    doc_type: str = Form(..., description="passport | national_id | aadhaar | pan | voter_id | driving_license | dob_proof | visa"),
+) -> dict:
+    """Run document processor + adapter layer. Returns canonical AdaptedResult JSON.
+
+    This is the primary endpoint for testing the full extraction pipeline with
+    the adapter layer applied. No LLM is invoked.
+    """
+    from ocr.passport import process_passport
+    from ocr.national_id import process_national_id
+    from ocr.driving_license import process_driving_license
+    from ocr.dob_proof import process_dob_proof
+    from ocr.visa import process_visa
+    from ocr.adapter import adapt_result
+
+    data = await file.read()
+    norm_type = doc_type.lower().strip().replace("driving_licence", "driving_license")
+
+    try:
+        if norm_type == "passport":
+            raw = process_passport(data)
+        elif norm_type in ("national_id", "aadhaar", "pan", "voter_id"):
+            sub = "auto" if norm_type == "national_id" else norm_type
+            raw = process_national_id(data, id_type=sub)
+        elif norm_type == "driving_license":
+            raw = process_driving_license(data)
+        elif norm_type == "dob_proof":
+            raw = process_dob_proof(data)
+        elif norm_type == "visa":
+            raw = process_visa(data)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown doc_type '{doc_type}'. Use: passport, national_id, aadhaar, pan, voter_id, driving_license, dob_proof, visa",
+            )
+
+        adapted = adapt_result(raw)
+        return {
+            "adapted": adapted.to_dict(),
+            "flat_fields": adapted.flat_fields(),
+            "raw": raw,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Adapted doc processor failed")
+        raise HTTPException(status_code=500, detail=str(exc))
+
