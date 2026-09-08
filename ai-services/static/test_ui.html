@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Services — Component Diagnostics & Test Suite</title>
+  <title>AI Document Verification & Biometrics Test Suite</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-base: #0a0d14;
-      --bg-surface: #111726;
-      --bg-card: #161f33;
-      --bg-card-hover: #1c2742;
-      --bg-input: #0e1422;
+      --bg-base: #07090e;
+      --bg-surface: #0f1422;
+      --bg-card: #151d30;
+      --bg-card-hover: #1b2640;
+      --bg-input: #0a0e18;
       --border-subtle: rgba(255, 255, 255, 0.08);
-      --border-glow: rgba(56, 189, 248, 0.3);
+      --border-glow: rgba(56, 189, 248, 0.35);
       --accent-cyan: #06b6d4;
       --accent-sky: #38bdf8;
       --accent-indigo: #6366f1;
@@ -23,7 +23,7 @@
       --accent-emerald: #10b981;
       --accent-amber: #f59e0b;
       --accent-rose: #f43f5e;
-      --text-main: #f1f5f9;
+      --text-main: #f8fafc;
       --text-muted: #94a3b8;
       --text-faint: #64748b;
       --radius-sm: 8px;
@@ -47,16 +47,16 @@
       min-height: 100vh;
       line-height: 1.5;
       background-image: 
-        radial-gradient(circle at 15% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 45%),
-        radial-gradient(circle at 85% 25%, rgba(6, 182, 212, 0.10) 0%, transparent 40%),
-        radial-gradient(circle at 50% 90%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
+        radial-gradient(circle at 10% 10%, rgba(99, 102, 241, 0.15) 0%, transparent 45%),
+        radial-gradient(circle at 90% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 40%),
+        radial-gradient(circle at 50% 90%, rgba(139, 92, 246, 0.10) 0%, transparent 50%);
       background-attachment: fixed;
     }
 
     /* Header */
     header {
       border-bottom: 1px solid var(--border-subtle);
-      background: rgba(17, 23, 38, 0.85);
+      background: rgba(15, 20, 34, 0.85);
       backdrop-filter: blur(16px);
       position: sticky;
       top: 0;
@@ -81,24 +81,24 @@
     }
 
     .brand-icon {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: var(--radius-md);
       background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
       display: flex;
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-size: 1.3rem;
+      font-size: 1.35rem;
       font-weight: 800;
-      box-shadow: 0 4px 16px rgba(6, 182, 212, 0.35);
+      box-shadow: 0 4px 18px rgba(6, 182, 212, 0.4);
     }
 
     .brand-text h1 {
       font-size: 1.25rem;
       font-weight: 700;
       letter-spacing: -0.02em;
-      background: linear-gradient(to right, #fff, var(--text-muted));
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -119,7 +119,7 @@
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      padding: 0.3rem 0.75rem;
+      padding: 0.35rem 0.8rem;
       border-radius: 9999px;
       font-size: 0.75rem;
       font-weight: 600;
@@ -135,37 +135,40 @@
 
     .dot.online { background: var(--accent-emerald); box-shadow: 0 0 8px var(--accent-emerald); }
     .dot.disabled { background: var(--accent-amber); box-shadow: 0 0 6px var(--accent-amber); }
-    .dot.error { background: var(--accent-rose); }
 
-    /* Navigation Tabs */
+    /* Primary Navigation Tabs */
     .tabs-nav-wrapper {
-      background: rgba(14, 20, 34, 0.7);
+      background: rgba(10, 14, 24, 0.85);
       border-bottom: 1px solid var(--border-subtle);
       overflow-x: auto;
+      position: sticky;
+      top: 73px;
+      z-index: 90;
+      backdrop-filter: blur(12px);
     }
 
     .tabs-nav {
       max-width: 1440px;
       margin: 0 auto;
       display: flex;
-      gap: 0.25rem;
-      padding: 0.5rem 2rem;
+      gap: 0.35rem;
+      padding: 0.6rem 2rem;
     }
 
     .tab-btn {
       background: transparent;
-      border: none;
+      border: 1px solid transparent;
       color: var(--text-muted);
       font-family: inherit;
       font-size: 0.88rem;
       font-weight: 600;
-      padding: 0.6rem 1.1rem;
-      border-radius: var(--radius-sm);
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-md);
       cursor: pointer;
       white-space: nowrap;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.55rem;
       transition: all 0.2s ease;
     }
 
@@ -177,7 +180,18 @@
     .tab-btn.active {
       color: var(--accent-sky);
       background: rgba(56, 189, 248, 0.12);
-      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-color: rgba(56, 189, 248, 0.3);
+      box-shadow: 0 2px 10px rgba(56, 189, 248, 0.15);
+    }
+
+    .tab-badge {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 0.15rem 0.45rem;
+      border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--accent-sky);
     }
 
     /* Layout & Grid */
@@ -197,17 +211,18 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
+      from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
     .grid-2col {
       display: grid;
-      grid-template-columns: 420px 1fr;
-      gap: 1.75rem;
+      grid-template-columns: 460px 1fr;
+      gap: 2rem;
+      align-items: start;
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 1080px) {
       .grid-2col {
         grid-template-columns: 1fr;
       }
@@ -218,12 +233,12 @@
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
-      padding: 1.5rem;
+      padding: 1.75rem;
       box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
     }
 
     .card-title {
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-weight: 700;
       margin-bottom: 0.35rem;
       display: flex;
@@ -232,21 +247,23 @@
     }
 
     .card-subtitle {
-      font-size: 0.82rem;
+      font-size: 0.84rem;
       color: var(--text-muted);
       margin-bottom: 1.25rem;
+      line-height: 1.4;
     }
 
-    /* Upload Zone */
+    /* Dropzones */
     .dropzone {
-      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border: 2px dashed rgba(255, 255, 255, 0.14);
       border-radius: var(--radius-md);
-      padding: 2rem 1.5rem;
+      padding: 1.5rem 1.25rem;
       text-align: center;
       background: var(--bg-input);
       cursor: pointer;
       transition: all 0.2s ease;
       position: relative;
+      margin-bottom: 0.85rem;
     }
 
     .dropzone:hover, .dropzone.dragover {
@@ -262,44 +279,47 @@
     }
 
     .dropzone-icon {
-      font-size: 2.2rem;
-      margin-bottom: 0.5rem;
+      font-size: 2rem;
+      margin-bottom: 0.4rem;
       color: var(--accent-sky);
     }
 
     .dropzone-text {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 600;
       color: var(--text-main);
     }
 
     .dropzone-hint {
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       color: var(--text-faint);
-      margin-top: 0.25rem;
+      margin-top: 0.2rem;
     }
 
     .preview-box {
-      margin-top: 1rem;
+      margin-top: 0.5rem;
+      margin-bottom: 1rem;
       border-radius: var(--radius-sm);
       overflow: hidden;
       border: 1px solid var(--border-subtle);
-      max-height: 240px;
+      max-height: 200px;
       display: none;
       background: #000;
+      text-align: center;
     }
 
     .preview-box img {
-      width: 100%;
+      max-width: 100%;
       height: auto;
-      display: block;
+      max-height: 200px;
       object-fit: contain;
-      max-height: 240px;
+      display: block;
+      margin: 0 auto;
     }
 
-    /* Controls & Buttons */
+    /* Form Controls */
     .form-group {
-      margin-top: 1.2rem;
+      margin-top: 1rem;
     }
 
     .form-label {
@@ -312,7 +332,7 @@
 
     .form-select, .form-input {
       width: 100%;
-      padding: 0.65rem 0.9rem;
+      padding: 0.7rem 0.95rem;
       background: var(--bg-input);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
@@ -325,31 +345,34 @@
 
     .form-select:focus, .form-input:focus {
       border-color: var(--accent-sky);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
     }
 
+    /* Buttons */
     .btn-primary {
       width: 100%;
-      margin-top: 1.5rem;
-      padding: 0.75rem 1.25rem;
+      margin-top: 1.25rem;
+      padding: 0.85rem 1.25rem;
       border: none;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-md);
       background: linear-gradient(135deg, var(--accent-sky), var(--accent-indigo));
       color: #fff;
       font-family: inherit;
-      font-size: 0.92rem;
+      font-size: 0.95rem;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.35);
-      transition: transform 0.15s, opacity 0.2s;
+      gap: 0.6rem;
+      box-shadow: 0 4px 18px rgba(56, 189, 248, 0.35);
+      transition: transform 0.15s, opacity 0.2s, box-shadow 0.2s;
     }
 
     .btn-primary:hover {
-      opacity: 0.94;
+      opacity: 0.95;
       transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(56, 189, 248, 0.45);
     }
 
     .btn-primary:active {
@@ -360,30 +383,33 @@
       opacity: 0.5;
       cursor: not-allowed;
       transform: none;
+      box-shadow: none;
     }
 
-    /* Result Panels */
+    /* Results */
     .results-empty {
       text-align: center;
-      padding: 4rem 2rem;
+      padding: 4.5rem 2rem;
       color: var(--text-faint);
     }
 
     .results-empty-icon {
-      font-size: 3rem;
-      margin-bottom: 0.75rem;
-      opacity: 0.5;
+      font-size: 3.2rem;
+      margin-bottom: 0.8rem;
+      opacity: 0.4;
     }
 
     .results-content {
       display: none;
+      animation: fadeIn 0.25s ease forwards;
     }
 
+    /* Badges */
     .badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.3rem;
-      padding: 0.2rem 0.6rem;
+      gap: 0.35rem;
+      padding: 0.25rem 0.7rem;
       border-radius: 9999px;
       font-size: 0.72rem;
       font-weight: 700;
@@ -391,36 +417,128 @@
       letter-spacing: 0.04em;
     }
 
-    .badge-success { background: rgba(16, 185, 129, 0.18); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-warning { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-danger { background: rgba(244, 63, 94, 0.18); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.3); }
-    .badge-info { background: rgba(56, 189, 248, 0.18); color: var(--accent-sky); border: 1px solid rgba(56, 189, 248, 0.3); }
+    .badge-success { background: rgba(16, 185, 129, 0.18); color: var(--accent-emerald); border: 1px solid rgba(16, 185, 129, 0.35); }
+    .badge-warning { background: rgba(245, 158, 11, 0.18); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.35); }
+    .badge-danger  { background: rgba(244, 63, 94, 0.18); color: var(--accent-rose); border: 1px solid rgba(244, 63, 94, 0.35); }
+    .badge-info    { background: rgba(56, 189, 248, 0.18); color: var(--accent-sky); border: 1px solid rgba(56, 189, 248, 0.35); }
+
+    /* Metrics Cards Grid */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 0.9rem 1rem;
+    }
+
+    .metric-label {
+      font-size: 0.72rem;
+      color: var(--text-faint);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-top: 0.25rem;
+      color: #fff;
+    }
+
+    /* Face Comparison Card */
+    .face-comparison-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .face-comparison-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .face-pair {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .face-item {
+      text-align: center;
+    }
+
+    .face-avatar {
+      width: 140px;
+      height: 160px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      background: #000;
+      border: 2px solid var(--border-subtle);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+    }
+
+    .face-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .face-match-badge-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+    }
 
     /* Tables */
     .data-table-wrapper {
-      margin-top: 1rem;
+      margin-top: 0.75rem;
       border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-md);
       overflow: hidden;
+      max-height: 380px;
+      overflow-y: auto;
     }
 
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       text-align: left;
     }
 
     .data-table th {
       background: var(--bg-card);
-      padding: 0.75rem 1rem;
+      padding: 0.7rem 1rem;
       color: var(--text-muted);
       font-weight: 600;
       border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      z-index: 1;
     }
 
     .data-table td {
-      padding: 0.75rem 1rem;
+      padding: 0.65rem 1rem;
       border-bottom: 1px solid var(--border-subtle);
       color: var(--text-main);
     }
@@ -433,68 +551,6 @@
       background: rgba(255, 255, 255, 0.02);
     }
 
-    /* Metric Cards Row */
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
-    }
-
-    .metric-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 0.85rem 1rem;
-    }
-
-    .metric-label {
-      font-size: 0.72rem;
-      color: var(--text-faint);
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .metric-value {
-      font-size: 1.3rem;
-      font-weight: 800;
-      margin-top: 0.25rem;
-      color: #fff;
-    }
-
-    /* Crops Display */
-    .crops-strip {
-      display: flex;
-      gap: 1rem;
-      margin-top: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .crop-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      padding: 0.6rem;
-      width: 130px;
-      text-align: center;
-    }
-
-    .crop-card img {
-      width: 100%;
-      height: 100px;
-      object-fit: contain;
-      border-radius: 4px;
-      background: #000;
-    }
-
-    .crop-title {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-top: 0.4rem;
-    }
-
     /* JSON Box */
     .json-wrapper {
       margin-top: 1.5rem;
@@ -504,86 +560,80 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.4rem;
+      margin-bottom: 0.5rem;
     }
 
     .btn-copy {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       color: var(--text-muted);
-      font-size: 0.75rem;
-      padding: 0.25rem 0.6rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      padding: 0.3rem 0.75rem;
       border-radius: var(--radius-sm);
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s;
     }
 
     .btn-copy:hover {
       color: #fff;
       border-color: var(--accent-sky);
+      background: rgba(56, 189, 248, 0.1);
     }
 
     pre.json-box {
       background: var(--bg-input);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      padding: 1rem;
-      max-height: 320px;
+      padding: 1.1rem;
+      max-height: 360px;
       overflow-y: auto;
       font-family: var(--font-mono);
       font-size: 0.78rem;
       color: #cbd5e1;
+      line-height: 1.45;
     }
 
-    /* Canvas visualizer */
-    .canvas-container {
-      position: relative;
-      margin-top: 1rem;
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      border: 1px solid var(--border-subtle);
-      background: #05070d;
-      text-align: center;
-    }
-
-    .canvas-container img {
-      max-width: 100%;
-      height: auto;
-      display: block;
-      margin: 0 auto;
-    }
-
-    /* Alerts */
-    .alert {
-      padding: 0.75rem 1rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.82rem;
-      margin-bottom: 1rem;
+    /* Sub-tabs within Diagnostics */
+    .subtabs-bar {
       display: flex;
-      align-items: center;
-      gap: 0.6rem;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.5rem;
+      flex-wrap: wrap;
     }
 
-    .alert-info {
-      background: rgba(56, 189, 248, 0.1);
-      border: 1px solid rgba(56, 189, 248, 0.25);
+    .subtab-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .subtab-btn.active {
       color: var(--accent-sky);
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.3);
     }
 
-    .alert-warning {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.25);
-      color: var(--accent-amber);
-    }
-
-    /* Loading Spinner */
+    /* Spinner */
     .spinner {
       display: inline-block;
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       border: 2px solid rgba(255, 255, 255, 0.3);
       border-radius: 50%;
       border-top-color: #fff;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.7s linear infinite;
     }
 
     @keyframes spin {
@@ -599,750 +649,539 @@
       <div class="brand">
         <div class="brand-icon">AI</div>
         <div class="brand-text">
-          <h1>Identity Verification AI Services</h1>
-          <p>PaddleOCR • YOLO Layout • ArcFace Biometrics Diagnostics Console</p>
+          <h1>Identity Document Verification Suite</h1>
+          <p>PaddleOCR Engine • YOLO Layout Detector • ArcFace Biometrics</p>
         </div>
       </div>
       <div class="status-chips">
-        <div class="status-chip"><span class="dot online"></span> PaddleOCR 2.7+</div>
-        <div class="status-chip"><span class="dot online"></span> YOLO Layout</div>
+        <div class="status-chip"><span class="dot online"></span> PaddleOCR Only</div>
         <div class="status-chip"><span class="dot online"></span> ArcFace 1:1</div>
-        <div class="status-chip" title="LLM extraction is inactive in this stage"><span class="dot disabled"></span> LLM: Inactive (Phase 2)</div>
+        <div class="status-chip"><span class="dot online"></span> YOLO Layout</div>
+        <div class="status-chip" title="Direct Adapter outputs without LLM"><span class="dot disabled"></span> Direct Canonical JSON</div>
       </div>
     </div>
   </header>
 
-  <!-- Navigation Tabs -->
+  <!-- Primary Document Tabs Navigation -->
   <div class="tabs-nav-wrapper">
     <div class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('pipeline')">🚀 Full Pipeline</button>
-      <button class="tab-btn" onclick="switchTab('docproc')">📁 Doc Processors</button>
-      <button class="tab-btn" onclick="switchTab('adapter')">🔀 Adapter Layer</button>
-      <button class="tab-btn" onclick="switchTab('preprocess')">🖼️ Preprocessing</button>
-      <button class="tab-btn" onclick="switchTab('layout')">📐 Layout Detection</button>
-      <button class="tab-btn" onclick="switchTab('ocr')">🔍 PaddleOCR Raw</button>
-      <button class="tab-btn" onclick="switchTab('classifier')">🏷️ Doc Classifier</button>
-      <button class="tab-btn" onclick="switchTab('mrz')">🛂 MRZ Parser</button>
-      <button class="tab-btn" onclick="switchTab('extractors')">📋 Rule Extractors</button>
-      <button class="tab-btn" onclick="switchTab('tampering')">🛡️ Tampering / ELA</button>
-      <button class="tab-btn" onclick="switchTab('biometrics')">👤 Biometrics 1:1</button>
+      <button class="tab-btn active" id="tab-nav-passport" onclick="switchMainTab('passport')">
+        <span>🛂</span> Passport + Live Photo
+        <span class="tab-badge">Face Match</span>
+      </button>
+      <button class="tab-btn" id="tab-nav-visa" onclick="switchMainTab('visa')">
+        <span>✈️</span> Visa
+      </button>
+      <button class="tab-btn" id="tab-nav-dl" onclick="switchMainTab('dl')">
+        <span>🚗</span> Driving Licence
+      </button>
+      <button class="tab-btn" id="tab-nav-national-id" onclick="switchMainTab('national-id')">
+        <span>🪪</span> National ID (Aadhaar / PAN / Voter)
+      </button>
+      <button class="tab-btn" id="tab-nav-diagnostics" onclick="switchMainTab('diagnostics')">
+        <span>🔬</span> Diagnostics & Components
+      </button>
     </div>
   </div>
 
   <main>
-    <!-- TAB 1: FULL PIPELINE -->
-    <section id="tab-pipeline" class="tab-content active">
+    <!-- =================================================================== -->
+    <!-- SECTION 1: PASSPORT WITH LIVE PHOTO + FACE VERIFICATION            -->
+    <!-- =================================================================== -->
+    <section id="tab-passport" class="tab-content active">
       <div class="grid-2col">
+        <!-- Input Form -->
         <div class="card">
-          <h2 class="card-title">Document Extraction Pipeline</h2>
-          <p class="card-subtitle">Executes preprocessing, YOLO layout detection, PaddleOCR, MRZ parsing, and rule extraction.</p>
-          
-          <div class="dropzone" id="pipeline-dropzone">
-            <input type="file" id="pipeline-file" accept="image/*">
-            <div class="dropzone-icon">📁</div>
-            <div class="dropzone-text">Drop Document Image or Click</div>
-            <div class="dropzone-hint">PNG, JPG, JPEG, WebP, HEIC supported</div>
-          </div>
-          <div class="preview-box" id="pipeline-preview"><img id="pipeline-preview-img"></div>
+          <h2 class="card-title">Passport + Live Photo Verification</h2>
+          <p class="card-subtitle">
+            Upload passport document image and external live selfie. Preprocesses both images, extracts passport photo via YOLO, performs ArcFace 1:1 facial verification, and extracts full structured passport data via PaddleOCR.
+          </p>
 
           <div class="form-group">
-            <label class="form-label" for="pipeline-doctype">Document Type Hint (Optional)</label>
-            <select class="form-select" id="pipeline-doctype">
-              <option value="">Auto-Detect (Recommended)</option>
-              <option value="passport">Passport</option>
-              <option value="national_id">National ID / Aadhaar</option>
-              <option value="driving_license">Driving Licence</option>
-              <option value="pan">PAN Card</option>
-              <option value="voter_id">Voter ID</option>
-            </select>
+            <label class="form-label">1. Passport Document Image</label>
+            <div class="dropzone" id="pass-doc-dropzone">
+              <input type="file" id="pass-doc-file" accept="image/*">
+              <div class="dropzone-icon">🛂</div>
+              <div class="dropzone-text">Upload Passport Image</div>
+              <div class="dropzone-hint">Full bio-data page with portrait & MRZ</div>
+            </div>
+            <div class="preview-box" id="pass-doc-preview"><img id="pass-doc-preview-img"></div>
           </div>
 
-          <button class="btn-primary" id="pipeline-btn" onclick="runPipeline()">
-            <span>Run Complete Pipeline</span>
+          <div class="form-group">
+            <label class="form-label">2. External / Live Camera Photo</label>
+            <div class="dropzone" id="pass-live-dropzone">
+              <input type="file" id="pass-live-file" accept="image/*">
+              <div class="dropzone-icon">🤳</div>
+              <div class="dropzone-text">Upload Live Photo / Selfie</div>
+              <div class="dropzone-hint">Clear single face portrait</div>
+            </div>
+            <div class="preview-box" id="pass-live-preview"><img id="pass-live-preview-img"></div>
+          </div>
+
+          <button class="btn-primary" id="pass-verify-btn" onclick="runPassportVerification()">
+            <span>Verify Passport & Match Face</span>
           </button>
         </div>
 
+        <!-- Output Panel -->
         <div class="card">
           <div class="card-title">
-            <span>Pipeline Results</span>
-            <span id="pipeline-status-badge" class="badge badge-info">Awaiting Input</span>
+            <span>Passport Verification Output</span>
+            <span id="pass-status-badge" class="badge badge-info">Awaiting Input</span>
           </div>
-          <p class="card-subtitle">Detailed extraction output and parsed field attributes.</p>
+          <p class="card-subtitle">1:1 Biometric decision, facial similarity score, and canonical passport JSON.</p>
 
-          <div id="pipeline-empty" class="results-empty">
-            <div class="results-empty-icon">⚡</div>
-            <p>Upload a document and run the pipeline to see extraction results.</p>
+          <div id="pass-empty" class="results-empty">
+            <div class="results-empty-icon">🛂</div>
+            <p>Upload both a passport image and a live photo to execute complete verification.</p>
           </div>
 
-          <div id="pipeline-results" class="results-content">
+          <div id="pass-results" class="results-content">
+            <!-- Side-by-side Facial Verification Visualizer -->
+            <div class="face-comparison-box">
+              <div class="face-comparison-title">
+                <span>Facial Match Verification (ArcFace 1:1)</span>
+                <span id="pass-bio-verdict-badge" class="badge badge-success">MATCH</span>
+              </div>
+              <div class="face-pair">
+                <div class="face-item">
+                  <img id="pass-doc-crop-img" class="face-avatar" alt="Passport Face">
+                  <div class="face-label">Cropped Passport Portrait</div>
+                </div>
+                <div class="face-match-badge-wrapper">
+                  <div style="font-size:0.75rem; color:var(--text-faint)">Cosine Similarity</div>
+                  <div id="pass-score-val" style="font-size:1.6rem; font-weight:800; color:var(--accent-sky)">0.0%</div>
+                  <div style="font-size:0.72rem; color:var(--text-faint)">Threshold: 65%</div>
+                </div>
+                <div class="face-item">
+                  <img id="pass-live-crop-img" class="face-avatar" alt="Live Face">
+                  <div class="face-label">Live Photo</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Key Passport Metrics -->
             <div class="metrics-grid">
               <div class="metric-card">
-                <div class="metric-label">Detected Type</div>
-                <div class="metric-value" id="pipe-type" style="font-size:1.05rem">-</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Overall Conf</div>
-                <div class="metric-value" id="pipe-conf" style="color:var(--accent-emerald)">-</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Execution Time</div>
-                <div class="metric-value" id="pipe-time">-</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Blur Score</div>
-                <div class="metric-value" id="pipe-blur">-</div>
-              </div>
-            </div>
-
-            <!-- Visual Crops -->
-            <div class="card-title" style="font-size:0.95rem; margin-top:1rem;">Extracted Layout Regions</div>
-            <div class="crops-strip" id="pipe-crops"></div>
-
-            <!-- Extracted Fields Table -->
-            <div class="card-title" style="font-size:0.95rem; margin-top:1.5rem;">Extracted Fields</div>
-            <div class="data-table-wrapper">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Field</th>
-                    <th>Value</th>
-                    <th>Source</th>
-                    <th>Confidence</th>
-                  </tr>
-                </thead>
-                <tbody id="pipe-fields-tbody"></tbody>
-              </table>
-            </div>
-
-            <!-- JSON Output -->
-            <div class="json-wrapper">
-              <div class="json-header">
-                <span class="form-label" style="margin:0">Complete JSON Response</span>
-                <button class="btn-copy" onclick="copyJson('pipe-json')">Copy JSON</button>
-              </div>
-              <pre class="json-box" id="pipe-json"></pre>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB: DOC PROCESSORS -->
-    <section id="tab-docproc" class="tab-content">
-      <div class="grid-2col">
-        <div class="card">
-          <h2 class="card-title">Document Processor (Raw)</h2>
-          <p class="card-subtitle">Runs the full processor for the chosen doc type. Returns raw unformatted output from the OCR pipeline.</p>
-
-          <div class="dropzone" id="docproc-dropzone">
-            <input type="file" id="docproc-file" accept="image/*">
-            <div class="dropzone-icon">📄</div>
-            <div class="dropzone-text">Drop Document Image or Click</div>
-            <div class="dropzone-hint">Passport, Aadhaar, PAN, DL, Voter ID, DOB Proof, Visa</div>
-          </div>
-          <div class="preview-box" id="docproc-preview"><img id="docproc-preview-img"></div>
-
-          <div class="form-group">
-            <label class="form-label" for="docproc-type">Document Type</label>
-            <select class="form-select" id="docproc-type">
-              <option value="passport">Passport</option>
-              <option value="national_id">National ID (Auto)</option>
-              <option value="aadhaar">Aadhaar</option>
-              <option value="pan">PAN Card</option>
-              <option value="voter_id">Voter ID</option>
-              <option value="driving_license">Driving License</option>
-              <option value="dob_proof">DOB Proof / Birth Certificate</option>
-              <option value="visa">Visa</option>
-            </select>
-          </div>
-
-          <button class="btn-primary" id="docproc-btn" onclick="runDocProc()">
-            <span>Run Raw Processor</span>
-          </button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">
-            <span>Raw Processor Output</span>
-            <span id="docproc-badge" class="badge badge-info">Idle</span>
-          </div>
-          <p class="card-subtitle">Unformatted output directly from the processor function.</p>
-
-          <div id="docproc-empty" class="results-empty">
-            <div class="results-empty-icon">📋</div>
-            <p>Select a document type and upload an image to see raw extraction results.</p>
-          </div>
-
-          <div id="docproc-results" class="results-content">
-            <div class="json-wrapper">
-              <div class="json-header">
-                <span class="form-label" style="margin:0">Raw Processor JSON</span>
-                <button class="btn-copy" onclick="copyJson('docproc-json')">Copy JSON</button>
-              </div>
-              <pre class="json-box" id="docproc-json"></pre>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB: ADAPTER LAYER -->
-    <section id="tab-adapter" class="tab-content">
-      <div class="grid-2col">
-        <div class="card">
-          <h2 class="card-title">Adapter Layer — Canonical JSON</h2>
-          <p class="card-subtitle">Runs processor + adapter. Returns <strong>AdaptedResult</strong> with guaranteed fields, per-field confidence, and MRZ/OCR provenance. No LLM involved.</p>
-
-          <div class="dropzone" id="adapter-dropzone">
-            <input type="file" id="adapter-file" accept="image/*">
-            <div class="dropzone-icon">🔀</div>
-            <div class="dropzone-text">Drop Document Image or Click</div>
-            <div class="dropzone-hint">All document types supported</div>
-          </div>
-          <div class="preview-box" id="adapter-preview"><img id="adapter-preview-img"></div>
-
-          <div class="form-group">
-            <label class="form-label" for="adapter-type">Document Type</label>
-            <select class="form-select" id="adapter-type">
-              <option value="passport">Passport</option>
-              <option value="aadhaar">Aadhaar</option>
-              <option value="pan">PAN Card</option>
-              <option value="voter_id">Voter ID</option>
-              <option value="national_id">National ID (Auto)</option>
-              <option value="driving_license">Driving License</option>
-              <option value="dob_proof">DOB Proof / Birth Certificate</option>
-              <option value="visa">Visa</option>
-            </select>
-          </div>
-
-          <button class="btn-primary" id="adapter-btn" onclick="runAdapter()">
-            <span>Run Processor + Adapter</span>
-          </button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">
-            <span>Adapted Result</span>
-            <span id="adapter-badge" class="badge badge-info">Idle</span>
-          </div>
-          <p class="card-subtitle">Canonical fields with confidence scores and provenance (mrz / ocr / unknown).</p>
-
-          <div id="adapter-empty" class="results-empty">
-            <div class="results-empty-icon">🔀</div>
-            <p>Upload an image and run to see the canonical AdaptedResult.</p>
-          </div>
-
-          <div id="adapter-results" class="results-content">
-
-            <!-- Flat Fields Quick View -->
-            <div class="card-title" style="font-size:0.9rem; margin-bottom:0.5rem">📋 Flat Fields (value only)</div>
-            <div id="adapter-flat-table"></div>
-
-            <!-- Confidence + Stats -->
-            <div class="metrics-grid" style="margin-top:1rem">
-              <div class="metric-card">
-                <div class="metric-label">Aggregate Conf</div>
-                <div class="metric-value" id="adapter-conf" style="color:var(--accent-emerald)">-</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Fields Found</div>
-                <div class="metric-value" id="adapter-fields-found">-</div>
+                <div class="metric-label">Passport No.</div>
+                <div class="metric-value" id="pass-card-number" style="font-size:1.05rem">-</div>
               </div>
               <div class="metric-card">
                 <div class="metric-label">MRZ Valid</div>
-                <div class="metric-value" id="adapter-mrz-valid">-</div>
+                <div class="metric-value" id="pass-card-mrz" style="font-size:1.05rem; color:var(--accent-emerald)">-</div>
               </div>
               <div class="metric-card">
-                <div class="metric-label">OCR Blocks</div>
-                <div class="metric-value" id="adapter-ocr-count">-</div>
+                <div class="metric-label">Nationality</div>
+                <div class="metric-value" id="pass-card-nat" style="font-size:1.05rem">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Expiry Date</div>
+                <div class="metric-value" id="pass-card-exp" style="font-size:1.05rem">-</div>
               </div>
             </div>
 
-            <!-- Full JSON -->
-            <div class="json-wrapper" style="margin-top:1.25rem">
+            <!-- Flat Fields Summary Table -->
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Extracted Passport Fields</div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead><tr><th>Field</th><th>Value</th><th>Source</th></tr></thead>
+                <tbody id="pass-fields-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- JSON Output with Copy -->
+            <div class="json-wrapper">
               <div class="json-header">
-                <span class="form-label" style="margin:0">Full AdaptedResult JSON</span>
-                <button class="btn-copy" onclick="copyJson('adapter-json')">Copy JSON</button>
+                <span class="form-label" style="margin:0">Full Verified JSON Response</span>
+                <button class="btn-copy" onclick="copyJson('pass-json-box')">📋 Copy JSON</button>
               </div>
-              <pre class="json-box" id="adapter-json"></pre>
+              <pre class="json-box" id="pass-json-box"></pre>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- TAB 2: PREPROCESSING -->
-    <section id="tab-preprocess" class="tab-content">
+    <!-- =================================================================== -->
+    <!-- SECTION 2: VISA DOCUMENT OCR                                       -->
+    <!-- =================================================================== -->
+    <section id="tab-visa" class="tab-content">
       <div class="grid-2col">
+        <!-- Input Form -->
         <div class="card">
-          <h2 class="card-title">Image Preprocessing Inspector</h2>
-          <p class="card-subtitle">Tests resolution checks, Laplacian blur score, HSV glare threshold, and quad detection.</p>
-          
-          <div class="dropzone" id="prep-dropzone">
-            <input type="file" id="prep-file" accept="image/*">
-            <div class="dropzone-icon">🖼️</div>
-            <div class="dropzone-text">Upload Document Photo</div>
-            <div class="dropzone-hint">Evaluates quality and corrects skew</div>
-          </div>
-          <div class="preview-box" id="prep-preview"><img id="prep-preview-img"></div>
+          <h2 class="card-title">Visa Document Processing</h2>
+          <p class="card-subtitle">
+            Upload travel visa sticker / e-visa document. Runs PaddleOCR, travel MRZ parsing (MRVA / MRVB), and extracts visa number, validity dates, entries, and holder name.
+          </p>
 
-          <button class="btn-primary" id="prep-btn" onclick="runPreprocess()">Run Preprocessing</button>
+          <div class="form-group">
+            <label class="form-label">Visa Document Image</label>
+            <div class="dropzone" id="visa-dropzone">
+              <input type="file" id="visa-file" accept="image/*">
+              <div class="dropzone-icon">✈️</div>
+              <div class="dropzone-text">Upload Visa Document</div>
+              <div class="dropzone-hint">Visa sticker or digital visa slip</div>
+            </div>
+            <div class="preview-box" id="visa-preview"><img id="visa-preview-img"></div>
+          </div>
+
+          <button class="btn-primary" id="visa-btn" onclick="runVisaProcessing()">
+            <span>Process Visa Document</span>
+          </button>
         </div>
 
+        <!-- Output Panel -->
         <div class="card">
           <div class="card-title">
-            <span>Preprocessing Diagnostics</span>
-            <span id="prep-badge" class="badge badge-info">Idle</span>
+            <span>Visa Extraction Output</span>
+            <span id="visa-status-badge" class="badge badge-info">Awaiting Input</span>
           </div>
-          <p class="card-subtitle">Quality measurements and normalized output image.</p>
+          <p class="card-subtitle">Structured visa fields, MRZ verification, and canonical JSON output.</p>
 
-          <div id="prep-empty" class="results-empty">
-            <div class="results-empty-icon">📊</div>
-            <p>Upload an image to inspect blur, glare, and perspective adjustments.</p>
+          <div id="visa-empty" class="results-empty">
+            <div class="results-empty-icon">✈️</div>
+            <p>Upload a visa image and click Process Visa Document to view results.</p>
           </div>
 
-          <div id="prep-results" class="results-content">
+          <div id="visa-results" class="results-content">
             <div class="metrics-grid">
               <div class="metric-card">
-                <div class="metric-label">Blur Score</div>
-                <div class="metric-value" id="prep-blur">-</div>
+                <div class="metric-label">Visa Number</div>
+                <div class="metric-value" id="visa-card-number" style="font-size:1.05rem">-</div>
               </div>
               <div class="metric-card">
-                <div class="metric-label">Glare Status</div>
-                <div class="metric-value" id="prep-glare">-</div>
+                <div class="metric-label">MRZ Valid</div>
+                <div class="metric-value" id="visa-card-mrz" style="font-size:1.05rem; color:var(--accent-emerald)">-</div>
               </div>
               <div class="metric-card">
-                <div class="metric-label">Original Res</div>
-                <div class="metric-value" id="prep-orig-res" style="font-size:0.95rem">-</div>
+                <div class="metric-label">Valid Until</div>
+                <div class="metric-value" id="visa-card-exp" style="font-size:1.05rem">-</div>
               </div>
               <div class="metric-card">
-                <div class="metric-label">Normalized Res</div>
-                <div class="metric-value" id="prep-norm-res" style="font-size:0.95rem">-</div>
+                <div class="metric-label">Entries</div>
+                <div class="metric-value" id="visa-card-entries" style="font-size:1.05rem">-</div>
               </div>
             </div>
 
-            <div id="prep-warnings" style="margin-top:1rem;"></div>
-
-            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Processed Output</div>
-            <div class="canvas-container">
-              <img id="prep-processed-img" alt="Processed Document">
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 3: LAYOUT DETECTION -->
-    <section id="tab-layout" class="tab-content">
-      <div class="grid-2col">
-        <div class="card">
-          <h2 class="card-title">YOLO Layout Detection</h2>
-          <p class="card-subtitle">Isolates portrait photo, handwritten signature, and MRZ machine-readable zones.</p>
-
-          <div class="dropzone">
-            <input type="file" id="layout-file" accept="image/*">
-            <div class="dropzone-icon">📐</div>
-            <div class="dropzone-text">Upload Document Image</div>
-          </div>
-          <div class="preview-box" id="layout-preview"><img id="layout-preview-img"></div>
-
-          <button class="btn-primary" id="layout-btn" onclick="runLayout()">Detect Layout Regions</button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Layout Bounding Boxes</div>
-          <p class="card-subtitle">Annotated image and isolated cropped visual elements.</p>
-
-          <div id="layout-empty" class="results-empty">
-            <div class="results-empty-icon">🔍</div>
-            <p>Upload an image to detect bounding boxes for photo, signature, and MRZ.</p>
-          </div>
-
-          <div id="layout-results" class="results-content">
-            <div class="card-title" style="font-size:0.95rem">Extracted Element Crops</div>
-            <div class="crops-strip" id="layout-crops"></div>
-
-            <div class="card-title" style="font-size:0.95rem; margin-top:1.5rem;">Annotated Document</div>
-            <div class="canvas-container">
-              <img id="layout-annotated-img" alt="Annotated Layout">
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 4: PADDLEOCR RAW -->
-    <section id="tab-ocr" class="tab-content">
-      <div class="grid-2col">
-        <div class="card">
-          <h2 class="card-title">PaddleOCR Raw Text Inspector</h2>
-          <p class="card-subtitle">Direct PaddleOCR inference showing all text polygons, lines, and confidence scores.</p>
-
-          <div class="dropzone">
-            <input type="file" id="ocr-file" accept="image/*">
-            <div class="dropzone-icon">🔤</div>
-            <div class="dropzone-text">Upload Any Document / Crop</div>
-          </div>
-          <div class="preview-box" id="ocr-preview"><img id="ocr-preview-img"></div>
-
-          <div class="form-group">
-            <label class="form-label" for="ocr-lang">Language / Script</label>
-            <select class="form-select" id="ocr-lang">
-              <option value="en">English (Default)</option>
-              <option value="devanagari">Devanagari (Hindi / Marathi)</option>
-              <option value="latin">Latin</option>
-            </select>
-          </div>
-
-          <button class="btn-primary" id="ocr-btn" onclick="runRawOCR()">Run PaddleOCR</button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">OCR Text Regions</div>
-          <p class="card-subtitle">Visual polygon overlays and detected text lines.</p>
-
-          <div id="ocr-empty" class="results-empty">
-            <div class="results-empty-icon">📝</div>
-            <p>Upload an image to extract text blocks with bounding boxes.</p>
-          </div>
-
-          <div id="ocr-results" class="results-content">
-            <div class="canvas-container">
-              <img id="ocr-annotated-img" alt="OCR Polygon Overlay">
-            </div>
-
-            <div class="card-title" style="font-size:0.95rem; margin-top:1.5rem;">Detected Blocks</div>
-            <div class="data-table-wrapper" style="max-height: 350px; overflow-y:auto;">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Text</th>
-                    <th>Confidence</th>
-                  </tr>
-                </thead>
-                <tbody id="ocr-blocks-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 5: CLASSIFIER -->
-    <section id="tab-classifier" class="tab-content">
-      <div class="grid-2col">
-        <div class="card">
-          <h2 class="card-title">Document Classifier</h2>
-          <p class="card-subtitle">Classifies document type using OCR keyword cues, identifiers (PAN/Aadhaar/DL/EPIC), and MRZ presence.</p>
-
-          <div class="dropzone">
-            <input type="file" id="clf-file" accept="image/*">
-            <div class="dropzone-icon">🏷️</div>
-            <div class="dropzone-text">Upload Document Image</div>
-          </div>
-          <div class="preview-box" id="clf-preview"><img id="clf-preview-img"></div>
-
-          <button class="btn-primary" id="clf-btn" onclick="runClassifier()">Classify Document</button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Classification Decision</div>
-          <p class="card-subtitle">Predicted document category, confidence score, and matching reasoning.</p>
-
-          <div id="clf-empty" class="results-empty">
-            <div class="results-empty-icon">🎯</div>
-            <p>Upload an image to test document-type auto-detection.</p>
-          </div>
-
-          <div id="clf-results" class="results-content">
-            <div class="metrics-grid">
-              <div class="metric-card">
-                <div class="metric-label">Document Type</div>
-                <div class="metric-value" id="clf-doc" style="color:var(--accent-sky)">-</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Confidence</div>
-                <div class="metric-value" id="clf-conf" style="color:var(--accent-emerald)">-</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Text Regions</div>
-                <div class="metric-value" id="clf-count">-</div>
-              </div>
-            </div>
-
-            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Matched Signals & Reasons</div>
-            <ul id="clf-reasons" style="list-style:disc; margin-left:1.5rem; color:var(--text-muted); font-size:0.88rem;"></ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 6: MRZ PARSER -->
-    <section id="tab-mrz" class="tab-content">
-      <div class="grid-2col">
-        <div class="card">
-          <h2 class="card-title">MRZ Parser & Checksum Tester</h2>
-          <p class="card-subtitle">Accepts full passports or cropped MRZ zones. Parses TD3 (2x44) and TD1 (3x30) with ICAO check digits.</p>
-
-          <div class="dropzone">
-            <input type="file" id="mrz-file" accept="image/*">
-            <div class="dropzone-icon">🛂</div>
-            <div class="dropzone-text">Upload Passport or MRZ Crop</div>
-          </div>
-          <div class="preview-box" id="mrz-preview"><img id="mrz-preview-img"></div>
-
-          <button class="btn-primary" id="mrz-btn" onclick="runMRZ()">Parse MRZ Zone</button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Parsed MRZ Fields & Checksums</div>
-          <p class="card-subtitle">Verified ICAO 9303 checksums and extracted identity tokens.</p>
-
-          <div id="mrz-empty" class="results-empty">
-            <div class="results-empty-icon">🛡️</div>
-            <p>Upload a passport image or cropped MRZ band to parse check digits.</p>
-          </div>
-
-          <div id="mrz-results" class="results-content">
-            <div class="card-title" style="font-size:0.95rem">Raw MRZ Lines</div>
-            <pre class="json-box" id="mrz-raw-lines" style="max-height:80px; margin-bottom:1rem;"></pre>
-
-            <div class="card-title" style="font-size:0.95rem">Checksum Validations</div>
-            <div id="mrz-checksums-pills" style="display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.5rem 0 1.25rem 0;"></div>
-
-            <div class="card-title" style="font-size:0.95rem">Fields</div>
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Extracted Fields</div>
             <div class="data-table-wrapper">
               <table class="data-table">
-                <thead><tr><th>Field</th><th>Value</th></tr></thead>
-                <tbody id="mrz-fields-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 7: RULE EXTRACTORS -->
-    <section id="tab-extractors" class="tab-content">
-      <div class="grid-2col">
-        <div class="card">
-          <h2 class="card-title">Rule-Based Field Extractors</h2>
-          <p class="card-subtitle">Runs targeted regex/label extractors for specific national ID formats.</p>
-
-          <div class="dropzone">
-            <input type="file" id="ext-file" accept="image/*">
-            <div class="dropzone-icon">📋</div>
-            <div class="dropzone-text">Upload Document Image</div>
-          </div>
-          <div class="preview-box" id="ext-preview"><img id="ext-preview-img"></div>
-
-          <div class="form-group">
-            <label class="form-label" for="ext-doctype">Select Specific Extractor</label>
-            <select class="form-select" id="ext-doctype">
-              <option value="aadhaar">Indian Aadhaar (UIDAI)</option>
-              <option value="pan">Indian PAN Card (ITD)</option>
-              <option value="driving_licence">Indian Driving Licence (Sarathi)</option>
-              <option value="voter_id">Indian Voter ID (EPIC / ECI)</option>
-              <option value="passport">Passport Visual Fields</option>
-            </select>
-          </div>
-
-          <button class="btn-primary" id="ext-btn" onclick="runExtractor()">Extract Fields</button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Extracted Document Data</div>
-          <p class="card-subtitle">Structured field values and attributes extracted by rule logic.</p>
-
-          <div id="ext-empty" class="results-empty">
-            <div class="results-empty-icon">📑</div>
-            <p>Select an extractor and upload an image to inspect field extraction.</p>
-          </div>
-
-          <div id="ext-results" class="results-content">
-            <div class="data-table-wrapper">
-              <table class="data-table">
-                <thead><tr><th>Field Name</th><th>Extracted Value</th></tr></thead>
-                <tbody id="ext-fields-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 8: BIOMETRICS -->
-    <section id="tab-biometrics" class="tab-content">
-      <div class="grid-2col">
-        <div class="card">
-          <h2 class="card-title">ArcFace 1:1 Face Verification</h2>
-          <p class="card-subtitle">Matches portrait from document against live selfie using SCRFD face detection and ArcFace ResNet-100 embeddings.</p>
-
-          <div class="form-group">
-            <label class="form-label">1. Document Portrait or Full Document</label>
-            <div class="dropzone" id="bio-doc-dropzone">
-              <input type="file" id="bio-doc-file" accept="image/*">
-              <div class="dropzone-icon" style="font-size:1.5rem">📄</div>
-              <div class="dropzone-text" style="font-size:0.85rem">Upload Document Photo</div>
-            </div>
-            <div class="preview-box" id="bio-doc-preview"><img id="bio-doc-preview-img"></div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">2. Live Selfie Photo (Single Face)</label>
-            <div class="dropzone" id="bio-live-dropzone">
-              <input type="file" id="bio-live-file" accept="image/*">
-              <div class="dropzone-icon" style="font-size:1.5rem">🤳</div>
-              <div class="dropzone-text" style="font-size:0.85rem">Upload Live Camera Selfie</div>
-            </div>
-            <div class="preview-box" id="bio-live-preview"><img id="bio-live-preview-img"></div>
-          </div>
-
-          <button class="btn-primary" id="bio-btn" onclick="runBiometrics()">Execute 1:1 Match</button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Biometric Comparison Verdict</div>
-          <p class="card-subtitle">Cosine similarity score and verification decision.</p>
-
-          <div id="bio-empty" class="results-empty">
-            <div class="results-empty-icon">👥</div>
-            <p>Upload both a document photo and a live selfie to perform facial verification.</p>
-          </div>
-
-          <div id="bio-results" class="results-content">
-            <div class="metrics-grid">
-              <div class="metric-card">
-                <div class="metric-label">Verdict</div>
-                <div class="metric-value" id="bio-verdict">-</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Cosine Similarity</div>
-                <div class="metric-value" id="bio-score" style="color:var(--accent-sky)">-</div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Threshold</div>
-                <div class="metric-value" id="bio-thresh">-</div>
-              </div>
-            </div>
-
-            <div class="json-wrapper">
-              <div class="json-header">
-                <span class="form-label" style="margin:0">Biometric Verification Diagnostics</span>
-              </div>
-              <pre class="json-box" id="bio-json"></pre>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-    <!-- TAB: DOC FOLDER PROCESSORS -->
-    <section id="tab-docproc" class="tab-content">
-      <div class="grid-2col">
-        <div class="card">
-          <h2 class="card-title">Document Folder Processors</h2>
-          <p class="card-subtitle">Directly tests the standalone processor pipelines for each document folder (ocr/passport, ocr/national_id, ocr/driving_license, ocr/dob_proof, ocr/visa).</p>
-
-          <div class="dropzone">
-            <input type="file" id="docproc-file" accept="image/*">
-            <div class="dropzone-icon">📁</div>
-            <div class="dropzone-text">Upload Document Image</div>
-          </div>
-          <div class="preview-box" id="docproc-preview"><img id="docproc-preview-img"></div>
-
-          <div class="form-group">
-            <label class="form-label" for="docproc-type">Select Document Folder Pipeline</label>
-            <select class="form-select" id="docproc-type">
-              <option value="passport">Passport (ocr/passport/processor.py)</option>
-              <option value="national_id">National ID: Aadhaar / PAN / Voter (ocr/national_id/processor.py)</option>
-              <option value="driving_license">Driving Licence (ocr/driving_license/processor.py)</option>
-              <option value="dob_proof">DOB Proof / Birth Cert (ocr/dob_proof/processor.py)</option>
-              <option value="visa">Travel Visa Sticker (ocr/visa/processor.py)</option>
-            </select>
-          </div>
-
-          <button class="btn-primary" id="docproc-btn" onclick="runDocProc()">Process Document via Folder Pipeline</button>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Processor Results</div>
-          <p class="card-subtitle">Structured field outputs and prepared LLM payload.</p>
-
-          <div id="docproc-empty" class="results-empty">
-            <div class="results-empty-icon">📂</div>
-            <p>Upload an image and run the folder pipeline.</p>
-          </div>
-
-          <div id="docproc-results" class="results-content">
-            <div class="data-table-wrapper">
-              <table class="data-table">
-                <thead><tr><th>Field Name</th><th>Extracted Value</th></tr></thead>
-                <tbody id="docproc-fields-tbody"></tbody>
+                <thead><tr><th>Field</th><th>Value</th><th>Confidence</th></tr></thead>
+                <tbody id="visa-fields-tbody"></tbody>
               </table>
             </div>
 
             <div class="json-wrapper">
               <div class="json-header">
-                <span class="form-label" style="margin:0">Full Processor Output (including LLM schema & status)</span>
-                <button class="btn-copy" onclick="copyJson('docproc-json')">Copy JSON</button>
+                <span class="form-label" style="margin:0">Visa JSON Output</span>
+                <button class="btn-copy" onclick="copyJson('visa-json-box')">📋 Copy JSON</button>
               </div>
-              <pre class="json-box" id="docproc-json"></pre>
+              <pre class="json-box" id="visa-json-box"></pre>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- TAB: TAMPERING & ELA -->
-    <section id="tab-tampering" class="tab-content">
+    <!-- =================================================================== -->
+    <!-- SECTION 3: DRIVING LICENCE OCR                                     -->
+    <!-- =================================================================== -->
+    <section id="tab-dl" class="tab-content">
       <div class="grid-2col">
+        <!-- Input Form -->
         <div class="card">
-          <h2 class="card-title">Forgery & Tampering Detection</h2>
-          <p class="card-subtitle">Error Level Analysis (ELA), copy-move cloning detection, and compression anomaly mapping.</p>
+          <h2 class="card-title">Driving Licence Processing</h2>
+          <p class="card-subtitle">
+            Upload driving licence card image. Runs PaddleOCR text extraction, Sarathi / standard regex parsing, and extracts DL number, holder name, DOB, vehicle classes, and validity.
+          </p>
 
-          <div class="dropzone">
-            <input type="file" id="tamp-file" accept="image/*">
-            <div class="dropzone-icon">🛡️</div>
-            <div class="dropzone-text">Upload Document Image</div>
+          <div class="form-group">
+            <label class="form-label">Driving Licence Image</label>
+            <div class="dropzone" id="dl-dropzone">
+              <input type="file" id="dl-file" accept="image/*">
+              <div class="dropzone-icon">🚗</div>
+              <div class="dropzone-text">Upload Driving Licence</div>
+              <div class="dropzone-hint">Front side of smart card or paper licence</div>
+            </div>
+            <div class="preview-box" id="dl-preview"><img id="dl-preview-img"></div>
           </div>
-          <div class="preview-box" id="tamp-preview"><img id="tamp-preview-img"></div>
 
-          <button class="btn-primary" id="tamp-btn" onclick="runTampering()">Analyze Forgery & Compression</button>
+          <button class="btn-primary" id="dl-btn" onclick="runDrivingLicenceProcessing()">
+            <span>Process Driving Licence</span>
+          </button>
         </div>
 
+        <!-- Output Panel -->
         <div class="card">
-          <div class="card-title">Tampering Assessment</div>
-          <p class="card-subtitle">Forgery score, diagnostic reasons, and visual explanation heatmap.</p>
+          <div class="card-title">
+            <span>Driving Licence Output</span>
+            <span id="dl-status-badge" class="badge badge-info">Awaiting Input</span>
+          </div>
+          <p class="card-subtitle">Parsed driving licence details and canonical JSON response.</p>
 
-          <div id="tamp-empty" class="results-empty">
-            <div class="results-empty-icon">🔬</div>
-            <p>Upload an image to inspect ELA compression patterns and clone detection.</p>
+          <div id="dl-empty" class="results-empty">
+            <div class="results-empty-icon">🚗</div>
+            <p>Upload a driving licence and click Process Driving Licence to view results.</p>
           </div>
 
-          <div id="tamp-results" class="results-content">
+          <div id="dl-results" class="results-content">
             <div class="metrics-grid">
               <div class="metric-card">
-                <div class="metric-label">Verdict</div>
-                <div class="metric-value" id="tamp-verdict">-</div>
+                <div class="metric-label">Licence No.</div>
+                <div class="metric-value" id="dl-card-number" style="font-size:1.05rem">-</div>
               </div>
               <div class="metric-card">
-                <div class="metric-label">Tamper Score</div>
-                <div class="metric-value" id="tamp-score" style="color:var(--accent-sky)">-</div>
+                <div class="metric-label">Holder Name</div>
+                <div class="metric-value" id="dl-card-name" style="font-size:1.05rem">-</div>
               </div>
               <div class="metric-card">
-                <div class="metric-label">Threshold</div>
-                <div class="metric-value" id="tamp-thresh">-</div>
+                <div class="metric-label">DOB</div>
+                <div class="metric-value" id="dl-card-dob" style="font-size:1.05rem">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Validity</div>
+                <div class="metric-value" id="dl-card-validity" style="font-size:1.05rem">-</div>
               </div>
             </div>
 
-            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Visual Explanation Heatmap (ELA)</div>
-            <div class="canvas-container">
-              <img id="tamp-heatmap-img" alt="Tamper Heatmap">
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Extracted Fields</div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead><tr><th>Field</th><th>Value</th><th>Confidence</th></tr></thead>
+                <tbody id="dl-fields-tbody"></tbody>
+              </table>
             </div>
 
-            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Detected Signals</div>
-            <ul id="tamp-reasons" style="list-style:disc; margin-left:1.5rem; color:var(--text-muted); font-size:0.88rem;"></ul>
+            <div class="json-wrapper">
+              <div class="json-header">
+                <span class="form-label" style="margin:0">Driving Licence JSON Output</span>
+                <button class="btn-copy" onclick="copyJson('dl-json-box')">📋 Copy JSON</button>
+              </div>
+              <pre class="json-box" id="dl-json-box"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SECTION 4: NATIONAL ID OCR (Aadhaar / PAN / Voter ID)               -->
+    <!-- =================================================================== -->
+    <section id="tab-national-id" class="tab-content">
+      <div class="grid-2col">
+        <!-- Input Form -->
+        <div class="card">
+          <h2 class="card-title">National ID Processing</h2>
+          <p class="card-subtitle">
+            Upload Aadhaar, PAN card, or Voter ID document. Select specific document type or use Auto-Detect. Extracts unique ID number, full name, DOB / YOB, gender, and address.
+          </p>
+
+          <div class="form-group">
+            <label class="form-label">Select ID Type</label>
+            <select class="form-select" id="nid-subtype">
+              <option value="national_id">Auto-Detect (Aadhaar / PAN / Voter ID)</option>
+              <option value="aadhaar">Aadhaar Card (UIDAI 12-digit)</option>
+              <option value="pan">PAN Card (ITD 10-char alphanumeric)</option>
+              <option value="voter_id">Voter ID (ECI EPIC)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">National ID Document Image</label>
+            <div class="dropzone" id="nid-dropzone">
+              <input type="file" id="nid-file" accept="image/*">
+              <div class="dropzone-icon">🪪</div>
+              <div class="dropzone-text">Upload National ID Image</div>
+              <div class="dropzone-hint">Aadhaar, PAN Card, or Voter ID</div>
+            </div>
+            <div class="preview-box" id="nid-preview"><img id="nid-preview-img"></div>
+          </div>
+
+          <button class="btn-primary" id="nid-btn" onclick="runNationalIdProcessing()">
+            <span>Process National ID</span>
+          </button>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="card">
+          <div class="card-title">
+            <span>National ID Output</span>
+            <span id="nid-status-badge" class="badge badge-info">Awaiting Input</span>
+          </div>
+          <p class="card-subtitle">Parsed national identity fields and structured JSON response.</p>
+
+          <div id="nid-empty" class="results-empty">
+            <div class="results-empty-icon">🪪</div>
+            <p>Upload a national ID and click Process National ID to view results.</p>
+          </div>
+
+          <div id="nid-results" class="results-content">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Detected Type</div>
+                <div class="metric-value" id="nid-card-type" style="font-size:1.05rem; color:var(--accent-sky)">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">ID Number</div>
+                <div class="metric-value" id="nid-card-number" style="font-size:1.05rem">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Holder Name</div>
+                <div class="metric-value" id="nid-card-name" style="font-size:1.05rem">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">DOB / YOB</div>
+                <div class="metric-value" id="nid-card-dob" style="font-size:1.05rem">-</div>
+              </div>
+            </div>
+
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Extracted Fields</div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead><tr><th>Field</th><th>Value</th><th>Confidence</th></tr></thead>
+                <tbody id="nid-fields-tbody"></tbody>
+              </table>
+            </div>
+
+            <div class="json-wrapper">
+              <div class="json-header">
+                <span class="form-label" style="margin:0">National ID JSON Output</span>
+                <button class="btn-copy" onclick="copyJson('nid-json-box')">📋 Copy JSON</button>
+              </div>
+              <pre class="json-box" id="nid-json-box"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SECTION 5: COMPONENT DIAGNOSTICS & TEST TOOLS                       -->
+    <!-- =================================================================== -->
+    <section id="tab-diagnostics" class="tab-content">
+      <div class="subtabs-bar">
+        <button class="subtab-btn active" onclick="switchDiagTool('raw-ocr')">🔤 PaddleOCR Raw</button>
+        <button class="subtab-btn" onclick="switchDiagTool('layout')">📐 YOLO Layout</button>
+        <button class="subtab-btn" onclick="switchDiagTool('prep')">🖼️ Preprocessing</button>
+        <button class="subtab-btn" onclick="switchDiagTool('tampering')">🛡️ Tampering / ELA</button>
+      </div>
+
+      <!-- DIAGNOSTIC 1: PADDLEOCR RAW -->
+      <div id="diag-raw-ocr" class="diag-tool-content">
+        <div class="grid-2col">
+          <div class="card">
+            <h3 class="card-title">PaddleOCR Raw Inference</h3>
+            <p class="card-subtitle">Run PaddleOCR on any image without rule parsing. Returns raw detected bounding boxes, recognized text strings, and confidence.</p>
+            <div class="dropzone" id="d-ocr-dropzone">
+              <input type="file" id="d-ocr-file" accept="image/*">
+              <div class="dropzone-icon">🔤</div>
+              <div class="dropzone-text">Upload Image for Raw OCR</div>
+            </div>
+            <div class="preview-box" id="d-ocr-preview"><img id="d-ocr-preview-img"></div>
+            <button class="btn-primary" id="d-ocr-btn" onclick="runDiagRawOcr()">Execute PaddleOCR</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Detected Text Blocks</div>
+            <div id="d-ocr-results" style="display:none">
+              <div style="text-align:center; margin-bottom:1rem;">
+                <img id="d-ocr-annotated-img" style="max-width:100%; border-radius:8px; max-height:260px; object-fit:contain; border:1px solid var(--border-subtle)">
+              </div>
+              <div class="data-table-wrapper">
+                <table class="data-table">
+                  <thead><tr><th>#</th><th>Text</th><th>Confidence</th></tr></thead>
+                  <tbody id="d-ocr-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div id="d-ocr-empty" class="results-empty"><p>Upload an image to inspect raw text bounding boxes.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIAGNOSTIC 2: YOLO LAYOUT -->
+      <div id="diag-layout" class="diag-tool-content" style="display:none">
+        <div class="grid-2col">
+          <div class="card">
+            <h3 class="card-title">YOLO Layout Detector</h3>
+            <p class="card-subtitle">Detects and crops photo portrait, signature, and MRZ machine-readable zones.</p>
+            <div class="dropzone" id="d-lay-dropzone">
+              <input type="file" id="d-lay-file" accept="image/*">
+              <div class="dropzone-icon">📐</div>
+              <div class="dropzone-text">Upload Document Image</div>
+            </div>
+            <div class="preview-box" id="d-lay-preview"><img id="d-lay-preview-img"></div>
+            <button class="btn-primary" id="d-lay-btn" onclick="runDiagLayout()">Detect Layout Regions</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Detected Regions</div>
+            <div id="d-lay-results" style="display:none">
+              <div id="d-lay-crops" style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem;"></div>
+              <div style="text-align:center">
+                <img id="d-lay-annotated-img" style="max-width:100%; border-radius:8px; max-height:280px; object-fit:contain; border:1px solid var(--border-subtle)">
+              </div>
+            </div>
+            <div id="d-lay-empty" class="results-empty"><p>Upload an image to inspect YOLO layout bounding boxes.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIAGNOSTIC 3: PREPROCESSING -->
+      <div id="diag-prep" class="diag-tool-content" style="display:none">
+        <div class="grid-2col">
+          <div class="card">
+            <h3 class="card-title">Preprocessing & Quality Inspector</h3>
+            <p class="card-subtitle">Evaluates Laplacian blur variance, HSV glare detection, and document boundary quad skew correction.</p>
+            <div class="dropzone" id="d-prep-dropzone">
+              <input type="file" id="d-prep-file" accept="image/*">
+              <div class="dropzone-icon">🖼️</div>
+              <div class="dropzone-text">Upload Document Photo</div>
+            </div>
+            <div class="preview-box" id="d-prep-preview"><img id="d-prep-preview-img"></div>
+            <button class="btn-primary" id="d-prep-btn" onclick="runDiagPrep()">Analyze Image Quality</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Quality Metrics & Normalized Image</div>
+            <div id="d-prep-results" style="display:none">
+              <div class="metrics-grid">
+                <div class="metric-card"><div class="metric-label">Blur Score</div><div class="metric-value" id="d-prep-blur">-</div></div>
+                <div class="metric-card"><div class="metric-label">Glare</div><div class="metric-value" id="d-prep-glare">-</div></div>
+              </div>
+              <div style="text-align:center; margin-top:1rem;">
+                <img id="d-prep-img" style="max-width:100%; border-radius:8px; max-height:280px; object-fit:contain; border:1px solid var(--border-subtle)">
+              </div>
+            </div>
+            <div id="d-prep-empty" class="results-empty"><p>Upload an image to inspect quality diagnostics.</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIAGNOSTIC 4: TAMPERING & ELA -->
+      <div id="diag-tampering" class="diag-tool-content" style="display:none">
+        <div class="grid-2col">
+          <div class="card">
+            <h3 class="card-title">Forgery & Tampering (ELA)</h3>
+            <p class="card-subtitle">Analyzes Error Level Analysis (ELA) compression patterns, clone detection, and metadata consistency.</p>
+            <div class="dropzone" id="d-tamp-dropzone">
+              <input type="file" id="d-tamp-file" accept="image/*">
+              <div class="dropzone-icon">🛡️</div>
+              <div class="dropzone-text">Upload Document Image</div>
+            </div>
+            <div class="preview-box" id="d-tamp-preview"><img id="d-tamp-preview-img"></div>
+            <button class="btn-primary" id="d-tamp-btn" onclick="runDiagTampering()">Detect Forgery</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Forgery Analysis Result</div>
+            <div id="d-tamp-results" style="display:none">
+              <div class="metrics-grid">
+                <div class="metric-card"><div class="metric-label">Verdict</div><div class="metric-value" id="d-tamp-verdict">-</div></div>
+                <div class="metric-card"><div class="metric-label">Tamper Score</div><div class="metric-value" id="d-tamp-score">-</div></div>
+              </div>
+              <div style="text-align:center; margin-top:1rem;">
+                <img id="d-tamp-img" style="max-width:100%; border-radius:8px; max-height:280px; object-fit:contain; border:1px solid var(--border-subtle)">
+              </div>
+            </div>
+            <div id="d-tamp-empty" class="results-empty"><p>Upload an image to run Error Level Analysis.</p></div>
           </div>
         </div>
       </div>
@@ -1350,23 +1189,37 @@
   </main>
 
   <script>
-    // Tab switching
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    // -------------------------------------------------------------------------
+    // Tab Navigation Handlers
+    // -------------------------------------------------------------------------
+    function switchMainTab(tabId) {
+      document.querySelectorAll('.tabs-nav .tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('main > .tab-content').forEach(section => section.classList.remove('active'));
 
-      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
-      if (activeBtn) activeBtn.classList.add('active');
+      const activeNav = document.getElementById(`tab-nav-${tabId}`);
+      if (activeNav) activeNav.classList.add('active');
 
-      const targetContent = document.getElementById(`tab-${tabId}`);
-      if (targetContent) targetContent.classList.add('active');
+      const targetSection = document.getElementById(`tab-${tabId}`);
+      if (targetSection) targetSection.classList.add('active');
     }
 
-    // Helper: Wire up dropzone preview
-    function setupDropzone(inputId, previewBoxId, previewImgId) {
+    function switchDiagTool(toolId) {
+      document.querySelectorAll('.subtabs-bar .subtab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.diag-tool-content').forEach(el => el.style.display = 'none');
+
+      event.currentTarget.classList.add('active');
+      const target = document.getElementById(`diag-${toolId}`);
+      if (target) target.style.display = 'block';
+    }
+
+    // -------------------------------------------------------------------------
+    // Dropzone Helper
+    // -------------------------------------------------------------------------
+    function wireDropzone(inputId, previewBoxId, previewImgId) {
       const input = document.getElementById(inputId);
       const box = document.getElementById(previewBoxId);
       const img = document.getElementById(previewImgId);
+      if (!input || !box || !img) return;
 
       input.addEventListener('change', () => {
         const file = input.files[0];
@@ -1381,17 +1234,15 @@
       });
     }
 
-    setupDropzone('pipeline-file', 'pipeline-preview', 'pipeline-preview-img');
-    setupDropzone('docproc-file', 'docproc-preview', 'docproc-preview-img');
-    setupDropzone('prep-file', 'prep-preview', 'prep-preview-img');
-    setupDropzone('layout-file', 'layout-preview', 'layout-preview-img');
-    setupDropzone('ocr-file', 'ocr-preview', 'ocr-preview-img');
-    setupDropzone('clf-file', 'clf-preview', 'clf-preview-img');
-    setupDropzone('mrz-file', 'mrz-preview', 'mrz-preview-img');
-    setupDropzone('ext-file', 'ext-preview', 'ext-preview-img');
-    setupDropzone('tamp-file', 'tamp-preview', 'tamp-preview-img');
-    setupDropzone('bio-doc-file', 'bio-doc-preview', 'bio-doc-preview-img');
-    setupDropzone('bio-live-file', 'bio-live-preview', 'bio-live-preview-img');
+    wireDropzone('pass-doc-file', 'pass-doc-preview', 'pass-doc-preview-img');
+    wireDropzone('pass-live-file', 'pass-live-preview', 'pass-live-preview-img');
+    wireDropzone('visa-file', 'visa-preview', 'visa-preview-img');
+    wireDropzone('dl-file', 'dl-preview', 'dl-preview-img');
+    wireDropzone('nid-file', 'nid-preview', 'nid-preview-img');
+    wireDropzone('d-ocr-file', 'd-ocr-preview', 'd-ocr-preview-img');
+    wireDropzone('d-lay-file', 'd-lay-preview', 'd-lay-preview-img');
+    wireDropzone('d-prep-file', 'd-prep-preview', 'd-prep-preview-img');
+    wireDropzone('d-tamp-file', 'd-tamp-preview', 'd-tamp-preview-img');
 
     function copyJson(elementId) {
       const text = document.getElementById(elementId).innerText;
@@ -1399,561 +1250,349 @@
       alert('JSON copied to clipboard!');
     }
 
-    // TAB: DOC PROCESSOR
-    async function runDocProc() {
-      const fileInput = document.getElementById('docproc-file');
-      if (!fileInput.files[0]) return alert('Please select an image.');
+    // -------------------------------------------------------------------------
+    // 1. PASSPORT WITH LIVE PHOTO VERIFICATION
+    // -------------------------------------------------------------------------
+    async function runPassportVerification() {
+      const docFile = document.getElementById('pass-doc-file').files[0];
+      const liveFile = document.getElementById('pass-live-file').files[0];
 
-      const btn = document.getElementById('docproc-btn');
+      if (!docFile) return alert('Please upload the passport document image.');
+      if (!liveFile) return alert('Please upload the live photo / selfie.');
+
+      const btn = document.getElementById('pass-verify-btn');
+      const badge = document.getElementById('pass-status-badge');
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Processing...';
+      btn.innerHTML = '<span class="spinner"></span> Verifying Faces & Passport...';
+      badge.className = 'badge badge-info';
+      badge.innerText = 'Processing';
 
       const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-      formData.append('doc_type', document.getElementById('docproc-type').value);
+      formData.append('passport', docFile);
+      formData.append('live_photo', liveFile);
 
       try {
-        const res = await fetch('/test/doc-processor', { method: 'POST', body: formData });
+        const res = await fetch('/biometrics/passport-verify', {
+          method: 'POST',
+          body: formData,
+        });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Processing failed');
+        if (!res.ok) throw new Error(data.detail?.message || data.detail?.error || JSON.stringify(data.detail || data));
 
-        document.getElementById('docproc-empty').style.display = 'none';
-        document.getElementById('docproc-results').style.display = 'block';
+        document.getElementById('pass-empty').style.display = 'none';
+        document.getElementById('pass-results').style.display = 'block';
 
-        const tbody = document.getElementById('docproc-fields-tbody');
-        tbody.innerHTML = '';
-        const fields = data.fields || {};
-        for (const [k, v] of Object.entries(fields)) {
-          tbody.innerHTML += `<tr><td><strong>${k}</strong></td><td>${v || '-'}</td></tr>`;
+        // Biometrics
+        const bio = data.face_verification || {};
+        const isMatch = bio.is_match === true || bio.status === 'VERIFIED';
+        const bioVerdict = document.getElementById('pass-bio-verdict-badge');
+        bioVerdict.className = isMatch ? 'badge badge-success' : 'badge badge-danger';
+        bioVerdict.innerText = isMatch ? 'MATCH (VERIFIED)' : (bio.status || 'NO MATCH');
+
+        const scorePct = (Number(bio.match_score || 0) * 100).toFixed(1);
+        document.getElementById('pass-score-val').innerText = `${scorePct}%`;
+        document.getElementById('pass-score-val').style.color = isMatch ? 'var(--accent-emerald)' : 'var(--accent-rose)';
+
+        if (bio.doc_portrait_base64) {
+          document.getElementById('pass-doc-crop-img').src = `data:image/jpeg;base64,${bio.doc_portrait_base64}`;
+        }
+        if (bio.live_photo_base64) {
+          document.getElementById('pass-live-crop-img').src = `data:image/jpeg;base64,${bio.live_photo_base64}`;
         }
 
-        document.getElementById('docproc-json').innerText = JSON.stringify(data, null, 2);
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Process Document via Folder Pipeline';
-      }
-    }
+        // Passport summary cards
+        const flat = data.flat_fields || {};
+        const adapted = data.adapted || {};
+        document.getElementById('pass-card-number').innerText = flat.passport_number || flat.document_number || '-';
+        document.getElementById('pass-card-nat').innerText = flat.nationality || flat.country_code || '-';
+        document.getElementById('pass-card-exp').innerText = flat.expiry_date || '-';
 
-    // TAB: TAMPERING
-    async function runTampering() {
-      const fileInput = document.getElementById('tamp-file');
-      if (!fileInput.files[0]) return alert('Please select an image.');
+        const mrz = adapted.mrz || (data.passport_data && data.passport_data.mrz);
+        const mrzValid = mrz ? (mrz.is_valid || mrz.checksum_valid) : null;
+        document.getElementById('pass-card-mrz').innerText = mrzValid === true ? '✅ VALID' : (mrzValid === false ? '❌ INVALID' : 'N/A');
 
-      const btn = document.getElementById('tamp-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Analyzing ELA...';
+        // Fields table
+        const tbody = document.getElementById('pass-fields-tbody');
+        tbody.innerHTML = '';
+        const extFields = adapted.extracted_fields || {};
+        for (const [k, fv] of Object.entries(extFields)) {
+          const val = (fv && typeof fv === 'object') ? fv.value : fv;
+          const src = (fv && typeof fv === 'object') ? (fv.source || 'ocr') : 'ocr';
+          if (val) {
+            tbody.innerHTML += `
+              <tr>
+                <td><strong>${k}</strong></td>
+                <td>${val}</td>
+                <td><span class="badge badge-info">${src}</span></td>
+              </tr>
+            `;
+          }
+        }
+        if (tbody.children.length === 0) {
+          for (const [k, v] of Object.entries(flat)) {
+            if (v) tbody.innerHTML += `<tr><td><strong>${k}</strong></td><td>${v}</td><td><span class="badge badge-info">flat</span></td></tr>`;
+          }
+        }
 
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
+        // Full JSON Box
+        document.getElementById('pass-json-box').innerText = JSON.stringify(data, null, 2);
 
-      try {
-        const res = await fetch('/test/tampering', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Tampering analysis failed');
-
-        document.getElementById('tamp-empty').style.display = 'none';
-        document.getElementById('tamp-results').style.display = 'block';
-
-        const verdEl = document.getElementById('tamp-verdict');
-        verdEl.innerText = data.is_tampered ? '⚠️ TAMPERED' : '✅ AUTHENTIC';
-        verdEl.style.color = data.is_tampered ? 'var(--accent-rose)' : 'var(--accent-emerald)';
-
-        document.getElementById('tamp-score').innerText = `${Math.round(data.tamper_score * 100)}%`;
-        document.getElementById('tamp-thresh').innerText = `${Math.round(data.threshold * 100)}%`;
-
-        document.getElementById('tamp-heatmap-img').src = `data:image/jpeg;base64,${data.heatmap_base64}`;
-
-        const ul = document.getElementById('tamp-reasons');
-        ul.innerHTML = '';
-        (data.reasons || []).forEach(r => {
-          ul.innerHTML += `<li>${r}</li>`;
-        });
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Analyze Forgery & Compression';
-      }
-    }
-
-    function copyJson(elementId) {
-      const text = document.getElementById(elementId).innerText;
-      navigator.clipboard.writeText(text);
-      alert('JSON copied to clipboard!');
-    }
-
-    // TAB 1: RUN PIPELINE
-    async function runPipeline() {
-      const fileInput = document.getElementById('pipeline-file');
-      if (!fileInput.files[0]) return alert('Please select an image first.');
-
-      const btn = document.getElementById('pipeline-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Running Pipeline...';
-
-      const formData = new FormData();
-      formData.append('document', fileInput.files[0]);
-      const docType = document.getElementById('pipeline-doctype').value;
-      if (docType) formData.append('doc_type', docType);
-
-      try {
-        const res = await fetch('/ocr/extract', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail?.error || data.detail || 'Extraction failed');
-
-        document.getElementById('pipeline-empty').style.display = 'none';
-        document.getElementById('pipeline-results').style.display = 'block';
-
-        const badge = document.getElementById('pipeline-status-badge');
         badge.className = 'badge badge-success';
         badge.innerText = 'Completed';
 
-        document.getElementById('pipe-type').innerText = (data.document_metadata?.detected_type || 'Unknown').toUpperCase();
-        document.getElementById('pipe-conf').innerText = `${Math.round((data.pipeline_summary?.overall_confidence || 0) * 100)}%`;
-        document.getElementById('pipe-time').innerText = `${data.pipeline_summary?.execution_time_ms || 0} ms`;
-        document.getElementById('pipe-blur').innerText = data.quality_assessment?.blur_score || 'N/A';
-
-        // Render crops
-        const cropsContainer = document.getElementById('pipe-crops');
-        cropsContainer.innerHTML = '';
-        const coords = data.layout_coordinates || {};
-        ['photo', 'signature', 'mrz_region'].forEach(k => {
-          if (coords[k]?.image_base64) {
-            const card = document.createElement('div');
-            card.className = 'crop-card';
-            card.innerHTML = `<img src="data:image/jpeg;base64,${coords[k].image_base64}"><div class="crop-title">${k.toUpperCase()}</div>`;
-            cropsContainer.appendChild(card);
-          }
-        });
-
-        // Render fields
-        const tbody = document.getElementById('pipe-fields-tbody');
-        tbody.innerHTML = '';
-        const fields = data.extracted_data?.rule_extracted_fields || {};
-        for (const [k, v] of Object.entries(fields)) {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td><strong>${k}</strong></td>
-            <td>${v.value || '-'}</td>
-            <td><span class="badge badge-info">${v.source || 'ocr'}</span></td>
-            <td>${Math.round((v.confidence || 0) * 100)}%</td>
-          `;
-          tbody.appendChild(tr);
-        }
-
-        document.getElementById('pipe-json').innerText = JSON.stringify(data, null, 2);
       } catch (err) {
-        alert('Pipeline Error: ' + err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<span>Run Complete Pipeline</span>';
-      }
-    }
-
-    // TAB 2: PREPROCESS
-    async function runPreprocess() {
-      const fileInput = document.getElementById('prep-file');
-      if (!fileInput.files[0]) return alert('Please select an image.');
-
-      const btn = document.getElementById('prep-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Processing...';
-
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-
-      try {
-        const res = await fetch('/test/preprocess', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Preprocessing error');
-
-        document.getElementById('prep-empty').style.display = 'none';
-        document.getElementById('prep-results').style.display = 'block';
-
-        document.getElementById('prep-blur').innerText = data.blur_score;
-        document.getElementById('prep-glare').innerText = data.glare_detected ? '⚠️ Yes' : '✅ Clear';
-        document.getElementById('prep-orig-res').innerText = `${data.original_dimensions.width} × ${data.original_dimensions.height}`;
-        document.getElementById('prep-norm-res').innerText = `${data.processed_dimensions.width} × ${data.processed_dimensions.height}`;
-
-        const warnDiv = document.getElementById('prep-warnings');
-        warnDiv.innerHTML = '';
-        (data.warnings || []).forEach(w => {
-          warnDiv.innerHTML += `<div class="alert alert-warning">ℹ️ ${w}</div>`;
-        });
-
-        document.getElementById('prep-processed-img').src = `data:image/jpeg;base64,${data.processed_image_base64}`;
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Run Preprocessing';
-      }
-    }
-
-    // TAB 3: LAYOUT
-    async function runLayout() {
-      const fileInput = document.getElementById('layout-file');
-      if (!fileInput.files[0]) return alert('Please select an image.');
-
-      const btn = document.getElementById('layout-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Detecting...';
-
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-
-      try {
-        const res = await fetch('/test/layout', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Layout detection error');
-
-        document.getElementById('layout-empty').style.display = 'none';
-        document.getElementById('layout-results').style.display = 'block';
-
-        const cropsDiv = document.getElementById('layout-crops');
-        cropsDiv.innerHTML = '';
-        for (const [name, b64] of Object.entries(data.crops_base64 || {})) {
-          cropsDiv.innerHTML += `
-            <div class="crop-card">
-              <img src="data:image/jpeg;base64,${b64}">
-              <div class="crop-title">${name.toUpperCase()}</div>
-            </div>
-          `;
-        }
-
-        document.getElementById('layout-annotated-img').src = `data:image/jpeg;base64,${data.annotated_image_base64}`;
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Detect Layout Regions';
-      }
-    }
-
-    // TAB 4: RAW OCR
-    async function runRawOCR() {
-      const fileInput = document.getElementById('ocr-file');
-      if (!fileInput.files[0]) return alert('Please select an image.');
-
-      const btn = document.getElementById('ocr-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> OCR Running...';
-
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-      formData.append('lang', document.getElementById('ocr-lang').value);
-
-      try {
-        const res = await fetch('/test/ocr-raw', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'OCR error');
-
-        document.getElementById('ocr-empty').style.display = 'none';
-        document.getElementById('ocr-results').style.display = 'block';
-
-        document.getElementById('ocr-annotated-img').src = `data:image/jpeg;base64,${data.annotated_image_base64}`;
-
-        const tbody = document.getElementById('ocr-blocks-tbody');
-        tbody.innerHTML = '';
-        (data.blocks || []).forEach(b => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${b.id}</td>
-              <td>${b.text}</td>
-              <td><span class="badge badge-info">${Math.round(b.confidence * 100)}%</span></td>
-            </tr>
-          `;
-        });
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Run PaddleOCR';
-      }
-    }
-
-    // TAB 5: CLASSIFIER
-    async function runClassifier() {
-      const fileInput = document.getElementById('clf-file');
-      if (!fileInput.files[0]) return alert('Please select an image.');
-
-      const btn = document.getElementById('clf-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Classifying...';
-
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-
-      try {
-        const res = await fetch('/test/classify', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Classifier error');
-
-        document.getElementById('clf-empty').style.display = 'none';
-        document.getElementById('clf-results').style.display = 'block';
-
-        document.getElementById('clf-doc').innerText = data.detected_type.toUpperCase();
-        document.getElementById('clf-conf').innerText = `${Math.round(data.confidence * 100)}%`;
-        document.getElementById('clf-count').innerText = data.total_ocr_regions;
-
-        const ul = document.getElementById('clf-reasons');
-        ul.innerHTML = '';
-        (data.reasons || []).forEach(r => {
-          ul.innerHTML += `<li>${r}</li>`;
-        });
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Classify Document';
-      }
-    }
-
-    // TAB 6: MRZ
-    async function runMRZ() {
-      const fileInput = document.getElementById('mrz-file');
-      if (!fileInput.files[0]) return alert('Please select an image.');
-
-      const btn = document.getElementById('mrz-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Parsing MRZ...';
-
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-
-      try {
-        const res = await fetch('/test/mrz', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'MRZ parsing error');
-
-        if (data.status === 'failed') {
-          alert('No MRZ detected: ' + (data.message || ''));
-          return;
-        }
-
-        document.getElementById('mrz-empty').style.display = 'none';
-        document.getElementById('mrz-results').style.display = 'block';
-
-        document.getElementById('mrz-raw-lines').innerText = (data.raw_lines || []).join('\n');
-
-        const pillsDiv = document.getElementById('mrz-checksums-pills');
-        pillsDiv.innerHTML = '';
-        for (const [chk, ok] of Object.entries(data.checksums || data.checks || {})) {
-          const cls = ok ? 'badge-success' : 'badge-danger';
-          const icon = ok ? '✅' : '❌';
-          pillsDiv.innerHTML += `<span class="badge ${cls}">${icon} ${chk}</span>`;
-        }
-
-        const tbody = document.getElementById('mrz-fields-tbody');
-        tbody.innerHTML = '';
-        for (const [k, v] of Object.entries(data.fields || {})) {
-          if (v) {
-            tbody.innerHTML += `<tr><td><strong>${k}</strong></td><td>${v}</td></tr>`;
-          }
-        }
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Parse MRZ Zone';
-      }
-    }
-
-    // TAB 7: EXTRACTOR
-    async function runExtractor() {
-      const fileInput = document.getElementById('ext-file');
-      if (!fileInput.files[0]) return alert('Please select an image.');
-
-      const btn = document.getElementById('ext-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Extracting...';
-
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-      formData.append('doc_type', document.getElementById('ext-doctype').value);
-
-      try {
-        const res = await fetch('/test/extractor', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Extractor error');
-
-        document.getElementById('ext-empty').style.display = 'none';
-        document.getElementById('ext-results').style.display = 'block';
-
-        const tbody = document.getElementById('ext-fields-tbody');
-        tbody.innerHTML = '';
-        for (const [k, v] of Object.entries(data.extracted_fields || {})) {
-          tbody.innerHTML += `
-            <tr>
-              <td><strong>${k}</strong></td>
-              <td>${v !== null && v !== undefined ? v : '<span style="color:var(--text-faint)">None</span>'}</td>
-            </tr>
-          `;
-        }
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Extract Fields';
-      }
-    }
-
-    // TAB 8: BIOMETRICS
-    async function runBiometrics() {
-      const docFile = document.getElementById('bio-doc-file').files[0];
-      const liveFile = document.getElementById('bio-live-file').files[0];
-      if (!docFile || !liveFile) return alert('Please upload both document photo and live selfie.');
-
-      const btn = document.getElementById('bio-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span> Verifying Faces...';
-
-      const formData = new FormData();
-      formData.append('document', docFile);
-      formData.append('selfie', liveFile);
-
-      try {
-        const res = await fetch('/biometrics/verify', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail?.message || data.detail?.error || 'Biometric match failed');
-
-        document.getElementById('bio-empty').style.display = 'none';
-        document.getElementById('bio-results').style.display = 'block';
-
-        const statusEl = document.getElementById('bio-verdict');
-        statusEl.innerText = data.status;
-        if (data.status === 'VERIFIED') statusEl.style.color = 'var(--accent-emerald)';
-        else if (data.status === 'REVIEW_REQUIRED') statusEl.style.color = 'var(--accent-amber)';
-        else statusEl.style.color = 'var(--accent-rose)';
-
-        document.getElementById('bio-score').innerText = `${Math.round((data.match_score || 0) * 100)}%`;
-        document.getElementById('bio-thresh').innerText = `${Math.round((data.decision_threshold || 0.65) * 100)}%`;
-        document.getElementById('bio-json').innerText = JSON.stringify(data, null, 2);
-      } catch (err) {
-        alert(err.message);
-      } finally {
-        btn.disabled = false;
-        btn.innerText = 'Execute 1:1 Match';
-      }
-    }
-
-    // ----------------------------------------------------------------
-    // Doc Processor (Raw)
-    // ----------------------------------------------------------------
-    setupDropzone('docproc-dropzone', 'docproc-file', 'docproc-preview', 'docproc-preview-img');
-
-    async function runDocProc() {
-      const file = document.getElementById('docproc-file').files[0];
-      if (!file) { alert('Please upload a document image first.'); return; }
-      const docType = document.getElementById('docproc-type').value;
-      const btn = document.getElementById('docproc-btn');
-      const badge = document.getElementById('docproc-badge');
-
-      btn.disabled = true;
-      btn.innerText = 'Processing…';
-      badge.className = 'badge badge-info';
-      badge.innerText = 'Running';
-
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('doc_type', docType);
-
-      try {
-        const res = await fetch('/test/doc-processor', { method: 'POST', body: fd });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
-
-        badge.className = 'badge badge-ok';
-        badge.innerText = 'Success';
-        document.getElementById('docproc-empty').style.display = 'none';
-        document.getElementById('docproc-results').style.display = 'block';
-        document.getElementById('docproc-json').innerText = JSON.stringify(data, null, 2);
-      } catch (err) {
-        badge.className = 'badge badge-error';
+        badge.className = 'badge badge-danger';
         badge.innerText = 'Error';
-        alert('Doc Processor Error: ' + err.message);
+        alert('Passport Verification Error: ' + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = 'Run Raw Processor';
+        btn.innerHTML = '<span>Verify Passport & Match Face</span>';
       }
     }
 
-    // ----------------------------------------------------------------
-    // Adapter Layer
-    // ----------------------------------------------------------------
-    setupDropzone('adapter-dropzone', 'adapter-file', 'adapter-preview', 'adapter-preview-img');
+    // -------------------------------------------------------------------------
+    // 2. VISA PROCESSING
+    // -------------------------------------------------------------------------
+    async function runVisaProcessing() {
+      const file = document.getElementById('visa-file').files[0];
+      if (!file) return alert('Please select a visa document image.');
 
-    async function runAdapter() {
-      const file = document.getElementById('adapter-file').files[0];
-      if (!file) { alert('Please upload a document image first.'); return; }
-      const docType = document.getElementById('adapter-type').value;
-      const btn = document.getElementById('adapter-btn');
-      const badge = document.getElementById('adapter-badge');
-
+      const btn = document.getElementById('visa-btn');
+      const badge = document.getElementById('visa-status-badge');
       btn.disabled = true;
-      btn.innerText = 'Processing…';
+      btn.innerHTML = '<span class="spinner"></span> Processing Visa...';
       badge.className = 'badge badge-info';
-      badge.innerText = 'Running';
+      badge.innerText = 'Processing';
 
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('doc_type', docType);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('doc_type', 'visa');
 
       try {
-        const res = await fetch('/test/adapted-doc-processor', { method: 'POST', body: fd });
+        const res = await fetch('/test/adapted-doc-processor', { method: 'POST', body: formData });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
 
-        const adapted = data.adapted || {};
+        document.getElementById('visa-empty').style.display = 'none';
+        document.getElementById('visa-results').style.display = 'block';
+
         const flat = data.flat_fields || {};
+        const adapted = data.adapted || {};
 
-        badge.className = 'badge badge-ok';
-        badge.innerText = 'Success';
-        document.getElementById('adapter-empty').style.display = 'none';
-        document.getElementById('adapter-results').style.display = 'block';
+        document.getElementById('visa-card-number').innerText = flat.visa_number || flat.document_number || '-';
+        document.getElementById('visa-card-exp').innerText = flat.valid_until || flat.expiry_date || '-';
+        document.getElementById('visa-card-entries').innerText = flat.entries || flat.visa_type || 'STANDARD';
 
-        // Metrics
-        const conf = adapted.aggregate_confidence || 0;
-        document.getElementById('adapter-conf').innerText = `${(conf * 100).toFixed(1)}%`;
-        const fields = adapted.extracted_fields || {};
-        const fieldsFound = Object.values(fields).filter(f => f.value !== null).length;
-        document.getElementById('adapter-fields-found').innerText = `${fieldsFound} / ${Object.keys(fields).length}`;
         const mrz = adapted.mrz;
-        document.getElementById('adapter-mrz-valid').innerText = mrz ? (mrz.is_valid ? '✅ Valid' : '❌ Invalid') : '—';
-        document.getElementById('adapter-ocr-count').innerText = adapted.raw_ocr_count ?? '—';
+        document.getElementById('visa-card-mrz').innerText = mrz ? (mrz.is_valid ? '✅ VALID' : '❌ INVALID') : 'N/A';
 
-        // Flat fields table
-        const tableEl = document.getElementById('adapter-flat-table');
-        let tableHtml = '<table style="width:100%; border-collapse:collapse; font-size:0.82rem;">';
-        tableHtml += '<tr style="border-bottom:1px solid rgba(255,255,255,0.1)"><th style="text-align:left;padding:4px 6px;color:var(--text-muted)">Field</th><th style="text-align:left;padding:4px 6px;color:var(--text-muted)">Value</th><th style="text-align:right;padding:4px 6px;color:var(--text-muted)">Conf</th><th style="text-align:left;padding:4px 6px;color:var(--text-muted)">Source</th></tr>';
-        for (const [k, fv] of Object.entries(fields)) {
-          const val = fv.value;
-          const conf = fv.confidence;
-          const src = fv.source;
-          const srcColor = src === 'mrz' ? 'var(--accent-emerald)' : src === 'ocr' ? 'var(--accent-sky)' : 'var(--text-faint)';
-          tableHtml += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04)">`;
-          tableHtml += `<td style="padding:4px 6px; color:var(--text-muted)">${k}</td>`;
-          tableHtml += `<td style="padding:4px 6px; color:${val ? 'var(--text-main)' : 'var(--text-faint)'}">${val ?? '<null>'}</td>`;
-          tableHtml += `<td style="padding:4px 6px; text-align:right; color:var(--text-muted)">${val ? (conf * 100).toFixed(0) + '%' : '—'}</td>`;
-          tableHtml += `<td style="padding:4px 6px; color:${srcColor}">${val ? src : '—'}</td>`;
-          tableHtml += `</tr>`;
+        const tbody = document.getElementById('visa-fields-tbody');
+        tbody.innerHTML = '';
+        const extFields = adapted.extracted_fields || {};
+        for (const [k, fv] of Object.entries(extFields)) {
+          const val = fv ? fv.value : null;
+          const conf = fv ? Math.round((fv.confidence || 0) * 100) : 0;
+          if (val) {
+            tbody.innerHTML += `<tr><td><strong>${k}</strong></td><td>${val}</td><td>${conf}%</td></tr>`;
+          }
         }
-        tableHtml += '</table>';
-        tableEl.innerHTML = tableHtml;
 
-        // JSON
-        document.getElementById('adapter-json').innerText = JSON.stringify(adapted, null, 2);
+        document.getElementById('visa-json-box').innerText = JSON.stringify(data, null, 2);
 
+        badge.className = 'badge badge-success';
+        badge.innerText = 'Success';
       } catch (err) {
-        badge.className = 'badge badge-error';
+        badge.className = 'badge badge-danger';
         badge.innerText = 'Error';
-        alert('Adapter Error: ' + err.message);
+        alert('Visa Processing Error: ' + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerText = 'Run Processor + Adapter';
+        btn.innerHTML = '<span>Process Visa Document</span>';
       }
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. DRIVING LICENCE PROCESSING
+    // -------------------------------------------------------------------------
+    async function runDrivingLicenceProcessing() {
+      const file = document.getElementById('dl-file').files[0];
+      if (!file) return alert('Please select a driving licence image.');
+
+      const btn = document.getElementById('dl-btn');
+      const badge = document.getElementById('dl-status-badge');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Processing Licence...';
+      badge.className = 'badge badge-info';
+      badge.innerText = 'Processing';
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('doc_type', 'driving_license');
+
+      try {
+        const res = await fetch('/test/adapted-doc-processor', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        document.getElementById('dl-empty').style.display = 'none';
+        document.getElementById('dl-results').style.display = 'block';
+
+        const flat = data.flat_fields || {};
+        const adapted = data.adapted || {};
+
+        document.getElementById('dl-card-number').innerText = flat.driving_license_number || flat.document_number || '-';
+        document.getElementById('dl-card-name').innerText = flat.full_name || flat.name || '-';
+        document.getElementById('dl-card-dob').innerText = flat.dob || '-';
+        document.getElementById('dl-card-validity').innerText = flat.expiry_date || flat.valid_until || '-';
+
+        const tbody = document.getElementById('dl-fields-tbody');
+        tbody.innerHTML = '';
+        const extFields = adapted.extracted_fields || {};
+        for (const [k, fv] of Object.entries(extFields)) {
+          const val = fv ? fv.value : null;
+          const conf = fv ? Math.round((fv.confidence || 0) * 100) : 0;
+          if (val) {
+            tbody.innerHTML += `<tr><td><strong>${k}</strong></td><td>${val}</td><td>${conf}%</td></tr>`;
+          }
+        }
+
+        document.getElementById('dl-json-box').innerText = JSON.stringify(data, null, 2);
+
+        badge.className = 'badge badge-success';
+        badge.innerText = 'Success';
+      } catch (err) {
+        badge.className = 'badge badge-danger';
+        badge.innerText = 'Error';
+        alert('Driving Licence Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Process Driving Licence</span>';
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. NATIONAL ID PROCESSING
+    // -------------------------------------------------------------------------
+    async function runNationalIdProcessing() {
+      const file = document.getElementById('nid-file').files[0];
+      if (!file) return alert('Please select a national ID image.');
+
+      const subtype = document.getElementById('nid-subtype').value;
+      const btn = document.getElementById('nid-btn');
+      const badge = document.getElementById('nid-status-badge');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Processing ID...';
+      badge.className = 'badge badge-info';
+      badge.innerText = 'Processing';
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('doc_type', subtype);
+
+      try {
+        const res = await fetch('/test/adapted-doc-processor', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        document.getElementById('nid-empty').style.display = 'none';
+        document.getElementById('nid-results').style.display = 'block';
+
+        const flat = data.flat_fields || {};
+        const adapted = data.adapted || {};
+
+        document.getElementById('nid-card-type').innerText = (adapted.document_type || subtype).toUpperCase();
+        document.getElementById('nid-card-number').innerText = flat.aadhaar_number || flat.pan_number || flat.voter_id_number || flat.document_number || '-';
+        document.getElementById('nid-card-name').innerText = flat.full_name || flat.name || '-';
+        document.getElementById('nid-card-dob').innerText = flat.dob || flat.year_of_birth || '-';
+
+        const tbody = document.getElementById('nid-fields-tbody');
+        tbody.innerHTML = '';
+        const extFields = adapted.extracted_fields || {};
+        for (const [k, fv] of Object.entries(extFields)) {
+          const val = fv ? fv.value : null;
+          const conf = fv ? Math.round((fv.confidence || 0) * 100) : 0;
+          if (val) {
+            tbody.innerHTML += `<tr><td><strong>${k}</strong></td><td>${val}</td><td>${conf}%</td></tr>`;
+          }
+        }
+
+        document.getElementById('nid-json-box').innerText = JSON.stringify(data, null, 2);
+
+        badge.className = 'badge badge-success';
+        badge.innerText = 'Success';
+      } catch (err) {
+        badge.className = 'badge badge-danger';
+        badge.innerText = 'Error';
+        alert('National ID Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Process National ID</span>';
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. DIAGNOSTICS HELPERS
+    // -------------------------------------------------------------------------
+    async function runDiagRawOcr() {
+      const file = document.getElementById('d-ocr-file').files[0];
+      if (!file) return alert('Select image');
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/test/ocr-raw', { method: 'POST', body: fd });
+      const data = await res.json();
+      document.getElementById('d-ocr-empty').style.display = 'none';
+      document.getElementById('d-ocr-results').style.display = 'block';
+      document.getElementById('d-ocr-annotated-img').src = `data:image/jpeg;base64,${data.annotated_image_base64}`;
+      const tbody = document.getElementById('d-ocr-tbody');
+      tbody.innerHTML = '';
+      (data.blocks || []).forEach(b => {
+        tbody.innerHTML += `<tr><td>${b.id}</td><td>${b.text}</td><td>${Math.round(b.confidence*100)}%</td></tr>`;
+      });
+    }
+
+    async function runDiagLayout() {
+      const file = document.getElementById('d-lay-file').files[0];
+      if (!file) return alert('Select image');
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/test/layout', { method: 'POST', body: fd });
+      const data = await res.json();
+      document.getElementById('d-lay-empty').style.display = 'none';
+      document.getElementById('d-lay-results').style.display = 'block';
+      document.getElementById('d-lay-annotated-img').src = `data:image/jpeg;base64,${data.annotated_image_base64}`;
+      const cropsDiv = document.getElementById('d-lay-crops');
+      cropsDiv.innerHTML = '';
+      for (const [name, b64] of Object.entries(data.crops_base64 || {})) {
+        cropsDiv.innerHTML += `<div style="text-align:center"><img src="data:image/jpeg;base64,${b64}" style="height:80px;border-radius:4px;border:1px solid #334155"><div style="font-size:0.7rem">${name}</div></div>`;
+      }
+    }
+
+    async function runDiagPrep() {
+      const file = document.getElementById('d-prep-file').files[0];
+      if (!file) return alert('Select image');
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/test/preprocess', { method: 'POST', body: fd });
+      const data = await res.json();
+      document.getElementById('d-prep-empty').style.display = 'none';
+      document.getElementById('d-prep-results').style.display = 'block';
+      document.getElementById('d-prep-blur').innerText = data.blur_score;
+      document.getElementById('d-prep-glare').innerText = data.glare_detected ? '⚠️ Yes' : '✅ Clear';
+      document.getElementById('d-prep-img').src = `data:image/jpeg;base64,${data.processed_image_base64}`;
+    }
+
+    async function runDiagTampering() {
+      const file = document.getElementById('d-tamp-file').files[0];
+      if (!file) return alert('Select image');
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/test/tampering', { method: 'POST', body: fd });
+      const data = await res.json();
+      document.getElementById('d-tamp-empty').style.display = 'none';
+      document.getElementById('d-tamp-results').style.display = 'block';
+      document.getElementById('d-tamp-verdict').innerText = data.is_tampered ? '⚠️ TAMPERED' : '✅ AUTHENTIC';
+      document.getElementById('d-tamp-score').innerText = `${Math.round(data.tamper_score * 100)}%`;
+      document.getElementById('d-tamp-img').src = `data:image/jpeg;base64,${data.heatmap_base64}`;
     }
   </script>
 </body>

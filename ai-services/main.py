@@ -1,4 +1,10 @@
 """FastAPI application — unified entrypoint for the identity document verification service."""
+import os
+# Set PaddlePaddle env vars before any paddle import to prevent source checks and oneDNN issues
+os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
+os.environ.setdefault("FLAGS_use_mkldnn", "0")
+os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
+os.environ.setdefault("PYTHONWARNINGS", "ignore::DeprecationWarning")
 from contextlib import asynccontextmanager
 from pathlib import Path
 

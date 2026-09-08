@@ -16,7 +16,7 @@ from core.logger import get_logger
 from layout import detect_fields, build_regions, crop_region
 from ocr.engine import run_ocr
 from ocr.extractors.passport import extract_passport
-from ocr.mrz import extract_mrz
+from ocr.mrz import extract_mrz, parse_mrz, parse_travel_mrz
 from ocr.shared.validator import validate
 from preprocessing import preprocess
 from preprocessing.preprocessor import _load_image
@@ -39,10 +39,21 @@ def process_passport(
         Structured dictionary containing extracted fields, MRZ data,
         quality metrics, and layout regions.
     """
-    # 1. Preprocessing
+    # 1. Image loading & Preprocessing
+    raw_img = _load_image(image_input)
+    warnings: list[str] = []
+
+    # Run OCR on raw image first (native pixels preserve fine fonts, check digits and chevrons best)
+    try:
+        raw_ocr_regions = run_ocr(raw_img)
+        raw_mrz = parse_mrz(raw_ocr_regions) or parse_travel_mrz(raw_ocr_regions)
+    except Exception as exc:
+        logger.debug("Raw image OCR/MRZ trial failed: %s", exc)
+        raw_ocr_regions = []
+        raw_mrz = None
+
     if isinstance(image_input, np.ndarray):
         img = image_input
-        warnings = []
     else:
         pre = preprocess(image_input)
         img = pre.image
@@ -59,12 +70,15 @@ def process_passport(
         detections = []
         regions_map = {}
 
-    # 3. OCR on full image
-    ocr_regions = run_ocr(img)
+    # 3. Choose best OCR regions (prefer raw if valid MRZ or high text confidence)
+    mrz_result = raw_mrz
+    if raw_mrz is not None or (len(raw_ocr_regions) >= 4 and sum(r.confidence for r in raw_ocr_regions) / len(raw_ocr_regions) >= 0.85):
+        ocr_regions = raw_ocr_regions
+    else:
+        ocr_regions = run_ocr(img)
 
-    # 4. MRZ Extraction (prefer cropped MRZ region if isolated by YOLO)
-    mrz_result = None
-    if "mrz" in regions_map:
+    # 4. MRZ Extraction fallback (prefer cropped MRZ region if isolated by YOLO)
+    if mrz_result is None and "mrz" in regions_map:
         mrz_crop = crop_region(img, regions_map["mrz"], pad_ratio=0.0)
         try:
             mrz_result = extract_mrz(mrz_crop)
@@ -72,11 +86,10 @@ def process_passport(
             logger.warning("MRZ extraction on crop failed: %s", exc)
 
     if mrz_result is None:
-        # Fallback: run MRZ extraction on full image text regions
         try:
-            mrz_result = extract_mrz(img)
-        except Exception:
-            pass
+            mrz_result = parse_mrz(ocr_regions) or parse_travel_mrz(ocr_regions)
+        except Exception as exc:
+            logger.warning("MRZ parsing fallback on ocr_regions failed: %s", exc)
 
     # 5. Visual field extraction
     visual_fields = extract_passport(ocr_regions)
@@ -97,26 +110,52 @@ def process_passport(
         fields["personal_number"] = getattr(getattr(mrz_result, "personal_number", None), "value", None)
         fields["country_code"] = getattr(getattr(mrz_result, "country_code", None), "value", None)
 
-    # Visual field supplements
+    # Visual field supplements (supplement missing MRZ fields or supplementary like place_of_birth, place_of_issue, date_of_issue)
     for k, v in asdict(visual_fields).items():
         if v and (k not in fields or not fields[k]):
             fields[k] = v
+
+    # Harmonize nationality and country code
+    if not fields.get("nationality") and fields.get("country_code"):
+        fields["nationality"] = fields["country_code"]
+    if not fields.get("country_code") and fields.get("nationality"):
+        fields["country_code"] = fields["nationality"]
 
     # 8. LLM Extraction Interface (Inactive in Phase 1)
     llm_payload = _get_llm_payload(ocr_regions, fields, enabled=use_llm)
 
     mrz_dict = None
     if mrz_result and hasattr(mrz_result, "passport_number"):
+        mrz_fields = {
+            "passport_number": mrz_result.passport_number.value,
+            "surname": mrz_result.surname.value,
+            "given_names": mrz_result.given_names.value,
+            "nationality": mrz_result.nationality.value,
+            "country_code": getattr(getattr(mrz_result, "country_code", None), "value", None),
+            "date_of_birth": mrz_result.date_of_birth.value,
+            "sex": mrz_result.sex.value,
+            "expiry_date": mrz_result.expiry_date.value,
+            "personal_number": getattr(getattr(mrz_result, "personal_number", None), "value", None),
+        }
         mrz_dict = {
             "type": "TD3",
             "is_valid": mrz_result.overall_checksum_valid,
             "raw_lines": list(mrz_result.raw_lines) if mrz_result.raw_lines else [],
+            "fields": mrz_fields,
             "checksums": {
                 "passport_number": mrz_result.passport_number.checksum_valid,
                 "date_of_birth": mrz_result.date_of_birth.checksum_valid,
                 "expiry_date": mrz_result.expiry_date.checksum_valid,
                 "overall_valid": mrz_result.overall_checksum_valid,
             },
+        }
+    elif mrz_result and hasattr(mrz_result, "fields"):
+        mrz_dict = {
+            "type": getattr(mrz_result, "document_type", "TD1"),
+            "is_valid": getattr(mrz_result, "checks", {}).get("mrz_checksums_valid", True),
+            "raw_lines": getattr(mrz_result, "fields", {}).get("mrz_raw", []),
+            "fields": getattr(mrz_result, "fields", {}),
+            "checksums": getattr(mrz_result, "checks", {}),
         }
 
     return {

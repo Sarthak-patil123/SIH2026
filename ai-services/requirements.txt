@@ -1,31 +1,51 @@
-# Web framework
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
-python-multipart==0.0.9
-pydantic==2.7.0
+# ============================================================
+# AI Services — Pinned Requirements (Python 3.12, Windows CPU)
+# ============================================================
+# IMPORTANT: Do NOT pip install -r this directly.
+# Use setup_env.ps1 which installs in the correct order.
+#
+# Conflict resolution notes:
+#   - numpy MUST stay at 1.26.4 (paddlepaddle requirement, overrides insightface/albumentations)
+#   - protobuf MUST stay at 3.20.2 (paddlepaddle requirement, overrides onnxruntime/onnx)
+#   - onnxruntime 1.18.1 is the last version compatible with protobuf 3.20.x
+#   - insightface 0.7.3 installed via prebuilt wheel (avoids MSVC C++ build requirement)
+#   - torch 2.4.0+cpu from pytorch.org/whl/cpu (avoids CUDA deps, fbgemm fixed via libomp copy)
+#   - ultralytics pinned to 8.2.90 which supports torch 2.4.x
+# ============================================================
 
-# Image processing
-opencv-python-headless==4.10.0.84
-Pillow==10.4.0
-pillow-heif==0.16.0
+# --- Web framework ---
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic>=2.7.0
+
+# --- Image processing (installed early) ---
+Pillow
+pillow-heif
+scikit-image
+
+# --- numpy: PINNED — must not be upgraded (paddlepaddle compat) ---
 numpy==1.26.4
-scikit-image==0.24.0
 
-# OCR — PaddleOCR
-paddlepaddle>=2.5.2
-paddleocr>=2.7.3
+# --- protobuf: PINNED — must not be upgraded (paddlepaddle compat) ---
+protobuf==3.20.2
 
-# Layout detection
-ultralytics==8.2.90
+# --- OCR — PaddlePaddle CPU + PaddleOCR (installed by setup_env.ps1 first) ---
+# paddlepaddle==2.6.2    <-- installed first in setup_env.ps1, NOT here
+# paddleocr==2.8.1       <-- installed second in setup_env.ps1, NOT here
 
-# Face recognition
-insightface==0.7.3
+# --- Face recognition — onnxruntime only (no torch dependency) ---
+# insightface installed via prebuilt .whl in setup_env.ps1
 onnxruntime==1.18.1
 
-# Fuzzy string match (used by validator.py from document-ocr-main)
-rapidfuzz==3.9.3
+# --- Layout detection (YOLOv8 — uses torch CPU) ---
+# torch/torchvision installed via pytorch.org/whl/cpu in setup_env.ps1
+ultralytics==8.2.90
 
-# Utilities
-python-dateutil==2.9.0
-pycountry==24.6.1
+# --- Text processing ---
+rapidfuzz>=3.9.3
 
+# --- Utilities ---
+python-dateutil>=2.9.0
+pycountry>=24.6.1
+requests>=2.32.3

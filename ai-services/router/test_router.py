@@ -436,3 +436,15 @@ async def test_adapted_doc_processor(
         logger.exception("Adapted doc processor failed")
         raise HTTPException(status_code=500, detail=str(exc))
 
+
+@router.post("/passport-verify")
+@router.post("/passport-live-verify")
+async def test_passport_verify(
+    passport: UploadFile = File(..., description="Passport document image"),
+    live_photo: UploadFile = File(..., description="Live camera photo or external portrait photo"),
+) -> dict:
+    """Test endpoint for Passport + Live Photo verification and OCR extraction."""
+    from router.biometric_router import verify_passport_with_live_photo
+    return await verify_passport_with_live_photo(passport=passport, live_photo=live_photo)
+
+

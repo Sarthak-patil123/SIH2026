@@ -1,0 +1,32 @@
+# Virtual environment — never commit
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# PaddlePaddle model cache (downloaded at runtime)
+.paddlex/
+
+# InsightFace model cache
+~/.insightface/
+
+# Log files
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Environment
+.env
+.env.local

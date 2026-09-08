@@ -104,11 +104,15 @@ def verify_faces(doc_img: np.ndarray, live_img: np.ndarray) -> dict:
         cy2 = min(h_img, y2 + dy)
         return img[cy1:cy2, cx1:cx2]
 
-    doc_crop = _crop_face(doc_img, doc_face_bbox)
-    live_crop = _crop_face(live_img, live_face_bbox)
+    emb_doc = getattr(doc_faces[0], "normed_embedding", None)
+    if emb_doc is None:
+        doc_crop = _crop_face(doc_img, doc_face_bbox)
+        emb_doc = get_embedding(doc_crop)
 
-    emb_doc = get_embedding(doc_crop)
-    emb_live = get_embedding(live_crop)
+    emb_live = getattr(live_faces[0], "normed_embedding", None)
+    if emb_live is None:
+        live_crop = _crop_face(live_img, live_face_bbox)
+        emb_live = get_embedding(live_crop)
     score = compute_similarity(emb_doc, emb_live)
     verdict = make_decision(score)
 

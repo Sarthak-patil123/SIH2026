@@ -83,6 +83,19 @@ _LABEL_HINTS = [
     "SPOUSE",
     "ADDRESS",
     "FILE",
+    "HEIGHT",
+    "TAILLE",
+    "PERSONAL",
+    "SIGNATURE",
+    "SIGNATUTE",
+    "AUTHORITY",
+    "AUTORITE",
+    "PRENOMS",
+    "KENNINAFT",
+    "KENNITALA",
+    "EIGINNOFN",
+    "PJODERNI",
+    "STJORNVALD",
 ]
 
 
@@ -288,6 +301,10 @@ def _normalise_label_text(text: str) -> str:
 
 def _looks_like_field_label(text: str) -> bool:
     """Heuristic to avoid treating the next label as a field value."""
+    if not text or len(text.strip()) == 0:
+        return True
+    if text.count("/") >= 2:
+        return True
     normalised = _normalise_label_text(text)
     padded = f" {normalised} "
     return any(f" {hint} " in padded for hint in _LABEL_HINTS)

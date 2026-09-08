@@ -7,9 +7,12 @@ Uses PaddleOCR models with text detection, angle classification, and recognition
 from __future__ import annotations
 
 import logging
+import os
 import threading
 from dataclasses import dataclass
 from typing import Optional
+
+os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")
 
 import numpy as np
 from core.exceptions import OCREngineError
@@ -60,16 +63,16 @@ _LANG_MAP = {
 
 
 def _get_ocr(lang: str = "en"):
-    """Get or create a cached OCR engine instance (PaddleOCR primary, EasyOCR fallback).
+    """Get or create a cached PaddleOCR engine instance.
+
+    PaddleOCR is the sole OCR engine.
 
     Raises:
-        OCRModelInitError: if both PaddleOCR and EasyOCR initialisation fail.
+        OCRModelInitError: if PaddleOCR initialisation fails.
     """
     if lang in _ocr_instances:
         return _ocr_instances[lang]
 
-    # Primary engine: PaddleOCR
-    paddle_exc = None
     try:
         from paddleocr import PaddleOCR
         with _lock:
@@ -83,48 +86,17 @@ def _get_ocr(lang: str = "en"):
                 instance = PaddleOCR(lang=paddle_lang)
 
             _ocr_instances[lang] = instance
+            logger.info("PaddleOCR engine initialised for language: %s", paddle_lang)
             return _ocr_instances[lang]
     except Exception as exc:
-        paddle_exc = exc
-        logger.info("PaddleOCR not available (%s), checking for EasyOCR fallback...", exc)
-
-    # Resilient fallback: EasyOCR
-    try:
-        import easyocr
-        with _lock:
-            if lang in _ocr_instances:
-                return _ocr_instances[lang]
-
-            easy_langs = ["en"]
-            if lang in ("hi", "devanagari"):
-                easy_langs = ["hi", "en"]
-            reader = easyocr.Reader(easy_langs, gpu=False)
-            instance = ("easyocr", reader)
-            _ocr_instances[lang] = instance
-            logger.info("Using EasyOCR engine fallback (langs=%s)", easy_langs)
-            return _ocr_instances[lang]
-    except Exception as easy_exc:
-        logger.exception("OCR model initialisation failed for both PaddleOCR and EasyOCR")
+        logger.exception("PaddleOCR model initialisation failed")
         raise OCRModelInitError(
-            f"MODEL_INIT_FAILED: PaddleOCR failed ({paddle_exc}) and EasyOCR failed ({easy_exc})"
-        ) from easy_exc
+            f"MODEL_INIT_FAILED: PaddleOCR failed to initialise ({exc})"
+        ) from exc
 
 
 def _call_paddleocr(ocr_instance, image: np.ndarray):
-    """Execute OCR inference on an image array."""
-    # Check if instance is the EasyOCR fallback adapter
-    if isinstance(ocr_instance, tuple) and len(ocr_instance) == 2 and ocr_instance[0] == "easyocr":
-        reader = ocr_instance[1]
-        raw_results = reader.readtext(image)
-        # Convert easyocr output format: (bbox, text, conf)
-        # into classic PaddleOCR list format: [[[bbox], (text, conf)], ...]
-        paddle_fmt = []
-        for item in raw_results:
-            if len(item) >= 3:
-                bbox, text, conf = item[0], item[1], item[2]
-                paddle_fmt.append([bbox, (text, float(conf))])
-        return [paddle_fmt]
-
+    """Execute PaddleOCR inference on an image array."""
     try:
         return ocr_instance.ocr(image, cls=True)
     except TypeError:

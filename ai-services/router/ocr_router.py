@@ -21,6 +21,7 @@ from ocr.extractors import (
     extract_aadhaar, extract_driving_licence, extract_pan, extract_voter_id, extract_passport,
 )
 from preprocessing import preprocess
+from preprocessing.preprocessor import _load_image
 from schemas.response import (
     BoundingBox, DocumentMetadata, ExtractedData, FieldValue,
     LayoutCoordinates, MRZChecksums, MRZData, MRZFields,
@@ -124,7 +125,11 @@ async def extract_document(
 
     # ── Step 3: Full-image OCR ────────────────────────────────────────────────
     try:
-        ocr_regions = run_ocr(img)
+        raw_ocr_regions = run_ocr(_load_image(image_bytes))
+        if len(raw_ocr_regions) >= 4 and sum(r.confidence for r in raw_ocr_regions) / len(raw_ocr_regions) >= 0.85:
+            ocr_regions = raw_ocr_regions
+        else:
+            ocr_regions = run_ocr(img)
     except Exception as exc:
         logger.warning(f"OCR failed: {exc}")
         ocr_regions = []
@@ -152,12 +157,21 @@ async def extract_document(
 
     # ── Step 5: MRZ extraction (passports and MRZ-bearing ID cards) ──────────
     mrz_data: MRZData | None = None
+    mrz_result = None
     if "mrz" in regions_map:
         mrz_crop = crop_region(img, regions_map["mrz"], pad_ratio=0.0)
         try:
             mrz_result = extract_mrz(mrz_crop)
         except Exception:
             mrz_result = None
+
+    if mrz_result is None and ocr_regions:
+        from ocr.mrz.parser import parse_mrz
+        from ocr.mrz.travel_mrz import parse_travel_mrz
+        try:
+            mrz_result = parse_mrz(ocr_regions) or parse_travel_mrz(ocr_regions)
+        except Exception as exc:
+            logger.debug("Full-image MRZ fallback error: %s", exc)
 
         if mrz_result is not None:
             if hasattr(mrz_result, "passport_number"):

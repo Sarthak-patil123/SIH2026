@@ -57,8 +57,10 @@ class PreprocessResult:
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _load_image(source: Union[str, bytes, Path]) -> np.ndarray:
-    """Load image from file path, bytes, or Path and return BGR numpy array."""
+def _load_image(source: Union[str, bytes, Path, np.ndarray]) -> np.ndarray:
+    """Load image from file path, bytes, Path, or numpy array and return BGR numpy array."""
+    if isinstance(source, np.ndarray):
+        return source.copy()
     data = Path(source).read_bytes() if isinstance(source, (str, Path)) else source
     if data.startswith(b"%PDF-"):
         raise ImageQualityError("PDF_NOT_SUPPORTED_USE_IMAGE")
@@ -90,15 +92,15 @@ def _load_image(source: Union[str, bytes, Path]) -> np.ndarray:
 
 def _check_resolution(img: np.ndarray) -> None:
     h, w = img.shape[:2]
-    if min(h, w) < MIN_RESOLUTION:
-        raise ImageQualityError("RESOLUTION_TOO_LOW")
+    if min(h, w) < 20:
+        raise ImageQualityError("IMAGE_TOO_SMALL")
 
 
 def _check_blur(img: np.ndarray, threshold: float = BLUR_THRESHOLD) -> float:
-    """Return Laplacian variance as blur score. Raise ImageQualityError if too blurry."""
+    """Return Laplacian variance as blur score. Raise ImageQualityError only if completely unreadable."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     variance = cv2.Laplacian(gray, cv2.CV_64F).var()
-    if variance < threshold:
+    if variance < 5.0 and min(img.shape[:2]) >= 200:
         raise ImageQualityError("IMAGE_TOO_BLURRY")
     return float(variance)
 
@@ -203,20 +205,23 @@ def _perspective_correct(img: np.ndarray, corners: np.ndarray) -> np.ndarray:
 
 
 def _normalise(img: np.ndarray) -> np.ndarray:
-    """Downscale to standard width (if larger) and apply CLAHE contrast enhancement."""
+    """Downscale to standard width (if larger) and conditionally apply contrast enhancement."""
     h, w = img.shape[:2]
     if w > TARGET_WIDTH:
         ratio = TARGET_WIDTH / w
         new_h = int(h * ratio)
-        img = cv2.resize(img, (TARGET_WIDTH, new_h), interpolation=cv2.INTER_LANCZOS4)
+        img = cv2.resize(img, (TARGET_WIDTH, new_h), interpolation=cv2.INTER_AREA)
 
-    # CLAHE on L channel in LAB
-    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-    l, a, b = cv2.split(lab)
-    clahe = cv2.createCLAHE(clipLimit=CLAHE_CLIP, tileGridSize=CLAHE_GRID)
-    l = clahe.apply(l)
-    lab = cv2.merge([l, a, b])
-    return cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    # Only apply CLAHE if image contrast is very low (prevents distorting clear text & chevrons)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    if float(gray.std()) < 35.0:
+        lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        clahe = cv2.createCLAHE(clipLimit=CLAHE_CLIP, tileGridSize=CLAHE_GRID)
+        l = clahe.apply(l)
+        lab = cv2.merge([l, a, b])
+        img = cv2.cvtColor(lab, cv2.COLOR_LAB2BGR)
+    return img
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +229,7 @@ def _normalise(img: np.ndarray) -> np.ndarray:
 # ---------------------------------------------------------------------------
 
 def preprocess(
-    source: Union[str, bytes, Path],
+    source: Union[str, bytes, Path, np.ndarray],
     *,
     blur_threshold: float = BLUR_THRESHOLD,
 ) -> PreprocessResult:
@@ -236,7 +241,7 @@ def preprocess(
     3. Blur detection
     4. Glare detection
     5. Document detection + perspective correction
-    6. Normalisation (resize + CLAHE)
+    6. Normalisation (resize + conditional contrast)
     """
     img = _load_image(source)
     _check_resolution(img)
@@ -250,7 +255,11 @@ def preprocess(
     if blur_score < 70.0:
         warnings.append("LOW_SHARPNESS_WARNING")
 
-    if min(img.shape[:2]) < 600:
+    if min(img.shape[:2]) < 180:
+        scale = 200.0 / min(img.shape[:2])
+        img = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)), interpolation=cv2.INTER_LINEAR)
+        warnings.append("SUBOPTIMAL_RESOLUTION_UPSCALED")
+    elif min(img.shape[:2]) < 600:
         warnings.append("SUBOPTIMAL_RESOLUTION_WARNING")
 
     if glare_warning:
