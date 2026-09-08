@@ -1,0 +1,156 @@
+{
+  "image": "sample_04_bangladesh_biopage.jpg",
+  "doc_type": "passport",
+  "status": "ok",
+  "elapsed_ms": 25590.8,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "passport",
+    "subtype": null,
+    "country": null,
+    "status": "success",
+    "aggregate_confidence": 0.51,
+    "extracted_fields": {
+      "passport_number": {
+        "value": "P",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "surname": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "given_names": {
+        "value": "Zleat",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "nationality": {
+        "value": "Ierly 7& / Personal No",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "country_code": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": "ITT 78",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "sex": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "expiry_date": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "personal_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "place_of_birth": {
+        "value": "M",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_issue": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "place_of_issue": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [
+        "MRZ_NOT_DETECTED"
+      ],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:1120.80",
+      "GLARE_DETECTED"
+    ],
+    "raw_ocr_count": 43
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "passport",
+    "fields": {
+      "passport_number": "P",
+      "given_names": "Zleat",
+      "nationality": "Ierly 7& / Personal No",
+      "date_of_birth": "ITT 78",
+      "place_of_birth": "M"
+    },
+    "mrz": null,
+    "validation": {
+      "confidence": 0.263,
+      "errors": [
+        "MRZ_NOT_DETECTED"
+      ],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:1120.80",
+      "GLARE_DETECTED"
+    ],
+    "layout_regions": [
+      "text",
+      "passport_number",
+      "photo"
+    ],
+    "raw_ocr_count": 43,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "passport_number": "string",
+        "surname": "string",
+        "given_names": "string",
+        "nationality": "string",
+        "date_of_birth": "YYYY-MM-DD",
+        "place_of_birth": "string",
+        "sex": "M | F | X",
+        "date_of_issue": "YYYY-MM-DD",
+        "place_of_issue": "string",
+        "expiry_date": "YYYY-MM-DD"
+      },
+      "prompt_template": "Extract passport identity fields from OCR tokens into JSON schema.",
+      "result": {
+        "passport_number": "P",
+        "given_names": "Zleat",
+        "nationality": "Ierly 7& / Personal No",
+        "date_of_birth": "ITT 78",
+        "place_of_birth": "M"
+      }
+    }
+  }
+}

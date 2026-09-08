@@ -1,0 +1,113 @@
+{
+  "image": "sample_01_aadhaar_specimen_2024.png",
+  "doc_type": "aadhaar",
+  "status": "ok",
+  "elapsed_ms": 17454.1,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "national_id",
+    "subtype": "aadhaar",
+    "country": "IND",
+    "status": "success",
+    "aggregate_confidence": 0.425,
+    "extracted_fields": {
+      "aadhaar_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "name": {
+        "value": "HRT",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "gender": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "address": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "pincode": {
+        "value": "396117",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "mobile_last4": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "vid": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "BLUR_SCORE:1209.49",
+      "GLARE_DETECTED",
+      "PERSPECTIVE_CORRECTION_DISCARDED"
+    ],
+    "raw_ocr_count": 38
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "national_id",
+    "subtype": "aadhaar",
+    "country": "IND",
+    "fields": {
+      "name": "HRT",
+      "pincode": "396117",
+      "checksum_valid": false,
+      "aadhaar_masked": false
+    },
+    "quality_warnings": [
+      "BLUR_SCORE:1209.49",
+      "GLARE_DETECTED",
+      "PERSPECTIVE_CORRECTION_DISCARDED"
+    ],
+    "raw_ocr_count": 38,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "aadhaar_number": "12-digit UID",
+        "name": "string",
+        "date_of_birth": "DD/MM/YYYY or YYYY",
+        "gender": "MALE | FEMALE | TRANSGENDER",
+        "address": "string",
+        "pincode": "6-digit code"
+      },
+      "prompt_template": "Extract AADHAAR fields from OCR tokens into JSON format.",
+      "result": {
+        "name": "HRT",
+        "pincode": "396117",
+        "checksum_valid": false,
+        "aadhaar_masked": false
+      }
+    }
+  }
+}

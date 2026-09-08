@@ -1,0 +1,105 @@
+{
+  "image": "sample_01_monroe_birth_cert.jpg",
+  "doc_type": "dob_proof",
+  "status": "ok",
+  "elapsed_ms": 8813.5,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "dob_proof",
+    "subtype": null,
+    "country": null,
+    "status": "success",
+    "aggregate_confidence": 0.0,
+    "extracted_fields": {
+      "name": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "father_name": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "mother_name": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "registration_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "place_of_birth": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "issuing_authority": {
+        "value": "oatetsi0f correctiomi$",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "issue_date": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "BLUR_SCORE:899.45"
+    ],
+    "raw_ocr_count": 128
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "dob_proof",
+    "fields": {
+      "issuing_authority": "oatetsi0f correctiomi$"
+    },
+    "quality_warnings": [
+      "BLUR_SCORE:899.45"
+    ],
+    "raw_ocr_count": 128,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "document_subtype": "Birth Certificate | 10th Marks Sheet | School Leaving Certificate",
+        "name": "string",
+        "date_of_birth": "DD/MM/YYYY",
+        "date_of_birth_words": "string",
+        "father_name": "string",
+        "mother_name": "string",
+        "registration_number": "string",
+        "place_of_birth": "string",
+        "issuing_authority": "string",
+        "issue_date": "DD/MM/YYYY"
+      },
+      "prompt_template": "Extract Birth / DOB proof fields from semi-structured certificate tokens.",
+      "result": {
+        "issuing_authority": "oatetsi0f correctiomi$"
+      }
+    }
+  }
+}

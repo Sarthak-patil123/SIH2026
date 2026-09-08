@@ -1,0 +1,130 @@
+{
+  "image": "sample_02_india_tourist_visa_2007.jpg",
+  "doc_type": "visa",
+  "status": "ok",
+  "elapsed_ms": 4721.5,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "visa",
+    "subtype": null,
+    "country": null,
+    "status": "success",
+    "aggregate_confidence": 0.2833,
+    "extracted_fields": {
+      "document_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "passport_number": {
+        "value": "faria 5CTBa ISpecial Endorsement",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "surname": {
+        "value": "TOMLINSON JR",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "given_names": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "nationality": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "visa_type": {
+        "value": "T",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "entries": {
+        "value": "MULTIPLE",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "issue_date": {
+        "value": "Fari 3 777 Io; of Entries",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "expiry_date": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "issuing_post": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:10694.30",
+      "GLARE_DETECTED"
+    ],
+    "raw_ocr_count": 34
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "visa",
+    "fields": {
+      "passport_number": "faria 5CTBa ISpecial Endorsement",
+      "surname": "TOMLINSON JR",
+      "entries": "MULTIPLE",
+      "visa_type": "T",
+      "issue_date": "Fari 3 777 Io; of Entries"
+    },
+    "mrz": null,
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:10694.30",
+      "GLARE_DETECTED"
+    ],
+    "raw_ocr_count": 34,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "visa_number": "string",
+        "passport_number": "string",
+        "surname": "string",
+        "given_names": "string",
+        "nationality": "string",
+        "visa_type": "string",
+        "entries": "M | S | D",
+        "issue_date": "YYYY-MM-DD",
+        "expiry_date": "YYYY-MM-DD",
+        "issuing_post": "string"
+      },
+      "prompt_template": "Extract Visa sticker fields from OCR tokens into JSON format.",
+      "result": {
+        "passport_number": "faria 5CTBa ISpecial Endorsement",
+        "surname": "TOMLINSON JR",
+        "entries": "MULTIPLE",
+        "visa_type": "T",
+        "issue_date": "Fari 3 777 Io; of Entries"
+      }
+    }
+  }
+}

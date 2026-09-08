@@ -1,0 +1,132 @@
+{
+  "image": "sample_04_oci_visa_stamp.jpg",
+  "doc_type": "visa",
+  "status": "ok",
+  "elapsed_ms": 8733.9,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "visa",
+    "subtype": null,
+    "country": null,
+    "status": "success",
+    "aggregate_confidence": 0.2833,
+    "extracted_fields": {
+      "document_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "passport_number": {
+        "value": "0rv,4.iv7 / Special Endorsement",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "surname": {
+        "value": "Hz",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "given_names": {
+        "value": "Hz",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "nationality": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "visa_type": {
+        "value": "48",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "entries": {
+        "value": "'U'",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "issue_date": {
+        "value": "48",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "expiry_date": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "issuing_post": {
+        "value": "GN *Aad eeN & ArleR / Signature of issuing Authority",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:166.74"
+    ],
+    "raw_ocr_count": 40
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "visa",
+    "fields": {
+      "passport_number": "0rv,4.iv7 / Special Endorsement",
+      "surname": "Hz",
+      "given_names": "Hz",
+      "entries": "'U'",
+      "visa_type": "48",
+      "issue_date": "48",
+      "issuing_post": "GN *Aad eeN & ArleR / Signature of issuing Authority"
+    },
+    "mrz": null,
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:166.74"
+    ],
+    "raw_ocr_count": 40,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "visa_number": "string",
+        "passport_number": "string",
+        "surname": "string",
+        "given_names": "string",
+        "nationality": "string",
+        "visa_type": "string",
+        "entries": "M | S | D",
+        "issue_date": "YYYY-MM-DD",
+        "expiry_date": "YYYY-MM-DD",
+        "issuing_post": "string"
+      },
+      "prompt_template": "Extract Visa sticker fields from OCR tokens into JSON format.",
+      "result": {
+        "passport_number": "0rv,4.iv7 / Special Endorsement",
+        "surname": "Hz",
+        "given_names": "Hz",
+        "entries": "'U'",
+        "visa_type": "48",
+        "issue_date": "48",
+        "issuing_post": "GN *Aad eeN & ArleR / Signature of issuing Authority"
+      }
+    }
+  }
+}

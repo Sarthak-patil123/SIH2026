@@ -1,0 +1,81 @@
+{
+  "image": "sample_01_pan_card_specimen.jpg",
+  "doc_type": "pan",
+  "status": "ok",
+  "elapsed_ms": 15600.9,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "national_id",
+    "subtype": "pan",
+    "country": "IND",
+    "status": "success",
+    "aggregate_confidence": 0.85,
+    "extracted_fields": {
+      "pan_number": {
+        "value": "AAAAA8888A",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "name": {
+        "value": "TRER",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "father_name": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:237.34"
+    ],
+    "raw_ocr_count": 15
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "national_id",
+    "subtype": "pan",
+    "country": "IND",
+    "fields": {
+      "pan_number": "AAAAA8888A",
+      "name": "TRER"
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:237.34"
+    ],
+    "raw_ocr_count": 15,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "pan_number": "10-character alphanumeric",
+        "name": "string",
+        "father_name": "string",
+        "date_of_birth": "DD/MM/YYYY"
+      },
+      "prompt_template": "Extract PAN fields from OCR tokens into JSON format.",
+      "result": {
+        "pan_number": "AAAAA8888A",
+        "name": "TRER"
+      }
+    }
+  }
+}

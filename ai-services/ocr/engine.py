@@ -60,51 +60,71 @@ _LANG_MAP = {
 
 
 def _get_ocr(lang: str = "en"):
-    """Get or create a cached PaddleOCR instance.
+    """Get or create a cached OCR engine instance (PaddleOCR primary, EasyOCR fallback).
 
     Raises:
-        OCRModelInitError: if PaddleOCR model initialisation fails. A failed
-            instance is never cached, so a subsequent call can retry.
+        OCRModelInitError: if both PaddleOCR and EasyOCR initialisation fail.
     """
     if lang in _ocr_instances:
         return _ocr_instances[lang]
 
+    # Primary engine: PaddleOCR
+    paddle_exc = None
     try:
         from paddleocr import PaddleOCR
-    except Exception as exc:  # pragma: no cover - import failure is environmental
-        logger.exception("Failed to import paddleocr")
-        raise OCRModelInitError(f"MODEL_INIT_FAILED: paddleocr import failed: {exc}") from exc
+        with _lock:
+            if lang in _ocr_instances:
+                return _ocr_instances[lang]
 
-    with _lock:
-        # Re-check under the lock — another thread may have built it.
-        if lang in _ocr_instances:
-            return _ocr_instances[lang]
-
-        paddle_lang = _LANG_MAP.get(lang, "en")
-        try:
-            instance = PaddleOCR(use_angle_cls=True, lang=paddle_lang)
-        except TypeError:
+            paddle_lang = _LANG_MAP.get(lang, "en")
             try:
+                instance = PaddleOCR(use_angle_cls=True, lang=paddle_lang)
+            except TypeError:
                 instance = PaddleOCR(lang=paddle_lang)
-            except Exception as exc:
-                logger.exception("PaddleOCR model initialisation failed (lang=%s)", lang)
-                raise OCRModelInitError(
-                    f"MODEL_INIT_FAILED: could not initialise PaddleOCR models for lang={lang}: {exc}"
-                ) from exc
-        except Exception as exc:
-            # Do NOT cache — leave the slot empty so a later call can retry.
-            logger.exception("PaddleOCR model initialisation failed (lang=%s)", lang)
-            raise OCRModelInitError(
-                f"MODEL_INIT_FAILED: could not initialise PaddleOCR models for lang={lang}: {exc}"
-            ) from exc
 
-        _ocr_instances[lang] = instance
+            _ocr_instances[lang] = instance
+            return _ocr_instances[lang]
+    except Exception as exc:
+        paddle_exc = exc
+        logger.info("PaddleOCR not available (%s), checking for EasyOCR fallback...", exc)
 
-    return _ocr_instances[lang]
+    # Resilient fallback: EasyOCR
+    try:
+        import easyocr
+        with _lock:
+            if lang in _ocr_instances:
+                return _ocr_instances[lang]
+
+            easy_langs = ["en"]
+            if lang in ("hi", "devanagari"):
+                easy_langs = ["hi", "en"]
+            reader = easyocr.Reader(easy_langs, gpu=False)
+            instance = ("easyocr", reader)
+            _ocr_instances[lang] = instance
+            logger.info("Using EasyOCR engine fallback (langs=%s)", easy_langs)
+            return _ocr_instances[lang]
+    except Exception as easy_exc:
+        logger.exception("OCR model initialisation failed for both PaddleOCR and EasyOCR")
+        raise OCRModelInitError(
+            f"MODEL_INIT_FAILED: PaddleOCR failed ({paddle_exc}) and EasyOCR failed ({easy_exc})"
+        ) from easy_exc
 
 
 def _call_paddleocr(ocr_instance, image: np.ndarray):
     """Execute OCR inference on an image array."""
+    # Check if instance is the EasyOCR fallback adapter
+    if isinstance(ocr_instance, tuple) and len(ocr_instance) == 2 and ocr_instance[0] == "easyocr":
+        reader = ocr_instance[1]
+        raw_results = reader.readtext(image)
+        # Convert easyocr output format: (bbox, text, conf)
+        # into classic PaddleOCR list format: [[[bbox], (text, conf)], ...]
+        paddle_fmt = []
+        for item in raw_results:
+            if len(item) >= 3:
+                bbox, text, conf = item[0], item[1], item[2]
+                paddle_fmt.append([bbox, (text, float(conf))])
+        return [paddle_fmt]
+
     try:
         return ocr_instance.ocr(image, cls=True)
     except TypeError:

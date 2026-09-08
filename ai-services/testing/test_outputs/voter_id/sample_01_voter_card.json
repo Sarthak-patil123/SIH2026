@@ -1,0 +1,118 @@
+{
+  "image": "sample_01_voter_card.jpg",
+  "doc_type": "voter_id",
+  "status": "ok",
+  "elapsed_ms": 11234.1,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "national_id",
+    "subtype": "voter_id",
+    "country": "IND",
+    "status": "success",
+    "aggregate_confidence": 0.425,
+    "extracted_fields": {
+      "epic_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "name": {
+        "value": "aelid7id",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "relation_name": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "gender": {
+        "value": "MALE",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "part_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "serial_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "constituency": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "district": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "state": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:112.07"
+    ],
+    "raw_ocr_count": 14
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "national_id",
+    "subtype": "voter_id",
+    "country": "IND",
+    "fields": {
+      "name": "aelid7id",
+      "gender": "MALE"
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:112.07"
+    ],
+    "raw_ocr_count": 14,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "epic_number": "alphanumeric EPIC",
+        "name": "string",
+        "relation_name": "string",
+        "gender": "MALE | FEMALE",
+        "date_of_birth": "string"
+      },
+      "prompt_template": "Extract VOTER_ID fields from OCR tokens into JSON format.",
+      "result": {
+        "name": "aelid7id",
+        "gender": "MALE"
+      }
+    }
+  }
+}
