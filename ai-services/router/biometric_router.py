@@ -78,6 +78,105 @@ def _img_to_b64(img: np.ndarray, quality: int = 85) -> str:
     return base64.b64encode(buf).decode()
 
 
+@router.post("/compare-faces")
+async def compare_two_faces(
+    image1: UploadFile = File(..., description="First face image or document"),
+    image2: UploadFile = File(..., description="Second face image or selfie"),
+) -> dict:
+    """Direct 1:1 face comparison endpoint. Accepts any two face images or document photos,
+    computes ArcFace embeddings, cosine similarity score, and returns match verdict with crops."""
+    img1_bytes = await image1.read()
+    img2_bytes = await image2.read()
+
+    from preprocessing.preprocessor import _load_image
+    img1 = _load_image(img1_bytes)
+    img2 = _load_image(img2_bytes)
+
+    # If image1 has a YOLO photo region (e.g. passport or ID document), crop it
+    try:
+        det1 = detect_fields(img1)
+        reg1 = build_regions(img1, det1)
+        face_crop1 = crop_region(img1, reg1["photo"], pad_ratio=0.05) if "photo" in reg1 else img1
+    except Exception:
+        face_crop1 = img1
+
+    # If image2 has a YOLO photo region, crop it
+    try:
+        det2 = detect_fields(img2)
+        reg2 = build_regions(img2, det2)
+        face_crop2 = crop_region(img2, reg2["photo"], pad_ratio=0.05) if "photo" in reg2 else img2
+    except Exception:
+        face_crop2 = img2
+
+    # Verify faces
+    try:
+        result = verify_faces(face_crop1, face_crop2)
+    except MultipleFacesError as e:
+        return {
+            "status": "FAILED",
+            "is_match": False,
+            "match_score": 0.0,
+            "similarity_percent": 0.0,
+            "decision_threshold": 0.65,
+            "error": "MULTIPLE_FACES_DETECTED",
+            "message": str(e),
+            "diagnostics": [f"MULTIPLE_FACES_DETECTED: {e}"],
+        }
+    except Exception as e:
+        logger.warning("verify_faces error: %s", e)
+        result = {
+            "status": "FAILED",
+            "is_match": False,
+            "match_score": 0.0,
+            "similarity_percent": 0.0,
+            "decision_threshold": 0.65,
+            "error": str(e),
+            "diagnostics": [str(e)],
+        }
+
+    # Generate face crops for UI display
+    doc_bbox = result.get("doc_face_bbox")
+    live_bbox = result.get("live_face_bbox")
+    crop1_b64 = ""
+    crop2_b64 = ""
+
+    if doc_bbox:
+        x1, y1, x2, y2 = [int(v) for v in doc_bbox]
+        h, w = face_crop1.shape[:2]
+        crop1 = face_crop1[max(0, y1):min(h, y2), max(0, x1):min(w, x2)]
+        if crop1.size > 0:
+            crop1_b64 = _img_to_b64(crop1)
+    if not crop1_b64 and face_crop1.size > 0:
+        crop1_b64 = _img_to_b64(face_crop1)
+
+    if live_bbox:
+        x1, y1, x2, y2 = [int(v) for v in live_bbox]
+        h, w = face_crop2.shape[:2]
+        crop2 = face_crop2[max(0, y1):min(h, y2), max(0, x1):min(w, x2)]
+        if crop2.size > 0:
+            crop2_b64 = _img_to_b64(crop2)
+    if not crop2_b64 and face_crop2.size > 0:
+        crop2_b64 = _img_to_b64(face_crop2)
+
+    score = float(result.get("match_score", 0.0))
+    is_match = bool(result.get("is_match") or result.get("status") == "VERIFIED")
+
+    return {
+        "status": "success",
+        "match_status": result.get("status", "REJECTED"),
+        "is_match": is_match,
+        "match_score": round(score, 4),
+        "similarity_percent": round(score * 100.0, 1),
+        "decision_threshold": result.get("decision_threshold", 0.65),
+        "face1_detected": result.get("doc_face_detected", False),
+        "face2_detected": result.get("live_face_detected", False),
+        "face1_crop_base64": crop1_b64,
+        "face2_crop_base64": crop2_b64,
+        "diagnostics": result.get("diagnostics", []),
+        "raw_result": result,
+    }
+
+
 @router.post("/passport-verify")
 async def verify_passport_with_live_photo(
     passport: UploadFile = File(..., description="Passport document image"),

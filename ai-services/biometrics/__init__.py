@@ -118,6 +118,7 @@ def verify_faces(doc_img: np.ndarray, live_img: np.ndarray) -> dict:
 
     return {
         **verdict,
+        "is_match": verdict.get("status") == "VERIFIED",
         "doc_face_detected": doc_face_detected,
         "doc_face_bbox": doc_face_bbox,
         "live_face_detected": live_face_detected,

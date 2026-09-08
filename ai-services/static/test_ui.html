@@ -509,6 +509,22 @@
       gap: 0.4rem;
     }
 
+    .score-bar-track {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+      margin: 0.8rem 0;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      transition: width 0.4s ease, background-color 0.4s ease;
+      border-radius: 999px;
+    }
+
     /* Tables */
     .data-table-wrapper {
       margin-top: 0.75rem;
@@ -667,7 +683,11 @@
     <div class="tabs-nav">
       <button class="tab-btn active" id="tab-nav-passport" onclick="switchMainTab('passport')">
         <span>🛂</span> Passport + Live Photo
-        <span class="tab-badge">Face Match</span>
+        <span class="tab-badge">Full Doc</span>
+      </button>
+      <button class="tab-btn" id="tab-nav-facematch" onclick="switchMainTab('facematch')">
+        <span>👤</span> 1:1 Face Match
+        <span class="tab-badge" style="background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald);">Similarity</span>
       </button>
       <button class="tab-btn" id="tab-nav-visa" onclick="switchMainTab('visa')">
         <span>✈️</span> Visa
@@ -696,6 +716,22 @@
           <p class="card-subtitle">
             Upload passport document image and external live selfie. Preprocesses both images, extracts passport photo via YOLO, performs ArcFace 1:1 facial verification, and extracts full structured passport data via PaddleOCR.
           </p>
+
+          <!-- 1-Click Quick Test Toolbar -->
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.9rem; margin-bottom: 0.6rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--accent-sky); text-transform:uppercase; letter-spacing:0.04em;">⚡ 1-Click Browser Quick Test</span>
+              <span style="font-size:0.7rem; color:var(--text-faint);">Instant automated verification</span>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button type="button" id="btn-quick-pass-match" onclick="loadPassportSample('match')" style="flex:1; min-width:180px; padding:0.5rem 0.75rem; background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.4); border-radius:var(--radius-sm); color:var(--accent-emerald); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                ✅ Quick Test Match (example1 + image.png)
+              </button>
+              <button type="button" id="btn-quick-pass-mismatch" onclick="loadPassportSample('mismatch')" style="flex:1; min-width:180px; padding:0.5rem 0.75rem; background:rgba(245, 158, 11, 0.15); border:1px solid rgba(245, 158, 11, 0.4); border-radius:var(--radius-sm); color:var(--accent-amber); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                📋 Quick Test Indian (passport1 + image.png)
+              </button>
+            </div>
+          </div>
 
           <div class="form-group">
             <label class="form-label">1. Passport Document Image</label>
@@ -797,6 +833,150 @@
                 <button class="btn-copy" onclick="copyJson('pass-json-box')">📋 Copy JSON</button>
               </div>
               <pre class="json-box" id="pass-json-box"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SECTION: 1:1 FACE VERIFICATION & SIMILARITY COMPARISON              -->
+    <!-- =================================================================== -->
+    <section id="tab-facematch" class="tab-content">
+      <div class="grid-2col">
+        <!-- Input Card -->
+        <div class="card">
+          <h2 class="card-title">1:1 Face Biometric Comparison</h2>
+          <p class="card-subtitle">
+            Insert any 2 images (passport photo, selfie, portrait, ID face, or webcam snap). The pipeline uses SCRFD for multi-scale face detection &amp; landmark alignment, then ArcFace (ResNet-100) extracts 512-D deep feature embeddings to compute cosine similarity score.
+          </p>
+
+          <!-- 1-Click Quick Test Toolbar -->
+          <div style="background: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.35); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.9rem; margin-bottom: 0.6rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--accent-emerald); text-transform:uppercase; letter-spacing:0.04em;">⚡ 1-Click Browser Quick Test</span>
+              <span style="font-size:0.7rem; color:var(--text-faint);">Instant automated verification</span>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button type="button" id="btn-quick-face-match" onclick="loadFaceSamplePair('match')" style="flex:1; min-width:180px; padding:0.5rem 0.75rem; background:rgba(16, 185, 129, 0.18); border:1px solid rgba(16, 185, 129, 0.45); border-radius:var(--radius-sm); color:var(--accent-emerald); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                ✅ Quick Test Match (97.5% • example1 + image.png)
+              </button>
+              <button type="button" id="btn-quick-face-mismatch" onclick="loadFaceSamplePair('mismatch')" style="flex:1; min-width:180px; padding:0.5rem 0.75rem; background:rgba(244, 63, 94, 0.18); border:1px solid rgba(244, 63, 94, 0.45); border-radius:var(--radius-sm); color:var(--accent-rose); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                ❌ Quick Test Mismatch (0.0% • passport1 + image.png)
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">1. Face Image 1 (Document Photo / Portrait)</label>
+            <div class="dropzone" id="face-img1-dropzone">
+              <input type="file" id="face-img1-file" accept="image/*">
+              <div class="dropzone-icon">👤</div>
+              <div class="dropzone-text">Upload Image 1</div>
+              <div class="dropzone-hint">Document photo, cropped face, or ID portrait</div>
+            </div>
+            <div class="preview-box" id="face-img1-preview"><img id="face-img1-preview-img"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">2. Face Image 2 (Live Photo / Selfie / Second Face)</label>
+            <div class="dropzone" id="face-img2-dropzone">
+              <input type="file" id="face-img2-file" accept="image/*">
+              <div class="dropzone-icon">🤳</div>
+              <div class="dropzone-text">Upload Image 2</div>
+              <div class="dropzone-hint">Live selfie or second face photo to compare</div>
+            </div>
+            <div class="preview-box" id="face-img2-preview"><img id="face-img2-preview-img"></div>
+          </div>
+
+          <button class="btn-primary" id="face-compare-btn" onclick="runFaceMatchComparison()">
+            <span>⚡ Compare Faces &amp; Get Similarity Score</span>
+          </button>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="card">
+          <div class="card-title">
+            <span>Face Similarity &amp; Verification Output</span>
+            <span id="face-status-badge" class="badge badge-info">Awaiting Images</span>
+          </div>
+          <p class="card-subtitle">ArcFace cosine similarity score, decision verdict, and aligned face crops.</p>
+
+          <div id="face-empty" class="results-empty">
+            <div class="results-empty-icon">👤</div>
+            <p>Select or drag-and-drop two images and click "Compare Faces" to see the similarity score and biometric match verdict.</p>
+          </div>
+
+          <div id="face-results" class="results-content">
+            <!-- Hero Match Box -->
+            <div class="face-comparison-box" style="text-align: center; padding: 1.5rem 1.25rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.8rem;">
+                <span style="font-size:0.8rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Biometric Decision Verdict</span>
+                <span id="face-hero-verdict" class="badge badge-success" style="font-size:0.85rem; padding:0.35rem 0.9rem;">MATCH (VERIFIED)</span>
+              </div>
+
+              <div style="margin: 0.8rem 0;">
+                <div style="font-size: 0.8rem; color: var(--text-faint); text-transform:uppercase; letter-spacing: 0.05em;">Cosine Similarity Score</div>
+                <div id="face-hero-score" style="font-size: 3.4rem; font-weight: 800; font-family: var(--font-mono); line-height: 1.1; margin: 0.3rem 0; color: var(--accent-emerald);">0.0%</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Verification Threshold: <strong>&ge; 65.0% (0.65)</strong></div>
+              </div>
+
+              <div class="score-bar-track">
+                <div id="face-score-bar-fill" class="score-bar-fill" style="width: 0%; background: var(--accent-emerald);"></div>
+              </div>
+
+              <!-- Side by Side Face Crops -->
+              <div class="face-pair" style="margin-top: 1.25rem;">
+                <div class="face-item" id="face1-crop-box">
+                  <img id="face1-crop-img" class="face-avatar" alt="Face 1 Detected Crop">
+                  <div class="face-label">Image 1 Aligned Face</div>
+                </div>
+
+                <div class="face-match-badge-wrapper">
+                  <div style="width:36px; height:36px; border-radius:50%; background:rgba(56, 189, 248, 0.15); display:flex; align-items:center; justify-content:center; border:1px solid rgba(56, 189, 248, 0.3); font-size:1.1rem;">⚡</div>
+                  <span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">ArcFace 512-D</span>
+                </div>
+
+                <div class="face-item" id="face2-crop-box">
+                  <img id="face2-crop-img" class="face-avatar" alt="Face 2 Detected Crop">
+                  <div class="face-label">Image 2 Aligned Face</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Metrics Grid -->
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Raw Score</div>
+                <div class="metric-value" id="face-metric-score" style="font-size:1.1rem">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Threshold</div>
+                <div class="metric-value" id="face-metric-threshold" style="font-size:1.1rem">0.65</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Face 1 Status</div>
+                <div class="metric-value" id="face-metric-f1" style="font-size:0.95rem">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Face 2 Status</div>
+                <div class="metric-value" id="face-metric-f2" style="font-size:0.95rem">-</div>
+              </div>
+            </div>
+
+            <!-- Diagnostics -->
+            <div style="margin-top: 1rem; background: var(--bg-surface); padding: 0.85rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase;">Diagnostics &amp; Model Info</div>
+              <ul id="face-diagnostics-list" style="padding-left: 1.2rem; margin: 0;"></ul>
+            </div>
+
+            <!-- JSON Output with Copy -->
+            <div class="json-wrapper">
+              <div class="json-header">
+                <span class="form-label" style="margin:0">Full API JSON Response</span>
+                <button class="btn-copy" onclick="copyJson('face-json-box')">📋 Copy JSON</button>
+              </div>
+              <pre class="json-box" id="face-json-box"></pre>
             </div>
           </div>
         </div>
@@ -1236,6 +1416,8 @@
 
     wireDropzone('pass-doc-file', 'pass-doc-preview', 'pass-doc-preview-img');
     wireDropzone('pass-live-file', 'pass-live-preview', 'pass-live-preview-img');
+    wireDropzone('face-img1-file', 'face-img1-preview', 'face-img1-preview-img');
+    wireDropzone('face-img2-file', 'face-img2-preview', 'face-img2-preview-img');
     wireDropzone('visa-file', 'visa-preview', 'visa-preview-img');
     wireDropzone('dl-file', 'dl-preview', 'dl-preview-img');
     wireDropzone('nid-file', 'nid-preview', 'nid-preview-img');
@@ -1347,6 +1529,194 @@
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<span>Verify Passport & Match Face</span>';
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 1B. 1:1 FACE MATCH COMPARISON (ArcFace Direct)
+    // -------------------------------------------------------------------------
+    async function runFaceMatchComparison() {
+      const img1File = document.getElementById('face-img1-file').files[0];
+      const img2File = document.getElementById('face-img2-file').files[0];
+
+      if (!img1File) return alert('Please upload Face Image 1.');
+      if (!img2File) return alert('Please upload Face Image 2.');
+
+      const btn = document.getElementById('face-compare-btn');
+      const badge = document.getElementById('face-status-badge');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Comparing Faces (ArcFace)...';
+      badge.className = 'badge badge-info';
+      badge.innerText = 'Processing';
+
+      const formData = new FormData();
+      formData.append('image1', img1File);
+      formData.append('image2', img2File);
+
+      try {
+        const res = await fetch('/biometrics/compare-faces', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || data.detail || JSON.stringify(data));
+
+        document.getElementById('face-empty').style.display = 'none';
+        document.getElementById('face-results').style.display = 'block';
+
+        const isMatch = data.is_match === true || data.match_status === 'VERIFIED';
+        const verdictBadge = document.getElementById('face-hero-verdict');
+        verdictBadge.className = isMatch ? 'badge badge-success' : 'badge badge-danger';
+        verdictBadge.innerText = isMatch ? 'MATCH (VERIFIED)' : (data.match_status || 'NO MATCH');
+
+        const scorePct = Number(data.similarity_percent ?? ((data.match_score || 0) * 100)).toFixed(1);
+        const heroScore = document.getElementById('face-hero-score');
+        heroScore.innerText = `${scorePct}%`;
+        heroScore.style.color = isMatch ? 'var(--accent-emerald)' : 'var(--accent-rose)';
+
+        const bar = document.getElementById('face-score-bar-fill');
+        if (bar) {
+          bar.style.width = `${Math.min(Math.max(scorePct, 0), 100)}%`;
+          bar.style.background = isMatch ? 'var(--accent-emerald)' : 'var(--accent-rose)';
+        }
+
+        // Side-by-side Aligned Face Crops
+        if (data.face1_crop_base64) {
+          document.getElementById('face1-crop-img').src = `data:image/jpeg;base64,${data.face1_crop_base64}`;
+        }
+        if (data.face2_crop_base64) {
+          document.getElementById('face2-crop-img').src = `data:image/jpeg;base64,${data.face2_crop_base64}`;
+        }
+
+        // Metrics Grid
+        document.getElementById('face-metric-score').innerText = data.match_score != null ? data.match_score : '-';
+        document.getElementById('face-metric-threshold').innerText = data.decision_threshold != null ? data.decision_threshold : '0.65';
+        document.getElementById('face-metric-f1').innerText = data.face1_detected ? '✅ Detected' : '❌ Not Found';
+        document.getElementById('face-metric-f2').innerText = data.face2_detected ? '✅ Detected' : '❌ Not Found';
+
+        // Diagnostics
+        const diagList = document.getElementById('face-diagnostics-list');
+        diagList.innerHTML = '';
+        if (data.diagnostics && data.diagnostics.length > 0) {
+          data.diagnostics.forEach(d => {
+            diagList.innerHTML += `<li style="color:var(--accent-amber); font-size:0.8rem">${d}</li>`;
+          });
+        } else {
+          diagList.innerHTML = `<li style="color:var(--accent-emerald); font-size:0.8rem">✅ Both faces detected and 512-D ArcFace embeddings matched successfully.</li>`;
+        }
+
+        // Full JSON
+        document.getElementById('face-json-box').innerText = JSON.stringify(data, null, 2);
+
+        badge.className = isMatch ? 'badge badge-success' : 'badge badge-warning';
+        badge.innerText = isMatch ? 'Match Confirmed' : 'Different Faces';
+
+      } catch (err) {
+        badge.className = 'badge badge-danger';
+        badge.innerText = 'Error';
+        alert('Face Comparison Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>⚡ Compare Faces &amp; Get Similarity Score</span>';
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 1C. 1-CLICK QUICK TEST LOADERS
+    // -------------------------------------------------------------------------
+    async function loadFaceSamplePair(mode) {
+      const isMatch = mode === 'match';
+      const file1Name = isMatch ? 'example1.jpg' : 'passport1.jpg';
+      const file2Name = 'image.png';
+
+      const btn = isMatch ? document.getElementById('btn-quick-face-match') : document.getElementById('btn-quick-face-mismatch');
+      const origText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> Running Quick Test...';
+      btn.disabled = true;
+
+      try {
+        const [res1, res2] = await Promise.all([
+          fetch(`/test/samples/${file1Name}`),
+          fetch(`/test/samples/${file2Name}`)
+        ]);
+        if (!res1.ok || !res2.ok) throw new Error('Could not fetch test sample images from /test/samples/');
+
+        const blob1 = await res1.blob();
+        const blob2 = await res2.blob();
+
+        const file1 = new File([blob1], file1Name, { type: 'image/jpeg' });
+        const file2 = new File([blob2], file2Name, { type: 'image/png' });
+
+        const dt1 = new DataTransfer();
+        dt1.items.add(file1);
+        document.getElementById('face-img1-file').files = dt1.files;
+
+        const dt2 = new DataTransfer();
+        dt2.items.add(file2);
+        document.getElementById('face-img2-file').files = dt2.files;
+
+        const img1El = document.getElementById('face-img1-preview-img');
+        img1El.src = URL.createObjectURL(blob1);
+        document.getElementById('face-img1-preview').style.display = 'block';
+
+        const img2El = document.getElementById('face-img2-preview-img');
+        img2El.src = URL.createObjectURL(blob2);
+        document.getElementById('face-img2-preview').style.display = 'block';
+
+        await runFaceMatchComparison();
+      } catch (err) {
+        alert('Quick Test Error: ' + err.message);
+      } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+      }
+    }
+
+    async function loadPassportSample(mode) {
+      const isMatch = mode === 'match';
+      const docName = isMatch ? 'example1.jpg' : 'passport1.jpg';
+      const liveName = 'image.png';
+
+      const btn = isMatch ? document.getElementById('btn-quick-pass-match') : document.getElementById('btn-quick-pass-mismatch');
+      const origText = btn.innerHTML;
+      btn.innerHTML = '<span class="spinner"></span> Running Passport Test...';
+      btn.disabled = true;
+
+      try {
+        const [res1, res2] = await Promise.all([
+          fetch(`/test/samples/${docName}`),
+          fetch(`/test/samples/${liveName}`)
+        ]);
+        if (!res1.ok || !res2.ok) throw new Error('Could not fetch sample images from /test/samples/');
+
+        const blob1 = await res1.blob();
+        const blob2 = await res2.blob();
+
+        const file1 = new File([blob1], docName, { type: 'image/jpeg' });
+        const file2 = new File([blob2], liveName, { type: 'image/png' });
+
+        const dt1 = new DataTransfer();
+        dt1.items.add(file1);
+        document.getElementById('pass-doc-file').files = dt1.files;
+
+        const dt2 = new DataTransfer();
+        dt2.items.add(file2);
+        document.getElementById('pass-live-file').files = dt2.files;
+
+        const img1El = document.getElementById('pass-doc-preview-img');
+        img1El.src = URL.createObjectURL(blob1);
+        document.getElementById('pass-doc-preview').style.display = 'block';
+
+        const img2El = document.getElementById('pass-live-preview-img');
+        img2El.src = URL.createObjectURL(blob2);
+        document.getElementById('pass-live-preview').style.display = 'block';
+
+        await runPassportVerification();
+      } catch (err) {
+        alert('Passport Quick Test Error: ' + err.message);
+      } finally {
+        btn.innerHTML = origText;
+        btn.disabled = false;
       }
     }
 

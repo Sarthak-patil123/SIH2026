@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import base64
+import os
 import cv2
 import numpy as np
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 
 from core.logger import get_logger
 from layout import detect_fields, build_regions, crop_region
@@ -54,6 +56,20 @@ def get_system_status() -> dict:
         "llm_note": "LLM extraction is intentionally inactive per architecture specification.",
     }
     return status
+SAMPLE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "MRZ_Passport_Reader_From_Image-main", "MRZ_Passport_Reader_From_Image-main"))
+
+
+@router.get("/samples/{filename}")
+async def get_sample_image(filename: str):
+    """Serve sample test images directly for quick 1-click UI and automated testing."""
+    allowed = ["example1.jpg", "image.png", "passport1.jpg"]
+    if filename not in allowed:
+        raise HTTPException(status_code=404, detail=f"Filename {filename} not allowed. Choose from {allowed}")
+    file_path = os.path.join(SAMPLE_DIR, filename)
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail=f"File {filename} not found at {file_path}")
+    media_type = "image/png" if filename.endswith(".png") else "image/jpeg"
+    return FileResponse(file_path, media_type=media_type)
 
 
 @router.post("/preprocess")
