@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "typeRoots": ["../src/types", "../node_modules/@types"],
+    "outDir": "../dist/prisma",
+    "rootDir": "."
+  },
+  "include": ["./**/*.ts"]
+}
