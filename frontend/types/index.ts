@@ -52,9 +52,9 @@ export interface User {
   email: string;
   name: string;
   role: Role;
-  employeeId: string;
-  department: string;
-  username: string;
+  employeeId?: string;
+  department?: string;
+  username?: string;
   accountStatus: 'ACTIVE' | 'INACTIVE';
   lastLogin: string;
   createdAt: string;

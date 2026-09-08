@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Search, ChevronDown, User, LogOut, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { mockOfficerNotifications, mockAdminNotifications } from '@/lib/mock-data';
@@ -18,6 +18,7 @@ interface HeaderProps {
 export default function Header({ onMobileMenuOpen }: HeaderProps) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -178,7 +179,7 @@ export default function Header({ onMobileMenuOpen }: HeaderProps) {
                     <User size={14} className="text-slate-400" /> Account Profile
                   </a>
                   <button
-                    onClick={() => { logout(); setUserMenuOpen(false); }}
+                    onClick={async () => { await logout(); setUserMenuOpen(false); router.push('/login'); }}
                     className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                   >
                     <LogOut size={14} /> Sign Out

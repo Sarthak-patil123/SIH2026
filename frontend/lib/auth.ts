@@ -1,4 +1,93 @@
 import { User, LoginCredentials } from '@/types';
+import { apiFetch } from '@/lib/api';
+
+// ---------------------------------------------------------------------------
+// Types returned by the backend auth endpoints
+// ---------------------------------------------------------------------------
+interface ApiAuthResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: 'OFFICER' | 'ADMIN';
+  };
+  token: string;
+}
+
+interface ApiMeResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: 'OFFICER' | 'ADMIN';
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Map backend user → frontend User shape
+// ---------------------------------------------------------------------------
+function toFrontendUser(apiUser: ApiAuthResponse['user']): User {
+  return {
+    id: apiUser.id,
+    email: apiUser.email,
+    name: apiUser.name,
+    role: apiUser.role,
+    // These fields are not returned by the backend but are optional in the type
+    employeeId: undefined,
+    department: undefined,
+    username: undefined,
+    accountStatus: 'ACTIVE',
+    lastLogin: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// API auth functions — used by AuthContext
+// ---------------------------------------------------------------------------
+
+/** POST /api/auth/login */
+export async function apiLogin(credentials: LoginCredentials): Promise<{ user: User; token: string }> {
+  const data = await apiFetch<ApiAuthResponse>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email: credentials.email, password: credentials.password }),
+  });
+
+  // Persist token for Authorization header fallback
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('idverify_token', data.token);
+  }
+
+  return { user: toFrontendUser(data.user), token: data.token };
+}
+
+/** GET /api/auth/me — restore session from cookie */
+export async function apiGetCurrentUser(): Promise<User | null> {
+  try {
+    const data = await apiFetch<ApiMeResponse>('/auth/me');
+    return toFrontendUser(data.user);
+  } catch {
+    return null;
+  }
+}
+
+/** POST /api/auth/logout */
+export async function apiLogout(): Promise<void> {
+  try {
+    await apiFetch('/auth/logout', { method: 'POST' });
+  } catch {
+    // Ignore errors — we clear local state regardless
+  }
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('idverify_token');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Legacy mock exports — kept for any code that still imports them
+// Remove once fully migrated.
+// ---------------------------------------------------------------------------
 export const mockUsers: User[] = [
   {
     id: 'officer-1',
@@ -14,19 +103,6 @@ export const mockUsers: User[] = [
     updatedAt: '2026-09-07T18:00:00Z',
   },
   {
-    id: 'officer-2',
-    email: 'officer2@ssb.gov.in',
-    name: 'Priya Sharma',
-    role: 'OFFICER',
-    employeeId: 'OFC-2024-002',
-    department: 'Border Security Force',
-    username: 'priya.sharma',
-    accountStatus: 'ACTIVE',
-    lastLogin: '2026-09-07T17:30:00Z',
-    createdAt: '2024-02-10T09:00:00Z',
-    updatedAt: '2026-09-07T17:30:00Z',
-  },
-  {
     id: 'admin-1',
     email: 'admin@ssb.gov.in',
     name: 'Anil Sharma',
@@ -40,31 +116,3 @@ export const mockUsers: User[] = [
     updatedAt: '2026-09-07T18:30:00Z',
   },
 ];
-
-// Demo credentials
-const CREDENTIALS: Record<string, { password: string; userId: string }> = {
-  'officer@ssb.gov.in': { password: 'password123', userId: 'officer-1' },
-  'officer2@ssb.gov.in': { password: 'password123', userId: 'officer-2' },
-  'admin@ssb.gov.in': { password: 'password123', userId: 'admin-1' },
-};
-
-interface LoginResult {
-  success: boolean;
-  user?: User;
-  error?: string;
-}
-
-export function mockLogin(credentials: LoginCredentials): LoginResult {
-  const entry = CREDENTIALS[credentials.email.toLowerCase()];
-  if (!entry) {
-    return { success: false, error: 'Invalid email or password.' };
-  }
-  if (entry.password !== credentials.password) {
-    return { success: false, error: 'Invalid email or password.' };
-  }
-  const user = mockUsers.find((u) => u.id === entry.userId);
-  if (!user) {
-    return { success: false, error: 'User account not found.' };
-  }
-  return { success: true, user };
-}

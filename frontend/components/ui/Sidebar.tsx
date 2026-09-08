@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, FolderOpen, ScanLine, Bell, ClipboardList,
   User, LogOut, Shield, ChevronLeft, ChevronRight, Menu, X
@@ -63,6 +63,7 @@ const adminSections: NavSection[] = [
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
 
   const sections = user?.role === 'ADMIN' ? adminSections : officerSections;
@@ -194,6 +195,7 @@ export function MobileSidebarToggle({ onClick }: { onClick: () => void }) {
 export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const sections = user?.role === 'ADMIN' ? adminSections : officerSections;
 
   if (!open) return null;
@@ -243,7 +245,7 @@ export function MobileSidebar({ open, onClose }: { open: boolean; onClose: () =>
 
         <div className="border-t border-slate-100 p-3">
           <button
-            onClick={() => { logout(); onClose(); }}
+            onClick={async () => { await logout(); onClose(); router.push('/login'); }}
             className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-all"
           >
             <LogOut size={18} /> Sign Out

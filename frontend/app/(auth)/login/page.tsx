@@ -20,19 +20,24 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 500)); // simulate network latency
+
     const result = await login({ email, password });
     setLoading(false);
-    if (result.success) {
-      const stored = localStorage.getItem('idverify_user');
-      const user = stored ? JSON.parse(stored) : result.user;
-      if (user?.role === 'ADMIN') {
+
+    if (result.success && result.user) {
+      if (result.user.role === 'ADMIN') {
         router.push('/admin/dashboard');
       } else {
         router.push('/officer/dashboard');
       }
     } else {
-      setError(result.error ?? 'Authentication failed. Please check your email and password.');
+      // Surface backend error, with a friendly message for network/server issues
+      const msg = result.error ?? 'Authentication failed.';
+      if (msg.includes('fetch') || msg.includes('network') || msg.includes('ECONNREFUSED')) {
+        setError('Server unavailable. Please ensure the backend service is running.');
+      } else {
+        setError(msg);
+      }
     }
   }
 
