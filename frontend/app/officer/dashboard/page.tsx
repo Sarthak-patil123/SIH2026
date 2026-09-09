@@ -168,7 +168,7 @@ export default function OfficerDashboard() {
                 <th className="w-48 pl-6 pr-4 py-3.5">Case ID</th>
                 <th className="px-4 py-3.5">Applicant</th>
                 <th className="px-4 py-3.5">Document</th>
-                <th className="px-4 py-3.5 min-w-[140px]">AI Confidence</th>
+                <th className="px-4 py-3.5 min-w-[150px]">Risk Score</th>
                 <th className="px-4 py-3.5">Status</th>
                 <th className="px-4 py-3.5 text-right pr-6">Action</th>
               </tr>
@@ -184,7 +184,8 @@ export default function OfficerDashboard() {
                 recentCases.map((c) => {
                   const docCount = c.documents?.length || 1;
                   const primaryDocType = c.documents?.[0]?.docType ?? 'PASSPORT';
-                  const confidence = getCaseConfidence(c);
+                  const riskScore = c.riskScore ?? (c.riskLevel === 'HIGH' ? 78 : c.riskLevel === 'MEDIUM' ? 45 : 12);
+                  const riskLevel = c.riskLevel ?? (riskScore > 60 ? 'HIGH' : riskScore > 30 ? 'MEDIUM' : 'LOW');
                   return (
                     <tr key={c.id}>
                       <td className="w-48 pl-6 pr-4 py-4">
@@ -217,8 +218,21 @@ export default function OfficerDashboard() {
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-4 min-w-[140px]">
-                        <ConfidenceBar value={confidence} segmentsCount={10} />
+                      <td className="px-4 py-4 min-w-[150px]">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-md border ${
+                              riskScore > 60
+                                ? 'text-rose-700 bg-rose-50 border-rose-200'
+                                : riskScore > 30
+                                ? 'text-amber-700 bg-amber-50 border-amber-200'
+                                : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                            }`}
+                          >
+                            {riskScore}/100
+                          </span>
+                          <RiskBadge level={riskLevel} />
+                        </div>
                       </td>
                       <td className="px-4 py-4">
                         <StatusBadge status={c.status} />
