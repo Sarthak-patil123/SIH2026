@@ -48,9 +48,71 @@ def _clean_llm_json_response(raw_text: str) -> dict[str, Any] | None:
     return None
 
 
+def _flatten_llm_json(parsed: dict[str, Any], doc_type: str) -> dict[str, Any]:
+    """Expose canonical top-level fields from nested LLM schemas while preserving hierarchy."""
+    if not isinstance(parsed, dict):
+        return parsed
+
+    norm_type = doc_type.strip().lower().replace("-", "_")
+
+    # 1. Person mappings
+    person = parsed.get("person")
+    if isinstance(person, dict):
+        if person.get("full_name") and not parsed.get("full_name"):
+            parsed["full_name"] = person["full_name"]
+            parsed["name"] = person["full_name"]
+        if person.get("date_of_birth") and not parsed.get("date_of_birth"):
+            parsed["date_of_birth"] = person["date_of_birth"]
+        if person.get("date_of_birth_raw") and not parsed.get("date_of_birth_raw"):
+            parsed["date_of_birth_raw"] = person["date_of_birth_raw"]
+        if person.get("gender") and not parsed.get("gender"):
+            parsed["gender"] = person["gender"]
+        if person.get("place_of_birth") and not parsed.get("place_of_birth"):
+            parsed["place_of_birth"] = person["place_of_birth"]
+
+    # 2. Parents mappings
+    parents = parsed.get("parents")
+    if isinstance(parents, dict):
+        if parents.get("father_name") and not parsed.get("father_name"):
+            parsed["father_name"] = parents["father_name"]
+        if parents.get("mother_name") and not parsed.get("mother_name"):
+            parsed["mother_name"] = parents["mother_name"]
+
+    # 3. Registration & Issue Details mappings
+    reg = parsed.get("registration")
+    if isinstance(reg, dict):
+        if reg.get("registration_number") and not parsed.get("registration_number"):
+            parsed["registration_number"] = reg["registration_number"]
+        if reg.get("registration_date") and not parsed.get("registration_date"):
+            parsed["registration_date"] = reg["registration_date"]
+            if not parsed.get("issue_date"):
+                parsed["issue_date"] = reg["registration_date"]
+        if reg.get("registration_authority") and not parsed.get("issuing_authority"):
+            parsed["issuing_authority"] = reg["registration_authority"]
+
+    issue = parsed.get("issue_details")
+    if isinstance(issue, dict):
+        if issue.get("date_of_issue") and not parsed.get("issue_date"):
+            parsed["issue_date"] = issue["date_of_issue"]
+        if issue.get("issuing_authority") and not parsed.get("issuing_authority"):
+            parsed["issuing_authority"] = issue["issuing_authority"]
+        if issue.get("issuing_officer") and not parsed.get("issuing_officer"):
+            parsed["issuing_officer"] = issue["issuing_officer"]
+
+    # 4. Document subtype mapping
+    doc_meta = parsed.get("document")
+    if isinstance(doc_meta, dict):
+        if doc_meta.get("proof_subtype") and not parsed.get("proof_subtype"):
+            parsed["proof_subtype"] = doc_meta["proof_subtype"]
+        if doc_meta.get("registration_number") and not parsed.get("registration_number"):
+            parsed["registration_number"] = doc_meta["registration_number"]
+
+    return parsed
+
+
 def _heuristic_fallback(ocr_lines: list[str], doc_type: str, error_detail: str | None = None) -> dict[str, Any]:
     """Fallback heuristic extraction when LLM service is unavailable or returned unparseable output."""
-    full_text = " ".join(ocr_lines).upper()
+    full_text = " \n ".join(ocr_lines).upper()
     norm_type = doc_type.strip().lower().replace("-", "_")
 
     # Common pattern detectors (supports DD/MM/YYYY, YYYY-MM-DD, DD.MM.YYYY, and textual months)
@@ -58,7 +120,7 @@ def _heuristic_fallback(ocr_lines: list[str], doc_type: str, error_detail: str |
         r"\b(\d{1,2}[/.-]\d{1,2}[/.-]\d{4}|\d{4}[/.-]\d{1,2}[/.-]\d{1,2}|\d{1,2}\s+(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*\s+\d{4})\b",
         re.IGNORECASE,
     )
-    all_dates = date_pattern.findall(" ".join(ocr_lines))
+    all_dates = date_pattern.findall(full_text)
 
     note_msg = "Extracted via rule-based fallback."
     if error_detail:
@@ -122,13 +184,40 @@ def _heuristic_fallback(ocr_lines: list[str], doc_type: str, error_detail: str |
             result["licence_number"] = dl_match.group(1).replace(" ", "")
 
     elif norm_type == "dob_proof":
+        # Extract using deterministic regex rules
+        dob_match = re.search(r"(?:जन्म\s*तिथि\s*[\/\-]?\s*Date\s*of\s*Birth|Date\s*of\s*Birth|DOB|D\.O\.B|Born\s*on|जन्म\s*तिथि)[\s\:\-\/]*[\:\-]?\s*([0-9]{1,2}[\/\.\-][0-9]{1,2}[\/\.\-][0-9]{4})", full_text, re.IGNORECASE)
+        reg_date_match = re.search(r"(?:पंजीकरण\s*की\s*तिथि\s*[\/\-]?\s*Date\s*of\s*Registration|Date\s*of\s*Registration|Registration\s*Date|पंजीकरण\s*की\s*तिथि)[\s\:\-\/]*[\:\-]?\s*([0-9]{1,2}[\/\.\-][0-9]{1,2}[\/\.\-][0-9]{4})", full_text, re.IGNORECASE)
+        reg_match = re.search(r"(?:पंजीकरण\s*संख्या\s*[\/\-]?\s*Registration\s*No|Registration\s*No|Regn?\s*No|Certificate\s*No|पंजीकरण\s*संख्या)[\s\:\.\-\/]*[\:\-]?\s*([A-Z0-9\/\-]{4,25})", full_text, re.IGNORECASE)
+        name_match = re.search(r"(?:पूरा\s*नाम\s*[\/\-]?\s*Full\s*Name|Full\s*Name|Child'?s?\s*Name|Name\s*of\s*Child|पूरा\s*नाम)[\s\:\-\/]*[\:\-]\s*([^\n\r\:\;]{2,50})", full_text, re.IGNORECASE)
+        father_match = re.search(r"(?:पिता\s*का\s*नाम\s*[\/\-]?\s*Father'?s?\s*Name|Father'?s?\s*Name|पिता\s*का\s*नाम)[\s\:\-\/]*[\:\-]\s*([^\n\r\:\;]{2,50})", full_text, re.IGNORECASE)
+        mother_match = re.search(r"(?:माता\s*का\s*नाम\s*[\/\-]?\s*Mother'?s?\s*Name|Mother'?s?\s*Name|माता\s*का\s*नाम)[\s\:\-\/]*[\:\-]\s*([^\n\r\:\;]{2,50})", full_text, re.IGNORECASE)
+        place_match = re.search(r"(?:जन्म\s*स्थान\s*[\/\-]?\s*Place\s*of\s*Birth|Place\s*of\s*Birth|जन्म\s*स्थान)[\s\:\-\/]*[\:\-]\s*([^\n\r\:\;]{2,40})", full_text, re.IGNORECASE)
+
+        def _clean(val: str | None) -> str | None:
+            if not val:
+                return None
+            if "/" in val:
+                parts = [p.strip() for p in val.split("/") if p.strip()]
+                # Prefer Latin substring
+                latin_parts = [p for p in parts if re.search(r"[A-Za-z]{2,}", p)]
+                val = latin_parts[-1] if latin_parts else parts[-1]
+            c = re.sub(r"[^A-Za-z0-9\u0900-\u097F\s\.\-']", "", val).strip()
+            return c if len(c) >= 2 else None
+
         result.update({
             "proof_subtype": "birth_certificate" if "BIRTH" in full_text else "school_leaving_certificate",
-            "registration_number": None,
-            "child_or_holder_name": None,
-            "date_of_birth": all_dates[0] if all_dates else None,
-            "father_name": None,
-            "mother_name": None,
+            "name": _clean(name_match.group(1)) if name_match else None,
+            "full_name": _clean(name_match.group(1)) if name_match else None,
+            "date_of_birth": dob_match.group(1) if dob_match else (all_dates[0] if all_dates else None),
+            "date_of_birth_raw": dob_match.group(1) if dob_match else (all_dates[0] if all_dates else None),
+            "father_name": _clean(father_match.group(1)) if father_match else None,
+            "mother_name": _clean(mother_match.group(1)) if mother_match else None,
+            "gender": "FEMALE" if any(k in full_text for k in ("FEMALE", "महिला")) else ("MALE" if any(k in full_text for k in ("MALE", "पुरुष")) else None),
+            "registration_number": reg_match.group(1).strip() if reg_match else None,
+            "registration_date": reg_date_match.group(1) if reg_date_match else (all_dates[1] if len(all_dates) > 1 else None),
+            "place_of_birth": _clean(place_match.group(1)) if place_match else None,
+            "issuing_authority": "MUNICIPAL CORPORATION OF DELHI" if "DELHI" in full_text else ("GOVERNMENT OF INDIA" if "INDIA" in full_text else None),
+            "issue_date": reg_date_match.group(1) if reg_date_match else (all_dates[1] if len(all_dates) > 1 else (all_dates[0] if all_dates else None)),
         })
 
     else:  # national_id fallback
@@ -220,7 +309,7 @@ def parse_document_with_llm(
     if parsed_json and isinstance(parsed_json, dict):
         parsed_json["is_llm_parsed"] = True
         parsed_json["raw_lines_count"] = len(lines)
-        return parsed_json
+        return _flatten_llm_json(parsed_json, doc_type)
 
     # Heuristic fallback if LLM is offline, fails, or produces invalid output
     err_detail = getattr(llm_client, "last_error", None)

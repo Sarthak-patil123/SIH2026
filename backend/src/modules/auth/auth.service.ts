@@ -1,94 +1,122 @@
-import crypto from "crypto";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { config } from "../../config/env";
-import {
-  UserRecord,
-  RegisterRequest,
-  LoginRequest,
-  AuthResponse,
-  AuthTokenPayload,
-} from "./auth.types";
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { PrismaClient, Role } from '@prisma/client';
+import { config } from '../../config';
+import { LoginDTO, AuthUserResponse, JWTPayload, LoginResponse } from './auth.types';
 
-/**
- * Auth service — JWT-based registration and login.
- *
- * NOTE: Uses an in-memory user store until Prisma User model is set up.
- * To switch to Prisma: replace the `users` Map with prisma.user.create / findUnique calls.
- */
+const prisma = new PrismaClient();
+
+// ---------------------------------------------------------------------------
+// Fallback demo users — used when PostgreSQL is unavailable (demo/hackathon mode)
+// The password field is plain-text here; it gets compared via bcrypt at runtime.
+// We use bcrypt.compare(inputPassword, storedHash) but for simplicity in demo
+// mode we store the PLAIN password and compare directly — the real bcrypt
+// comparison still happens for DB users. This avoids needing pre-generated hashes.
+// ---------------------------------------------------------------------------
+interface FallbackUser {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  password: string; // plain-text, demo only
+}
+
+const FALLBACK_USERS: FallbackUser[] = [
+  {
+    id: 'officer-1',
+    email: 'officer@ssb.gov.in',
+    name: 'Rajesh Kumar',
+    role: Role.OFFICER,
+    password: 'password123',
+  },
+  {
+    id: 'admin-1',
+    email: 'admin@ssb.gov.in',
+    name: 'Anil Sharma',
+    role: Role.ADMIN,
+    password: 'password123',
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Helper: sign a JWT
+// ---------------------------------------------------------------------------
+function signToken(user: AuthUserResponse): string {
+  const payload: JWTPayload = {
+    sub: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+  };
+  return jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
+}
+
+// ---------------------------------------------------------------------------
+// AuthService
+// ---------------------------------------------------------------------------
 export class AuthService {
-  /** In-memory user store — replace with Prisma once schema is ready. */
-  private readonly users = new Map<string, UserRecord>();
-  private readonly jwtSecret: string;
-  private readonly jwtExpiresIn = "8h";
+  /**
+   * Authenticate user: try database first, fall back to demo users.
+   */
+  async login(dto: LoginDTO): Promise<LoginResponse> {
+    const email = dto.email.toLowerCase().trim();
 
-  constructor() {
-    this.jwtSecret = config.jwtSecret;
-  }
+    // --- Try database (Prisma/PostgreSQL) ---
+    let dbUser: { id: string; email: string; name: string; role: Role; passwordHash: string | null } | null = null;
+    let dbAvailable = false;
 
-  async register(payload: RegisterRequest): Promise<AuthResponse> {
-    const existing = [...this.users.values()].find(
-      (u) => u.email === payload.email
-    );
-    if (existing) {
-      const err = Object.assign(new Error("Email already registered"), {
-        status: 409,
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const found = await (prisma.user as any).findUnique({
+        where: { email },
+        select: { id: true, email: true, name: true, role: true, passwordHash: true },
       });
-      throw err;
+      dbUser = found as { id: string; email: string; name: string; role: Role; passwordHash: string | null } | null;
+      dbAvailable = true;
+    } catch {
+      // DB unavailable — fall through to in-memory demo users
+      console.warn('[AuthService] Database unavailable — using fallback demo users.');
     }
 
-    const passwordHash = await bcrypt.hash(payload.password, 10);
-    const id = crypto.randomUUID();
-    const user: UserRecord = {
-      id,
-      email: payload.email,
-      passwordHash,
-      role: payload.role ?? "officer",
-      createdAt: new Date().toISOString(),
+    if (dbAvailable) {
+      // DB responded — enforce database authentication strictly
+      if (!dbUser) throw new AuthError('Invalid email or password.', 401);
+      if (!dbUser.passwordHash) throw new AuthError('Account not configured for password login.', 401);
+
+      const valid = await bcrypt.compare(dto.password, dbUser.passwordHash);
+      if (!valid) throw new AuthError('Invalid email or password.', 401);
+
+      const authUser: AuthUserResponse = {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.name,
+        role: dbUser.role,
+      };
+      return { user: authUser, token: signToken(authUser) };
+    }
+
+    // --- Fallback demo users (DB offline) ---
+    const fallback = FALLBACK_USERS.find((u) => u.email === email);
+    if (!fallback || fallback.password !== dto.password) {
+      throw new AuthError('Invalid email or password.', 401);
+    }
+
+    const authUser: AuthUserResponse = {
+      id: fallback.id,
+      email: fallback.email,
+      name: fallback.name,
+      role: fallback.role,
     };
-    this.users.set(id, user);
-
-    const token = this._signToken(user);
-    const { passwordHash: _, ...safeUser } = user;
-    return { token, user: safeUser };
-  }
-
-  async login(payload: LoginRequest): Promise<AuthResponse> {
-    const user = [...this.users.values()].find(
-      (u) => u.email === payload.email
-    );
-    if (!user) {
-      const err = Object.assign(new Error("Invalid credentials"), {
-        status: 401,
-      });
-      throw err;
-    }
-
-    const passwordMatch = await bcrypt.compare(payload.password, user.passwordHash);
-    if (!passwordMatch) {
-      const err = Object.assign(new Error("Invalid credentials"), {
-        status: 401,
-      });
-      throw err;
-    }
-
-    const token = this._signToken(user);
-    const { passwordHash: _, ...safeUser } = user;
-    return { token, user: safeUser };
-  }
-
-  verifyToken(token: string): AuthTokenPayload {
-    return jwt.verify(token, this.jwtSecret) as AuthTokenPayload;
-  }
-
-  private _signToken(user: UserRecord): string {
-    const payload: AuthTokenPayload = {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    };
-    return jwt.sign(payload, this.jwtSecret, { expiresIn: this.jwtExpiresIn });
+    return { user: authUser, token: signToken(authUser) };
   }
 }
 
-export const authService = new AuthService();
+// ---------------------------------------------------------------------------
+// Domain error class
+// ---------------------------------------------------------------------------
+export class AuthError extends Error {
+  constructor(message: string, public statusCode: number) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}

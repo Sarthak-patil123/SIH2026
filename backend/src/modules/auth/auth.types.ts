@@ -1,31 +1,25 @@
-export interface UserRecord {
+import { Role } from '@prisma/client';
+
+export interface LoginDTO {
+  email: string;
+  password: string;
+}
+
+export interface JWTPayload {
+  sub: string;        // user id
+  email: string;
+  name: string;
+  role: Role;
+}
+
+export interface AuthUserResponse {
   id: string;
   email: string;
-  passwordHash: string;
-  role: "admin" | "officer" | "viewer";
-  createdAt: string;
+  name: string;
+  role: Role;
 }
 
-export interface RegisterRequest {
-  email: string;
-  password: string;
-  role?: "admin" | "officer" | "viewer";
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface AuthTokenPayload {
-  userId: string;
-  email: string;
-  role: UserRecord["role"];
-  iat?: number;
-  exp?: number;
-}
-
-export interface AuthResponse {
+export interface LoginResponse {
+  user: AuthUserResponse;
   token: string;
-  user: Omit<UserRecord, "passwordHash">;
 }

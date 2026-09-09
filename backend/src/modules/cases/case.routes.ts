@@ -1,19 +1,31 @@
-import { Router } from "express";
-import { caseController } from "./case.controller";
+import { Router } from 'express';
+import { Role } from '@prisma/client';
+import { authenticate } from '../../middleware/auth.middleware';
+import { requireRole } from '../../middleware/role.middleware';
+import { CaseController } from './case.controller';
 
 export const caseRoutes = Router();
+const ctrl = new CaseController();
 
-// POST /api/cases - Create a new case
-caseRoutes.post("/", (req, res, next) => caseController.createCase(req, res, next));
+// All case routes require authentication
+caseRoutes.use(authenticate);
 
-// GET /api/cases - List all cases with optional filters (?status=...&priority=...)
-caseRoutes.get("/", (req, res, next) => caseController.listCases(req, res, next));
+// GET /api/cases — Officer (own cases) or Admin (all cases)
+caseRoutes.get('/', requireRole(Role.OFFICER, Role.ADMIN), (req, res) =>
+  ctrl.getCases(req, res)
+);
 
-// GET /api/cases/:id - Get case by ID
-caseRoutes.get("/:id", (req, res, next) => caseController.getCaseById(req, res, next));
+// GET /api/cases/:caseId — Officer (own only) or Admin (any)
+caseRoutes.get('/:caseId', requireRole(Role.OFFICER, Role.ADMIN), (req, res) =>
+  ctrl.getCaseById(req, res)
+);
 
-// PATCH /api/cases/:id - Update case fields
-caseRoutes.patch("/:id", (req, res, next) => caseController.updateCase(req, res, next));
+// POST /api/cases/:caseId/flag — Officer only
+caseRoutes.post('/:caseId/flag', requireRole(Role.OFFICER), (req, res) =>
+  ctrl.flagCase(req, res)
+);
 
-// DELETE /api/cases/:id - Delete a case
-caseRoutes.delete("/:id", (req, res, next) => caseController.deleteCase(req, res, next));
+// POST /api/cases/:caseId/decision — Admin only
+caseRoutes.post('/:caseId/decision', requireRole(Role.ADMIN), (req, res) =>
+  ctrl.makeDecision(req, res)
+);

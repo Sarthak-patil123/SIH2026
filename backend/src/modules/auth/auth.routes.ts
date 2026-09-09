@@ -1,19 +1,15 @@
-import { Router } from "express";
-import { authController } from "./auth.controller";
+import { Router } from 'express';
+import { AuthController } from './auth.controller';
+import { authenticate } from '../../middleware/auth.middleware';
 
 export const authRoutes = Router();
+const ctrl = new AuthController();
 
-// POST /api/auth/register — create a new user account
-authRoutes.post("/register", (req, res, next) =>
-  authController.register(req, res, next)
-);
+// POST /api/auth/login
+authRoutes.post('/login', (req, res) => ctrl.login(req, res));
 
-// POST /api/auth/login — authenticate and receive a JWT
-authRoutes.post("/login", (req, res, next) =>
-  authController.login(req, res, next)
-);
+// GET /api/auth/me  — requires valid JWT
+authRoutes.get('/me', authenticate, (req, res) => ctrl.me(req, res));
 
-// GET /api/auth/me — return current user info (protected by auth middleware when added)
-authRoutes.get("/me", (req, res) =>
-  authController.me(req as any, res)
-);
+// POST /api/auth/logout
+authRoutes.post('/logout', (req, res) => ctrl.logout(req, res));

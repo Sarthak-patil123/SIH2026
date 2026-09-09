@@ -177,6 +177,7 @@ Do NOT use:
 For objects, retain the defined keys and assign null when the information is unavailable.
 
 ==================================================
+==================================================
 4. NAME EXTRACTION
 ==================
 
@@ -186,16 +187,16 @@ Store it in:
 
 person.full_name
 
-Normalize the name to UPPERCASE.
+Normalize the name to UPPERCASE. When bilingual Hindi/English is present (e.g., "मीरा शर्मा / MEERA SHARMA"), extract the English Latin name "MEERA SHARMA" (or the cleanest transliterated name).
 
 Example:
 
 OCR:
-"Name of Child: Ramesh Kumar Patil"
+"पूरा नाम / Full Name : मीरा शर्मा / MEERA SHARMA"
 
 Output:
 
-"full_name": "RAMESH KUMAR PATIL"
+"full_name": "MEERA SHARMA"
 
 Do not:
 
@@ -220,12 +221,10 @@ YYYY-MM-DD
 
 Examples:
 
+"15/05/1990" → "1990-05-15"
 "15/08/2005" → "2005-08-15"
-
 "15-08-2005" → "2005-08-15"
-
 "August 15, 2005" → "2005-08-15"
-
 "15 August 2005" → "2005-08-15"
 
 If the date cannot be safely normalized, set:
@@ -246,43 +245,36 @@ Example:
 Do NOT silently convert an ambiguous date.
 
 ==================================================
-6. DATE DISAMBIGUATION
-======================
+6. DATE DISAMBIGUATION & BILINGUAL HEADERS
+==========================================
 
 This is extremely important.
 
-DOB documents can contain several dates, including:
+DOB documents frequently contain multiple dates and bilingual Hindi/English headings:
 
-* Date of Birth
-* Date of Registration
-* Date of Issue
-* Date of Admission
-* Date of Leaving
-* Date of Printing
-* Date of Certification
-* Date of Correction
-* Date of Amendment
-* Date of Death
+* Date of Birth (जन्म तिथि / Date of Birth / DOB):
+  e.g. "जन्म तिथि / Date of Birth : 15/05/1990" → person.date_of_birth = "1990-05-15", person.date_of_birth_raw = "15/05/1990"
 
-Never assume that the first date appearing in the OCR is the DOB.
+* Date of Registration (पंजीकरण की तिथि / Date of Registration):
+  e.g. "पंजीकरण की तिथि / Date of Registration : 20/05/1990" → registration.registration_date = "1990-05-20"
 
-Use the field label and surrounding document context.
+* Date of Issue (जारी करने की तिथि / Issued on / Date of Issue):
+  e.g. "Issued on: 20/05/1990" → issue_details.date_of_issue = "1990-05-20"
 
-Examples:
+* Registration Number (पंजीकरण संख्या / Registration No):
+  e.g. "पंजीकरण संख्या / Registration No : ND/1990/45678" → registration.registration_number = "ND/1990/45678"
 
-"Date of Birth: 12/04/2004"
+* Parents Details (माता-पिता का विवरण / PARENTS' DETAILS):
+  e.g. "पिता का नाम / Father's Name : रवि शर्मा / RAVI SHARMA" → parents.father_name = "RAVI SHARMA"
+  e.g. "माता का नाम / Mother's Name : सुनीता शर्मा / SUNITA SHARMA" → parents.mother_name = "SUNITA SHARMA"
 
-→ person.date_of_birth
+* Place of Birth (जन्म स्थान / Place of Birth):
+  e.g. "जन्म स्थान / Place of Birth : नई दिल्ली / NEW DELHI" → person.place_of_birth = "NEW DELHI"
 
-"Date of Registration: 15/04/2004"
+* Gender / Sex (लिंग / Gender):
+  e.g. "लिंग / Gender : महिला / FEMALE" → person.gender = "FEMALE"
 
-→ registration.registration_date
-
-"Issued on: 20/05/2020"
-
-→ issue_details.date_of_issue
-
-If a date appears without a sufficiently clear label and multiple interpretations are possible, do not guess.
+Never confuse Date of Registration (पंजीकरण की तिथि) with Date of Birth (जन्म तिथि).
 
 ==================================================
 7. DATE OF BIRTH IN WORDS

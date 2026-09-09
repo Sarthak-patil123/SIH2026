@@ -81,12 +81,29 @@ def _get_ocr(lang: str = "en"):
 
             paddle_lang = _LANG_MAP.get(lang, "en")
             try:
-                instance = PaddleOCR(use_angle_cls=True, lang=paddle_lang)
+                instance = PaddleOCR(
+                    use_angle_cls=True,
+                    lang=paddle_lang,
+                    det_db_thresh=0.22,        # Captures faint text, stamps & registration numbers
+                    det_db_box_thresh=0.48,    # Preserves small number boxes and dates
+                    det_db_unclip_ratio=1.85,  # Prevents clipping slashes, ascenders/descenders & matras
+                    det_limit_side_len=1536,   # High-resolution detection for dense certificates
+                    use_dilation=True,         # Connects broken/dot-matrix print
+                    drop_score=0.30,           # Retains low-confidence tokens for LLM parsing
+                )
             except TypeError:
-                instance = PaddleOCR(lang=paddle_lang)
+                instance = PaddleOCR(
+                    lang=paddle_lang,
+                    det_db_thresh=0.22,
+                    det_db_box_thresh=0.48,
+                    det_db_unclip_ratio=1.85,
+                    det_limit_side_len=1536,
+                    use_dilation=True,
+                    drop_score=0.30,
+                )
 
             _ocr_instances[lang] = instance
-            logger.info("PaddleOCR engine initialised for language: %s", paddle_lang)
+            logger.info("PaddleOCR engine initialised with tuned parameters for language: %s", paddle_lang)
             return _ocr_instances[lang]
     except Exception as exc:
         paddle_exc = exc
@@ -199,17 +216,100 @@ def _parse_paddleocr_results(result) -> list[TextRegion]:
 
 
 # ---------------------------------------------------------------------------
-# Script detection
+# Universal Script Detection and Multilingual Fusion
 # ---------------------------------------------------------------------------
 
-def _is_likely_non_latin(regions: list[TextRegion]) -> bool:
-    """Heuristic: if > 40% of characters in detected text are non-ASCII, re-run
-    with multilingual / devanagari model."""
+def _detect_dominant_script(regions: list[TextRegion]) -> Optional[str]:
+    """Detect non-Latin script from OCR text or identify garbled text requiring specialized script models."""
+    if not regions:
+        return None
     all_text = "".join(r.text for r in regions)
     if not all_text:
-        return False
-    non_ascii = sum(1 for c in all_text if ord(c) > 127)
-    return (non_ascii / len(all_text)) > 0.4
+        return None
+
+    script_counts = {
+        "devanagari": sum(1 for c in all_text if 0x0900 <= ord(c) <= 0x097F),
+        "ar": sum(1 for c in all_text if 0x0600 <= ord(c) <= 0x06FF),
+        "cyrillic": sum(1 for c in all_text if 0x0400 <= ord(c) <= 0x04FF),
+        "ch": sum(1 for c in all_text if 0x4E00 <= ord(c) <= 0x9FFF or 0x3400 <= ord(c) <= 0x4DBF),
+        "japan": sum(1 for c in all_text if 0x3040 <= ord(c) <= 0x30FF),
+        "korean": sum(1 for c in all_text if 0xAC00 <= ord(c) <= 0xD7AF),
+        "ta": sum(1 for c in all_text if 0x0B80 <= ord(c) <= 0x0BFF),
+        "te": sum(1 for c in all_text if 0x0C00 <= ord(c) <= 0x0C7F),
+    }
+
+    best_script, count = max(script_counts.items(), key=lambda x: x[1])
+    if count >= 2 or (count / max(len(all_text), 1)) > 0.05:
+        return best_script
+
+    # Heuristic for Indic/Arabic text forced through Latin model:
+    # Characterized by high low-confidence boxes (<0.70) or dense nonsense symbols
+    low_conf_count = sum(1 for r in regions if r.confidence < 0.70)
+    symbol_heavy = sum(1 for r in regions if re.search(r"[#@\$%&]{1,}|[a-z]{1,2}\s+[a-z]{1,2}", r.text, re.IGNORECASE))
+    if len(regions) >= 4 and (low_conf_count / len(regions) > 0.35 or symbol_heavy / len(regions) > 0.25):
+        # Default to Devanagari for Indic noisy fallback
+        return "devanagari"
+
+    return None
+
+
+def _calculate_iou(box1: list[list[int]], box2: list[list[int]]) -> float:
+    """Calculate Intersection over Union (IoU) between two bounding polygons."""
+    if not box1 or not box2 or len(box1) < 4 or len(box2) < 4:
+        return 0.0
+    x1_min = min(p[0] for p in box1)
+    y1_min = min(p[1] for p in box1)
+    x1_max = max(p[0] for p in box1)
+    y1_max = max(p[1] for p in box1)
+
+    x2_min = min(p[0] for p in box2)
+    y2_min = min(p[1] for p in box2)
+    x2_max = max(p[0] for p in box2)
+    y2_max = max(p[1] for p in box2)
+
+    inter_x1 = max(x1_min, x2_min)
+    inter_y1 = max(y1_min, y2_min)
+    inter_x2 = min(x1_max, x2_max)
+    inter_y2 = min(y1_max, y2_max)
+
+    if inter_x2 <= inter_x1 or inter_y2 <= inter_y1:
+        return 0.0
+
+    inter_area = (inter_x2 - inter_x1) * (inter_y2 - inter_y1)
+    area1 = (x1_max - x1_min) * (y1_max - y1_min)
+    area2 = (x2_max - x2_min) * (y2_max - y2_min)
+    union_area = area1 + area2 - inter_area
+    return inter_area / max(union_area, 1.0)
+
+
+def _merge_bilingual_regions(
+    primary: list[TextRegion],
+    secondary: list[TextRegion],
+) -> list[TextRegion]:
+    """Fuse primary (Latin) and secondary (Script) OCR outputs into a comprehensive list."""
+    if not secondary:
+        return primary
+    if not primary:
+        return secondary
+
+    merged: list[TextRegion] = list(primary)
+
+    for s_reg in secondary:
+        matched = False
+        for i, p_reg in enumerate(merged):
+            iou = _calculate_iou(p_reg.bbox, s_reg.bbox)
+            if iou > 0.40:
+                matched = True
+                # If secondary region has non-ASCII characters or significantly higher confidence, prefer it
+                s_has_unicode = any(ord(c) > 127 for c in s_reg.text)
+                p_has_unicode = any(ord(c) > 127 for c in p_reg.text)
+                if (s_has_unicode and not p_has_unicode) or (s_reg.confidence > p_reg.confidence + 0.15):
+                    merged[i] = s_reg
+                break
+        if not matched:
+            merged.append(s_reg)
+
+    return merged
 
 
 # ---------------------------------------------------------------------------
@@ -222,12 +322,11 @@ def run_ocr(
     lang: Optional[str] = None,
 ) -> list[TextRegion]:
     """
-    Run PaddleOCR on a preprocessed image.
+    Run PaddleOCR on a preprocessed image with automatic multilingual script detection.
 
     Args:
         image: BGR numpy array (preprocessed).
-        lang: Force a language. If None, starts with 'en' and falls back to
-              'devanagari' if non-Latin script is detected.
+        lang: Force a specific language. If None, auto-detects script and runs multi-script fusion.
 
     Returns:
         List of TextRegion with text, bounding box, and confidence.
@@ -256,6 +355,10 @@ def run_ocr(
             easy_langs = ["en"]
             if use_lang in ("hi", "devanagari"):
                 easy_langs = ["hi", "en"]
+            elif use_lang in ("ar", "arabic"):
+                easy_langs = ["ar", "en"]
+            elif use_lang in ("ch", "chinese"):
+                easy_langs = ["ch_sim", "en"]
             reader = easyocr.Reader(easy_langs, gpu=False)
             _ocr_instances[use_lang] = ("easyocr", reader)
             result = _call_paddleocr(_ocr_instances[use_lang], image)
@@ -265,13 +368,17 @@ def run_ocr(
 
     regions = _parse_paddleocr_results(result)
 
-    # Auto-detect non-Latin and retry with multilingual/devanagari
-    if lang is None and _is_likely_non_latin(regions):
-        try:
-            return run_ocr(image, lang="devanagari")
-        except Exception as exc:
-            logger.warning("Fallback to devanagari OCR failed: %s; keeping latin results", exc)
-            return regions
+    # Universal Multilingual Auto-Detection:
+    # If no language was forced, detect dominant non-Latin script and fuse multilingual outputs
+    if lang is None:
+        target_script = _detect_dominant_script(regions)
+        if target_script and target_script != "en":
+            try:
+                script_regions = run_ocr(image, lang=target_script)
+                if script_regions:
+                    return _merge_bilingual_regions(regions, script_regions)
+            except Exception as exc:
+                logger.warning("Multilingual OCR fusion for script '%s' failed: %s", target_script, exc)
 
     return regions
 

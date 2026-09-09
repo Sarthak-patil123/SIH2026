@@ -18,7 +18,7 @@ from ocr import run_ocr
 from ocr.mrz import extract_mrz
 from ocr.shared import classify_document
 from ocr.extractors import (
-    extract_aadhaar, extract_driving_licence, extract_pan, extract_voter_id, extract_passport,
+    extract_aadhaar, extract_driving_licence, extract_pan, extract_voter_id, extract_passport, extract_dob_proof,
 )
 from llm_parser import parse_document_with_llm
 from preprocessing import preprocess
@@ -299,6 +299,13 @@ async def extract_document(
         except Exception as exc:
             logger.warning("Visa extractor failed: %s", exc)
 
+    elif _normalised_type in ("dob_proof", "birth_certificate", "school_leaving_certificate"):
+        try:
+            dob_obj = extract_dob_proof(ocr_regions)
+            rule_fields.update(_fields_from_dataclass(dob_obj, 0.85, "ocr"))
+        except Exception as exc:
+            logger.warning("DOB proof extractor failed: %s", exc)
+
     elif _normalised_type in ("national_id", "pan", "aadhaar", "voter_id") and not rule_fields:
         # Try Aadhaar first, then PAN, then Voter ID (most specific to least)
         try:
@@ -326,18 +333,30 @@ async def extract_document(
     # Fallback cascade: if document type was unknown or extractor produced no fields,
     # try all standard extractors to identify document from its fields
     if not rule_fields:
-        # 1. Try Driving Licence
+        # 1. Try DOB Proof / Birth Certificate
         try:
-            dl = extract_driving_licence(ocr_regions)
-            dl_dict = _fields_from_dataclass(dl, 0.85, "ocr")
-            if "dl_number" in dl_dict or ("name" in dl_dict and "date_of_birth" in dl_dict):
-                rule_fields.update(dl_dict)
-                detected_type = "driving_license"
-                _normalised_type = "driving_licence"
+            dob_obj = extract_dob_proof(ocr_regions)
+            dob_dict = _fields_from_dataclass(dob_obj, 0.85, "ocr")
+            if "date_of_birth" in dob_dict and ("father_name" in dob_dict or "registration_number" in dob_dict or "name" in dob_dict):
+                rule_fields.update(dob_dict)
+                detected_type = "dob_proof"
+                _normalised_type = "dob_proof"
         except Exception:
             pass
 
-        # 2. Try PAN
+        # 2. Try Driving Licence
+        if not rule_fields:
+            try:
+                dl = extract_driving_licence(ocr_regions)
+                dl_dict = _fields_from_dataclass(dl, 0.85, "ocr")
+                if "dl_number" in dl_dict or ("name" in dl_dict and "date_of_birth" in dl_dict):
+                    rule_fields.update(dl_dict)
+                    detected_type = "driving_license"
+                    _normalised_type = "driving_licence"
+            except Exception:
+                pass
+
+        # 3. Try PAN
         if not rule_fields:
             try:
                 pan = extract_pan(ocr_regions)
@@ -349,7 +368,7 @@ async def extract_document(
             except Exception:
                 pass
 
-        # 3. Try Aadhaar
+        # 4. Try Aadhaar
         if not rule_fields:
             try:
                 aad = extract_aadhaar(ocr_regions)
@@ -361,7 +380,7 @@ async def extract_document(
             except Exception:
                 pass
 
-        # 4. Try Voter ID
+        # 5. Try Voter ID
         if not rule_fields:
             try:
                 voter = extract_voter_id(ocr_regions)
@@ -373,7 +392,7 @@ async def extract_document(
             except Exception:
                 pass
 
-        # 5. Try Visa
+        # 6. Try Visa
         if not rule_fields:
             try:
                 from ocr.visa.processor import process_visa
@@ -396,21 +415,27 @@ async def extract_document(
         try:
             llm_structured = parse_document_with_llm(ocr_regions, _normalised_type)
             if llm_structured and isinstance(llm_structured, dict):
-                conf_score = float(llm_structured.get("confidence_score", 0.8))
+                conf_score = float(llm_structured.get("confidence_score", 0.90 if llm_structured.get("is_llm_parsed") else 0.70))
                 for k, v in llm_structured.items():
+                    # Skip nested dictionaries and metadata keys for flat rule_fields
                     if (
-                        k not in ("is_llm_parsed", "raw_lines_count", "extraction_method", "notes", "flexible_fields")
+                        k not in ("is_llm_parsed", "raw_lines_count", "extraction_method", "notes", "flexible_fields", "target_schema", "document", "person", "parents", "birth_details", "registration", "issue_details", "address", "education_details", "additional_information", "extraction_metadata")
+                        and not isinstance(v, (dict, list))
                         and v is not None
-                        and v != ""
-                        and k not in rule_fields
+                        and str(v).strip() != ""
                     ):
-                        rule_fields[k] = FieldValue(value=str(v), confidence=conf_score, source="llm")
+                        val_str = str(v).strip()
+                        # Override if rule_fields was empty or had noisy OCR text (e.g., #, garbage tokens)
+                        curr_rf = rule_fields.get(k)
+                        is_noisy = curr_rf and (curr_rf.value.startswith("#") or len(curr_rf.value) < 2 or curr_rf.confidence < 0.80)
+                        if k not in rule_fields or is_noisy:
+                            rule_fields[k] = FieldValue(value=val_str, confidence=conf_score, source="llm")
 
                 # Attach any detected flexible fields
                 flex = llm_structured.get("flexible_fields", {})
                 if isinstance(flex, dict):
                     for fk, fv in flex.items():
-                        if fv is not None and fv != "" and fk not in rule_fields:
+                        if fv is not None and not isinstance(fv, (dict, list)) and str(fv).strip() != "" and fk not in rule_fields:
                             rule_fields[fk] = FieldValue(value=str(fv), confidence=conf_score * 0.9, source="llm")
         except Exception as exc:
             logger.warning("LLM parser pipeline integration warning: %s", exc)
