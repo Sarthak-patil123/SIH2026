@@ -253,13 +253,30 @@ async def extract_document(
     # ── Step 6: Document field extraction ────────────────────────────────────
     rule_fields: dict[str, FieldValue] = {}
 
-    def _fields_from_dataclass(obj, conf: float, source: str) -> dict[str, FieldValue]:
-        """Convert a dataclass result into FieldValue dict, skipping None/False/empty."""
+    def _get_region_confidence(val_str: str) -> float:
+        """Find the real neural OCR confidence of the text region containing the value."""
+        if not val_str or not ocr_regions:
+            return round(float(ocr_conf_mean if ocr_conf_mean > 0 else 0.88), 3)
+        val_clean = str(val_str).lower().replace(" ", "").replace("-", "").replace("/", "")
+        best_conf = None
+        for r in ocr_regions:
+            r_text = r.text.lower().replace(" ", "").replace("-", "").replace("/", "")
+            if val_clean in r_text or r_text in val_clean:
+                if best_conf is None or r.confidence > best_conf:
+                    best_conf = r.confidence
+        if best_conf is not None:
+            return round(float(best_conf), 3)
+        return round(float(ocr_conf_mean if ocr_conf_mean > 0 else 0.88), 3)
+
+    def _fields_from_dataclass(obj, default_conf: float, source: str) -> dict[str, FieldValue]:
+        """Convert a dataclass result into FieldValue dict, using genuine OCR region confidence."""
         out: dict[str, FieldValue] = {}
         for fname in obj.__dataclass_fields__:
             v = getattr(obj, fname, None)
             if v is not None and v is not False and v != "":
-                out[fname] = FieldValue(value=str(v), confidence=conf, source=source)
+                v_str = str(v)
+                real_conf = _get_region_confidence(v_str)
+                out[fname] = FieldValue(value=v_str, confidence=real_conf, source=source)
         return out
 
     # Passport / national_id with MRZ → populate from MRZ first
@@ -295,7 +312,8 @@ async def extract_document(
             visa_res = process_visa(img)
             for k, v in (visa_res.get("fields") or {}).items():
                 if v:
-                    rule_fields[k] = FieldValue(value=str(v), confidence=0.85, source="ocr")
+                    real_conf = _get_region_confidence(str(v))
+                    rule_fields[k] = FieldValue(value=str(v), confidence=real_conf, source="ocr")
         except Exception as exc:
             logger.warning("Visa extractor failed: %s", exc)
 
@@ -305,7 +323,8 @@ async def extract_document(
             dob_res = process_dob_proof(img)
             for k, v in (dob_res.get("fields") or {}).items():
                 if v:
-                    rule_fields[k] = FieldValue(value=str(v), confidence=0.85, source="ocr")
+                    real_conf = _get_region_confidence(str(v))
+                    rule_fields[k] = FieldValue(value=str(v), confidence=real_conf, source="ocr")
         except Exception as exc:
             logger.warning("DOB Proof extractor failed: %s", exc)
 
@@ -392,7 +411,7 @@ async def extract_document(
                 if any(k in v_fields for k in ("visa_number", "passport_number", "visa_type")):
                     for k, v in v_fields.items():
                         if v:
-                            rule_fields[k] = FieldValue(value=str(v), confidence=0.85, source="ocr")
+                            rule_fields[k] = FieldValue(value=str(v), confidence=_get_region_confidence(str(v)), source="ocr")
                     detected_type = "visa"
                     _normalised_type = "visa"
             except Exception:
@@ -407,7 +426,7 @@ async def extract_document(
                 if any(k in dob_f for k in ("date_of_birth", "registration_number")):
                     for k, v in dob_f.items():
                         if v:
-                            rule_fields[k] = FieldValue(value=str(v), confidence=0.85, source="ocr")
+                            rule_fields[k] = FieldValue(value=str(v), confidence=_get_region_confidence(str(v)), source="ocr")
                     detected_type = "dob_proof"
                     _normalised_type = "dob_proof"
             except Exception:
