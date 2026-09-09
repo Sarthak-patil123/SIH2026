@@ -7,6 +7,7 @@ import { authRoutes } from './modules/auth/auth.routes';
 import { caseRoutes } from './modules/cases/case.routes';
 import { documentRoutes } from './modules/documents/document.routes';
 import { alertRoutes } from './modules/alerts/alert.routes';
+import { chatbotRoutes } from './modules/chatbot/chatbot.routes';
 
 export const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/chatbot', chatbotRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
