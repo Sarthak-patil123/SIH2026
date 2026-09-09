@@ -4,13 +4,12 @@ Works with any OpenAI-compatible endpoint:
 - Groq Cloud API
 - OpenAI (e.g. https://api.openai.com/v1)
 - LMStudio / vLLM / LocalAI / OpenRouter
+- Google Gemini (via generativelanguage.googleapis.com/v1beta/openai)
 Provides graceful heuristic fallback if no LLM service is running or reachable.
 """
 from __future__ import annotations
 
-import json
 import logging
-import re
 from typing import Any
 
 import requests
@@ -37,30 +36,33 @@ class FlexibleLLMClient:
         temperature: float | None = None,
         timeout: float | None = None,
     ) -> str:
-        """Query LLM chat completions endpoint, returning the raw content response string."""
+        """Query LLM chat completions endpoint, returning the raw content response string.
+
+        Tries the primary model first, then iterates through `config.fallback_models`
+        if the primary returns a non-200 status or raises a connection error.
+        """
         base_url = (api_base_url or self.config.api_base_url).rstrip("/")
         model = model_name or self.config.model_name
         key = api_key or self.config.api_key
         temp = temperature if temperature is not None else self.config.temperature
         t_out = timeout if timeout is not None else self.config.timeout_seconds
 
-        # Form endpoint URL
         endpoint = f"{base_url}/chat/completions"
 
-        headers = {
+        headers: dict[str, str] = {
             "Content-Type": "application/json",
         }
         if key and key != "EMPTY":
             headers["Authorization"] = f"Bearer {key}"
 
-        candidate_models = [model]
-        # Automatic fallback models for resilience against demand spikes or 404s
-        for fallback in ["gemini-flash-latest", "gemini-3.5-flash-lite", "gemini-3-flash-preview"]:
+        # Build the ordered candidate list: primary model first, then configured fallbacks
+        candidate_models: list[str] = [model]
+        for fallback in self.config.fallback_models:
             if fallback not in candidate_models:
                 candidate_models.append(fallback)
 
         for candidate in candidate_models:
-            payload = {
+            payload: dict[str, Any] = {
                 "model": candidate,
                 "messages": [
                     {"role": "system", "content": system_prompt},

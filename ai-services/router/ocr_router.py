@@ -107,7 +107,7 @@ async def extract_document(
             return None
         bbox = regions_map[key]
         crop = crop_region(img, bbox)
-        conf = next((d[5] for d in detections if d[0] == key and len(d) > 5), 0.9) if detections else 0.0
+        conf = next((d[5] for d in detections if d[0] == key and len(d) > 5), 0.0) if detections else 0.0
         return BoundingBox(
             bounding_box=list(bbox),
             confidence=conf,

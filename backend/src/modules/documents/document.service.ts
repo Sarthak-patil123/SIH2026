@@ -27,12 +27,12 @@ export class DocumentService {
     const formData = new FormData();
     formData.append(
       "passport",
-      new Blob([passportBuffer]),
+      new Blob([passportBuffer as any]),
       passportFilename || "passport.jpg"
     );
     formData.append(
       "face",
-      new Blob([faceBuffer]),
+      new Blob([faceBuffer as any]),
       faceFilename || "live_face.jpg"
     );
 
@@ -56,7 +56,7 @@ export class DocumentService {
     options?: LLMVerificationOptions
   ): Promise<DocumentVerificationResponse> {
     const formData = new FormData();
-    formData.append("visa", new Blob([fileBuffer]), filename || "visa.jpg");
+    formData.append("visa", new Blob([fileBuffer as any]), filename || "visa.jpg");
 
     if (options?.llmModel) formData.append("llm_model", options.llmModel);
     if (options?.llmApiBase) formData.append("llm_api_base", options.llmApiBase);
@@ -80,7 +80,7 @@ export class DocumentService {
     const formData = new FormData();
     formData.append(
       "driving_licence",
-      new Blob([fileBuffer]),
+      new Blob([fileBuffer as any]),
       filename || "driving_licence.jpg"
     );
 
@@ -107,7 +107,7 @@ export class DocumentService {
     const formData = new FormData();
     formData.append(
       "national_id",
-      new Blob([fileBuffer]),
+      new Blob([fileBuffer as any]),
       filename || "national_id.jpg"
     );
 
@@ -134,7 +134,7 @@ export class DocumentService {
     const formData = new FormData();
     formData.append(
       "dob_proof",
-      new Blob([fileBuffer]),
+      new Blob([fileBuffer as any]),
       filename || "dob_proof.jpg"
     );
 

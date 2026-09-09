@@ -7,6 +7,12 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || "super-secret-key",
   databaseUrl: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/sih_db",
   aiServiceUrl: process.env.AI_SERVICE_URL || "http://localhost:8000",
+  llm: {
+    apiBase: process.env.LLM_API_BASE || "",
+    apiKey: process.env.LLM_API_KEY || "",
+    modelName: process.env.LLM_MODEL_NAME || "",
+    fallbackModels: process.env.LLM_FALLBACK_MODELS || "",
+  },
   fabric: {
     mspId: process.env.FABRIC_MSP_ID || "Org1MSP",
     channelName: process.env.FABRIC_CHANNEL || "identity-channel",

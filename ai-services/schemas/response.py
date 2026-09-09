@@ -1,6 +1,6 @@
 """Pydantic v2 response models — implements the JSON schema from pipeline_architecture.md §5.1."""
 from __future__ import annotations
-from typing import Literal
+from typing import Any, Literal
 from pydantic import BaseModel
 
 
