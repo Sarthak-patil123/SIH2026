@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, FolderOpen, ScanLine, Bell, ClipboardList,
-  User, LogOut, Shield, ChevronLeft, ChevronRight, Menu, X
+  User, LogOut, Shield, ChevronLeft, ChevronRight, Menu, X, MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -50,6 +50,7 @@ const adminSections: NavSection[] = [
     items: [
       { label: 'Alerts', href: '/admin/alerts', icon: <Bell size={18} /> },
       { label: 'Audit Trail', href: '/admin/audit', icon: <ClipboardList size={18} /> },
+      { label: 'AI Chatbot', href: '/admin/chatbot', icon: <MessageSquare size={18} /> },
     ],
   },
   {
