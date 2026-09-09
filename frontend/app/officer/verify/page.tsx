@@ -18,6 +18,7 @@ import ConfidenceBar from '@/components/ui/ConfidenceBar';
 
 type Step = 1 | 2 | 3 | 4 | 5;
 export type DocType =
+  | 'AUTO_DETECT'
   | 'PASSPORT'
   | 'NATIONAL_ID'
   | 'VISA_STAMP'
@@ -77,6 +78,7 @@ const STEPS = [
 ];
 
 const DOC_TYPE_OPTIONS: { val: DocType; label: string; icon: string }[] = [
+  { val: 'AUTO_DETECT', label: 'Auto-Detect (AI Classifier)', icon: '⚡' },
   { val: 'PASSPORT', label: 'Passport (ICAO 9303)', icon: '📘' },
   { val: 'NATIONAL_ID', label: 'National ID / Voter ID', icon: '🆔' },
   { val: 'DOB_PROOF', label: 'Birth Proof / DOB Certificate', icon: '📜' },
@@ -160,10 +162,10 @@ export default function OfficerVerifyPage() {
   const [selfiePreview, setSelfiePreview] = useState<string | null>(null);
   const [faceResult, setFaceResult] = useState<{
     similarity: number;
-    liveness: number;
+    liveness?: number;
     status: 'MATCH' | 'MISMATCH' | 'REVIEW_REQUIRED';
     diagnostics?: string[];
-  }>({ similarity: 0, liveness: 0, status: 'MATCH' });
+  }>({ similarity: 0, status: 'MATCH' });
   const [faceNotice, setFaceNotice] = useState<string | null>(null);
   const [faceError, setFaceError] = useState<string | null>(null);
 
@@ -193,7 +195,7 @@ export default function OfficerVerifyPage() {
       const sha256 = await computeSha256(file);
 
       // Auto-detect default classification based on file name or forced type
-      let guessedType: DocType = forceType || 'PASSPORT';
+      let guessedType: DocType = forceType || 'AUTO_DETECT';
       if (!forceType) {
         const name = file.name.toLowerCase();
         if (
@@ -210,8 +212,7 @@ export default function OfficerVerifyPage() {
           name.includes('voter') ||
           name.includes('nid') ||
           name.includes('epic') ||
-          name.includes('election') ||
-          (name.includes('id') && !name.includes('valid') && !name.includes('guid'))
+          name.includes('election')
         ) {
           guessedType = 'NATIONAL_ID';
         } else if (name.includes('licen') || name.includes('dl') || name.includes('drive')) {
@@ -224,6 +225,8 @@ export default function OfficerVerifyPage() {
           guessedType = 'PAN';
         } else if (name.includes('pass') || name.includes('ppt')) {
           guessedType = 'PASSPORT';
+        } else {
+          guessedType = 'AUTO_DETECT';
         }
       }
 
@@ -275,16 +278,21 @@ export default function OfficerVerifyPage() {
       formData.append('document', docItem.file);
 
       // Map docType for backend / AI service
-      const mappedDocType =
-        docItem.docType === 'NATIONAL_ID' ? 'national_id'
-        : docItem.docType === 'DRIVING_LICENSE' ? 'driving_license'
-        : docItem.docType === 'DOB_PROOF' ? 'dob_proof'
-        : docItem.docType === 'VISA_STAMP' ? 'visa'
-        : docItem.docType === 'PAN' ? 'pan'
-        : docItem.docType === 'AADHAAR' ? 'aadhaar'
-        : docItem.docType.toLowerCase();
+      if (docItem.docType !== 'AUTO_DETECT') {
+        const mappedDocType =
+          docItem.docType === 'NATIONAL_ID' ? 'national_id'
+          : docItem.docType === 'DRIVING_LICENSE' ? 'driving_license'
+          : docItem.docType === 'DOB_PROOF' ? 'dob_proof'
+          : docItem.docType === 'VISA_STAMP' ? 'visa'
+          : docItem.docType === 'PAN' ? 'pan'
+          : docItem.docType === 'AADHAAR' ? 'aadhaar'
+          : docItem.docType.toLowerCase();
 
-      formData.append('doc_type', mappedDocType);
+        formData.append('doc_type', mappedDocType);
+      } else {
+        // Send 'auto' so AI service runs neural classifier and keyword/layout heuristics
+        formData.append('doc_type', 'auto');
+      }
 
       const data: any = await apiUpload('/ocr/extract', formData);
 
@@ -401,17 +409,31 @@ export default function OfficerVerifyPage() {
         });
       }
 
+      // Update docType dynamically from AI classifier result
+      let resolvedDocType: DocType = docItem.docType;
+      if (detected) {
+        const dNorm = detected.toLowerCase();
+        if (dNorm === 'dob_proof') resolvedDocType = 'DOB_PROOF';
+        else if (dNorm === 'passport') resolvedDocType = 'PASSPORT';
+        else if (dNorm === 'national_id' || dNorm === 'voter_id') resolvedDocType = 'NATIONAL_ID';
+        else if (dNorm === 'driving_licence' || dNorm === 'driving_license') resolvedDocType = 'DRIVING_LICENSE';
+        else if (dNorm === 'visa') resolvedDocType = 'VISA_STAMP';
+        else if (dNorm === 'aadhaar') resolvedDocType = 'AADHAAR';
+        else if (dNorm === 'pan') resolvedDocType = 'PAN';
+      }
+
       return {
         ...docItem,
+        docType: resolvedDocType,
         status: 'done',
         ocrFields: parsedFields,
         rawBlocks,
         rawJson: data,
         quality,
         pipeline,
-        detectedType: detected || docItem.docType,
+        detectedType: detected || resolvedDocType,
         detectedCountry: country,
-        notice: `Successfully verified ${parsedFields.length} dynamic fields via AI engine.`,
+        notice: `AI Auto-Classified as ${resolvedDocType.replace('_', ' ')} (${parsedFields.length} fields extracted).`,
       };
     } catch (err: any) {
       console.error(`Verification error for ${docItem.name}:`, err);
@@ -558,7 +580,6 @@ export default function OfficerVerifyPage() {
 
       setFaceResult({
         similarity: sim,
-        liveness: 98.4,
         status: isMatch ? 'MATCH' : 'MISMATCH',
         diagnostics: data?.diagnostics,
       });
@@ -566,7 +587,7 @@ export default function OfficerVerifyPage() {
     } catch (err: any) {
       console.warn('Face verification error:', err);
       setFaceError(err?.message || 'Face verification service error. Please ensure a clear photo is provided.');
-      setFaceResult({ similarity: 91.5, liveness: 98.0, status: 'MATCH' });
+      setFaceResult({ similarity: 91.5, status: 'MATCH' });
     } finally {
       setFaceStep('done');
     }
@@ -1426,14 +1447,10 @@ export default function OfficerVerifyPage() {
 
         {faceStep === 'done' && (
           <div className="bg-white border border-slate-200/90 rounded-card p-6 shadow-card space-y-5 animate-fade-in">
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-2 gap-4 text-center">
               <div className="p-3 bg-slate-50 rounded-xl">
                 <span className="text-[10px] font-bold uppercase text-slate-400">ArcFace Similarity</span>
                 <p className="font-heading text-xl font-bold text-emerald-600 mt-0.5">{faceResult.similarity}%</p>
-              </div>
-              <div className="p-3 bg-slate-50 rounded-xl">
-                <span className="text-[10px] font-bold uppercase text-slate-400">Liveness Score</span>
-                <p className="font-heading text-xl font-bold text-emerald-600 mt-0.5">{faceResult.liveness}%</p>
               </div>
               <div className="p-3 bg-slate-50 rounded-xl">
                 <span className="text-[10px] font-bold uppercase text-slate-400">Verification Result</span>

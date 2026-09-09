@@ -326,14 +326,10 @@ export default function AdminCaseDetailPage({ params }: { params: { caseId: stri
                             ))}
                           </div>
 
-                          <div className="grid grid-cols-3 gap-3">
+                          <div className="grid grid-cols-2 gap-3">
                             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
                               <span className="text-[10px] font-bold uppercase text-slate-400">Similarity</span>
                               <p className="font-heading text-lg font-bold text-slate-900 mt-0.5">{primaryDoc.faceResult.similarity}%</p>
-                            </div>
-                            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
-                              <span className="text-[10px] font-bold uppercase text-slate-400">Liveness</span>
-                              <p className="font-heading text-lg font-bold text-slate-900 mt-0.5">{primaryDoc.faceResult.liveness}%</p>
                             </div>
                             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
                               <span className="text-[10px] font-bold uppercase text-slate-400">Status</span>

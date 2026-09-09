@@ -291,12 +291,6 @@ export default function OfficerCaseDetailPage({ params }: { params: { caseId: st
                   </div>
 
                   <div className="space-y-1.5 text-xs">
-                    <div className="flex items-center justify-between py-1 border-b border-slate-100">
-                      <span className="text-slate-600">Liveness Detection</span>
-                      <span className="font-semibold text-emerald-600 flex items-center gap-1">
-                        <Check size={13} /> {primaryDoc.faceResult.liveness.toFixed(1)}% (Passed)
-                      </span>
-                    </div>
                     <div className="flex items-center justify-between py-1">
                       <span className="text-slate-600">Tamper Analysis</span>
                       <span className={`font-semibold flex items-center gap-1 ${primaryDoc.tamperResult?.status === 'CLEAN' ? 'text-emerald-600' : 'text-rose-600'}`}>

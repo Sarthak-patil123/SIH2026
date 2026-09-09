@@ -49,7 +49,7 @@ def _img_to_b64(img: np.ndarray) -> str:
 @router.post("/extract", response_model=VerificationResponse)
 async def extract_document(
     document: UploadFile = File(..., description="Document image"),
-    doc_type: Literal["passport", "national_id", "driving_license", "dob_proof"] | None = Form(None),
+    doc_type: str | None = Form(None, description="passport | national_id | driving_license | dob_proof | visa | aadhaar | pan | auto"),
 ) -> dict:
     """
     Pipeline:
@@ -147,7 +147,7 @@ async def extract_document(
     # Normalise spelling: classifier uses British 'driving_licence',
     # API form field accepts American 'driving_license'. Canonicalise to 'driving_licence'
     # internally and expose whichever was provided to the user.
-    if doc_type is None:
+    if not doc_type or doc_type.strip().lower() in ("auto", "auto_detect", "unknown", "none"):
         classification = classify_document(ocr_regions)
         detected_type = classification.document_type
     else:

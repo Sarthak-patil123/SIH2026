@@ -68,6 +68,13 @@ _NREGA_RURAL_CONTEXT = [
 _NPR_TITLE_KEYWORDS = ["NATIONAL POPULATION REGISTER"]
 _NPR_ISSUER_KEYWORDS = ["REGISTRAR GENERAL", "CENSUS COMMISSIONER"]
 _PASSPORT_KEYWORDS = ["PASSPORT", "REPUBLIC OF INDIA PASSPORT", "TRAVEL DOCUMENT"]
+_DOB_PROOF_KEYWORDS = [
+    "BIRTH CERTIFICATE", "CERTIFICATE OF BIRTH", "DATE OF BIRTH", "PLACE OF BIRTH",
+    "REGISTRAR OF BIRTHS", "REGISTRAR OF BIRTHS AND DEATHS", "MUNICIPAL CORPORATION",
+    "REGISTRATION OF BIRTHS", "FORM 5", "FORM 9", "JANM PRAMAN", "BIRTH REPORT",
+    "CHIEF REGISTRAR", "HEALTH DEPARTMENT", "VITAL STATISTICS", "LIVE BIRTH",
+    "SECONDARY SCHOOL", "MATRICULATION", "CBSE", "ICSE", "SCHOOL LEAVING",
+]
 
 
 @dataclass
@@ -136,6 +143,11 @@ def classify_document(regions: list[TextRegion]) -> DocumentClassification:
     npr_issuer_kw = _count_keyword_matches(normalised_regions, _NPR_ISSUER_KEYWORDS)
     visa_kw = _count_keyword_matches(normalised_regions, _VISA_KEYWORDS)
     passport_kw = _count_keyword_matches(normalised_regions, _PASSPORT_KEYWORDS)
+    dob_kw = _count_keyword_matches(normalised_regions, _DOB_PROOF_KEYWORDS)
+    dob_kw = max(
+        dob_kw,
+        _count_keyword_matches([joined_normalised], _DOB_PROOF_KEYWORDS),
+    )
 
     nrega_hindi_titles = (
         "राष्ट्रीय ग्रामीण रोजगार गारंटी",
@@ -222,6 +234,8 @@ def classify_document(regions: list[TextRegion]) -> DocumentClassification:
         add("passport", 2 * passport_kw, f"PASSPORT_KEYWORDS_{passport_kw}")
     if has_mrz:
         add("passport", 4, "MRZ_DETECTED")
+    if dob_kw:
+        add("dob_proof", 3 * dob_kw, f"DOB_KEYWORDS_{dob_kw}")
 
     if not scores:
         return DocumentClassification("unknown", 0.2, ["NO_DOCUMENT_HINTS"], probe_text)
