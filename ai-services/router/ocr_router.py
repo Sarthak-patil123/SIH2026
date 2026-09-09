@@ -299,6 +299,16 @@ async def extract_document(
         except Exception as exc:
             logger.warning("Visa extractor failed: %s", exc)
 
+    elif _normalised_type == "dob_proof":
+        try:
+            from ocr.dob_proof.processor import process_dob_proof
+            dob_res = process_dob_proof(img)
+            for k, v in (dob_res.get("fields") or {}).items():
+                if v:
+                    rule_fields[k] = FieldValue(value=str(v), confidence=0.85, source="ocr")
+        except Exception as exc:
+            logger.warning("DOB Proof extractor failed: %s", exc)
+
     elif _normalised_type in ("national_id", "pan", "aadhaar", "voter_id") and not rule_fields:
         # Try Aadhaar first, then PAN, then Voter ID (most specific to least)
         try:
@@ -385,6 +395,21 @@ async def extract_document(
                             rule_fields[k] = FieldValue(value=str(v), confidence=0.85, source="ocr")
                     detected_type = "visa"
                     _normalised_type = "visa"
+            except Exception:
+                pass
+
+        # 6. Try DOB Proof
+        if not rule_fields:
+            try:
+                from ocr.dob_proof.processor import process_dob_proof
+                dob_res = process_dob_proof(img)
+                dob_f = dob_res.get("fields") or {}
+                if any(k in dob_f for k in ("date_of_birth", "registration_number")):
+                    for k, v in dob_f.items():
+                        if v:
+                            rule_fields[k] = FieldValue(value=str(v), confidence=0.85, source="ocr")
+                    detected_type = "dob_proof"
+                    _normalised_type = "dob_proof"
             except Exception:
                 pass
 
