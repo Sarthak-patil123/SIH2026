@@ -20,6 +20,7 @@ from ocr.shared import classify_document
 from ocr.extractors import (
     extract_aadhaar, extract_driving_licence, extract_pan, extract_voter_id, extract_passport,
 )
+from llm_parser import parse_document_with_llm
 from preprocessing import preprocess
 from preprocessing.preprocessor import _load_image
 from schemas.response import (
@@ -173,7 +174,13 @@ async def extract_document(
         except Exception as exc:
             logger.debug("Full-image MRZ fallback error: %s", exc)
 
-        if mrz_result is not None:
+    if mrz_result is None:
+        try:
+            mrz_result = extract_mrz(img)
+        except Exception:
+            mrz_result = None
+
+    if mrz_result is not None:
             if hasattr(mrz_result, "passport_number"):
                 # TD3 Passport format
                 doc_num = getattr(mrz_result.passport_number, "value", None)
@@ -275,37 +282,138 @@ async def extract_document(
             logger.warning("Passport visual extractor failed: %s", exc)
 
     # Driving licence — use normalised type to catch both spellings
-    elif _normalised_type == "driving_licence":
+    elif _normalised_type in ("driving_licence", "driving_license"):
         try:
             dl = extract_driving_licence(ocr_regions)
-            rule_fields.update(_fields_from_dataclass(dl, 0.8, "ocr"))
+            rule_fields.update(_fields_from_dataclass(dl, 0.85, "ocr"))
         except Exception as exc:  # noqa: BLE001
             logger.warning("DL extractor failed: %s", exc)
+
+    elif _normalised_type == "visa":
+        try:
+            from ocr.visa.processor import process_visa
+            visa_res = process_visa(img)
+            for k, v in (visa_res.get("fields") or {}).items():
+                if v:
+                    rule_fields[k] = FieldValue(value=str(v), confidence=0.85, source="ocr")
+        except Exception as exc:
+            logger.warning("Visa extractor failed: %s", exc)
 
     elif _normalised_type in ("national_id", "pan", "aadhaar", "voter_id") and not rule_fields:
         # Try Aadhaar first, then PAN, then Voter ID (most specific to least)
         try:
             aad = extract_aadhaar(ocr_regions)
-            rule_fields.update(_fields_from_dataclass(aad, 0.8, "ocr"))
+            rule_fields.update(_fields_from_dataclass(aad, 0.85, "ocr"))
         except Exception as exc:
             logger.warning("Aadhaar extractor failed: %s", exc)
 
-        if not rule_fields:
+        if not rule_fields or not any(k in rule_fields for k in ("aadhaar_number", "aadhaar_last4")):
             try:
                 pan = extract_pan(ocr_regions)
-                rule_fields.update(_fields_from_dataclass(pan, 0.8, "ocr"))
+                pan_fields = _fields_from_dataclass(pan, 0.85, "ocr")
+                if "pan_number" in pan_fields:
+                    rule_fields = pan_fields
             except Exception as exc:
                 logger.warning("PAN extractor failed: %s", exc)
 
         if not rule_fields:
             try:
                 voter = extract_voter_id(ocr_regions)
-                rule_fields.update(_fields_from_dataclass(voter, 0.8, "ocr"))
+                rule_fields.update(_fields_from_dataclass(voter, 0.85, "ocr"))
             except Exception as exc:
                 logger.warning("Voter ID extractor failed: %s", exc)
 
-    # dob_proof — no dedicated extractor; return raw OCR blocks only
-    # (LLM layer downstream handles unstructured extraction for this doc type)
+    # Fallback cascade: if document type was unknown or extractor produced no fields,
+    # try all standard extractors to identify document from its fields
+    if not rule_fields:
+        # 1. Try Driving Licence
+        try:
+            dl = extract_driving_licence(ocr_regions)
+            dl_dict = _fields_from_dataclass(dl, 0.85, "ocr")
+            if "dl_number" in dl_dict or ("name" in dl_dict and "date_of_birth" in dl_dict):
+                rule_fields.update(dl_dict)
+                detected_type = "driving_license"
+                _normalised_type = "driving_licence"
+        except Exception:
+            pass
+
+        # 2. Try PAN
+        if not rule_fields:
+            try:
+                pan = extract_pan(ocr_regions)
+                pan_dict = _fields_from_dataclass(pan, 0.85, "ocr")
+                if "pan_number" in pan_dict:
+                    rule_fields.update(pan_dict)
+                    detected_type = "pan"
+                    _normalised_type = "pan"
+            except Exception:
+                pass
+
+        # 3. Try Aadhaar
+        if not rule_fields:
+            try:
+                aad = extract_aadhaar(ocr_regions)
+                aad_dict = _fields_from_dataclass(aad, 0.85, "ocr")
+                if "aadhaar_number" in aad_dict or "aadhaar_last4" in aad_dict:
+                    rule_fields.update(aad_dict)
+                    detected_type = "aadhaar"
+                    _normalised_type = "aadhaar"
+            except Exception:
+                pass
+
+        # 4. Try Voter ID
+        if not rule_fields:
+            try:
+                voter = extract_voter_id(ocr_regions)
+                voter_dict = _fields_from_dataclass(voter, 0.85, "ocr")
+                if "epic_number" in voter_dict or ("gender" in voter_dict and "name" in voter_dict):
+                    rule_fields.update(voter_dict)
+                    detected_type = "voter_id"
+                    _normalised_type = "voter_id"
+            except Exception:
+                pass
+
+        # 5. Try Visa
+        if not rule_fields:
+            try:
+                from ocr.visa.processor import process_visa
+                visa_res = process_visa(img)
+                v_fields = visa_res.get("fields") or {}
+                if any(k in v_fields for k in ("visa_number", "passport_number", "visa_type")):
+                    for k, v in v_fields.items():
+                        if v:
+                            rule_fields[k] = FieldValue(value=str(v), confidence=0.85, source="ocr")
+                    detected_type = "visa"
+                    _normalised_type = "visa"
+            except Exception:
+                pass
+
+    # ── Step 6b: LLM Structured Extraction ────────────────────────────────────
+    # For non-passport documents (visa, driving licence, national ID, dob proof),
+    # invoke llm_parser to produce aligned structured JSON and supplement fields.
+    llm_structured: dict | None = None
+    if _normalised_type != "passport":
+        try:
+            llm_structured = parse_document_with_llm(ocr_regions, _normalised_type)
+            if llm_structured and isinstance(llm_structured, dict):
+                conf_score = float(llm_structured.get("confidence_score", 0.8))
+                for k, v in llm_structured.items():
+                    if (
+                        k not in ("is_llm_parsed", "raw_lines_count", "extraction_method", "notes", "flexible_fields")
+                        and v is not None
+                        and v != ""
+                        and k not in rule_fields
+                    ):
+                        rule_fields[k] = FieldValue(value=str(v), confidence=conf_score, source="llm")
+
+                # Attach any detected flexible fields
+                flex = llm_structured.get("flexible_fields", {})
+                if isinstance(flex, dict):
+                    for fk, fv in flex.items():
+                        if fv is not None and fv != "" and fk not in rule_fields:
+                            rule_fields[fk] = FieldValue(value=str(fv), confidence=conf_score * 0.9, source="llm")
+        except Exception as exc:
+            logger.warning("LLM parser pipeline integration warning: %s", exc)
 
     # ── Step 7: Assemble response ─────────────────────────────────────────────
     elapsed_ms = (time.monotonic() - t_start) * 1000
@@ -332,6 +440,7 @@ async def extract_document(
             mrz=mrz_data,
             ocr_text_blocks=ocr_blocks,
             rule_extracted_fields=rule_fields,
+            structured_data=llm_structured,
         ),
         pipeline_summary=PipelineSummary(
             overall_confidence=overall_conf,

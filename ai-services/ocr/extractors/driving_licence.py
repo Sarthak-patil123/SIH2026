@@ -21,10 +21,18 @@ from ocr.shared.validator import (
     find_visual_field,
     find_visual_value_near,
     find_visual_value_right,
+    parse_date_comprehensive,
 )
 from ocr.shared.validators import normalize_dl
 
-_DATE_RE = re.compile(r"\b(\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4})\b")
+_DATE_RE = re.compile(
+    r"\b("
+    r"\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}|"
+    r"\d{4}[/.\-]\d{1,2}[/.\-]\d{1,2}|"
+    r"\d{1,2}[/.\-\s](?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[a-z]*[/.\-\s]\d{2,4}"
+    r")\b",
+    re.IGNORECASE,
+)
 
 _BLOOD_GROUP_RE = re.compile(
     r"\b(AB|A|B|O)\s*"
@@ -39,7 +47,15 @@ _COV_TOKENS = [
     "PSV", "3WT", "3WNT", "INVCRG",
 ]
 
-_NAME_LABELS = ["NAME", "HOLDER S NAME", "HOLDERS NAME", "HOLDER NAME"]
+_DL_NO_LABELS = [
+    "DL NO", "DL NUMBER", "DRIVING LICENCE NO", "DRIVING LICENSE NO",
+    "LICENCE NO", "LICENSE NO", "PERMIT NO", "DL. NO", "D.L. NO", "NO.", "LICENSE N"
+]
+
+_NAME_LABELS = [
+    "HOLDER S NAME", "HOLDERS NAME", "HOLDER NAME", "NAME OF HOLDER",
+    "NAME", "FULL NAME"
+]
 _RELATION_LABELS = [
     "SON DAUGHTER WIFE OF",
     "S D W OF",
@@ -53,13 +69,15 @@ _RELATION_LABELS = [
     "FATHER",
     "GUARDIAN",
 ]
-_DOB_LABELS = ["DATE OF BIRTH", "DOB", "BIRTH"]
-_DOI_LABELS = ["DATE OF ISSUE", "ISSUE DATE", "DOI", "ISSUE"]
+_DOB_LABELS = ["DATE OF BIRTH", "DOB", "BIRTH", "BIRTH DATE"]
+_DOI_LABELS = ["DATE OF ISSUE", "ISSUE DATE", "DOI", "ISSUE", "ISSUED ON"]
 _VALIDITY_LABELS = [
     "VALID TILL",
     "VALID UPTO",
     "VALID UNTIL",
     "VALIDITY",
+    "EXPIRATION DATE",
+    "EXPIRY DATE",
     "DATE OF EXPIRY",
     "EXPIRY",
 ]
@@ -91,7 +109,7 @@ _PRESENT_ADDRESS_LABELS = [
     "TEMP ADDRESS",
 ]
 _PERMANENT_ADDRESS_LABELS = ["PERMANENT ADDRESS", "PERM ADDRESS"]
-_GENERIC_ADDRESS_LABELS = ["ADDRESS", "ADD", "ADDR"]
+_GENERIC_ADDRESS_LABELS = ["ADDRESS", "ADD", "ADDR", "ADDREES"]
 
 
 @dataclass
@@ -109,11 +127,30 @@ class DrivingLicenceFields:
 
 
 def _find_dl_number(regions: list[TextRegion]) -> Optional[str]:
+    # 1. Label-based search
+    val = find_label_value(regions, _DL_NO_LABELS)
+    if val:
+        dl = normalize_dl(val)
+        if dl:
+            return dl
+        cleaned = re.sub(r"[^A-Z0-9/\-]", "", val.upper())
+        if len(cleaned) >= 5 and any(ch.isdigit() for ch in cleaned):
+            return cleaned
+
+    # 2. Direct region normalization
     for region in regions:
+        m = re.search(
+            r"(?:LICEN[CS]E\s*NO|DL\s*NO|DL)[\s.:\-]*([A-Z]{2}[ -]?[0-9]{2}[ -]?[0-9]{4}[ -]?[0-9]{5,8})",
+            region.text,
+            re.IGNORECASE,
+        )
+        if m:
+            return m.group(1).strip().replace(" ", "")
         dl = normalize_dl(region.text)
         if dl:
             return dl
 
+    # 3. Horizontal merging
     ordered = sorted(
         regions,
         key=lambda r: (
@@ -130,18 +167,28 @@ def _find_dl_number(regions: list[TextRegion]) -> Optional[str]:
             n_top = min(p[1] for p in nxt.bbox)
             n_bottom = max(p[1] for p in nxt.bbox)
             overlap = min(bottom, n_bottom) - max(top, n_top)
-            if overlap < height * 0.4:
+            if overlap < height * 0.3:
                 continue
             combined += " " + nxt.text
             dl = normalize_dl(combined)
             if dl:
                 return dl
+
+    # 4. Regex fallback for standard Indian or state pattern
+    for r in regions:
+        m = re.search(r"\b([A-Z]{2}[-\s/]?\d{2}[-\s/]?\d{4,11})\b", r.text.upper())
+        if m:
+            return re.sub(r"[\s/]", "-", m.group(1))
+
     return None
 
 
 def _first_date(text: Optional[str]) -> Optional[str]:
     if not text:
         return None
+    parsed = parse_date_comprehensive(text)
+    if parsed:
+        return parsed
     m = _DATE_RE.search(text)
     return m.group(1) if m else None
 
@@ -152,6 +199,14 @@ def _labelled_date(
     *,
     label_region: Optional[TextRegion] = None,
 ) -> Optional[str]:
+    # 1. Inline check on any region containing label + date
+    for r in regions:
+        for lbl in labels:
+            if re.search(rf"\b{re.escape(lbl)}\b", r.text, re.IGNORECASE):
+                dt = _first_date(r.text)
+                if dt:
+                    return dt
+
     if label_region is None:
         label_region = find_visual_field(regions, labels)
     if label_region is None:
@@ -185,6 +240,20 @@ def _find_validity_date(regions: list[TextRegion]) -> tuple[Optional[str], Optio
     if primary is None and transport is not None:
         primary = transport
 
+    # Fallback: check for "Validity : <DATE>" inline
+    if primary is None:
+        primary = _labelled_date(regions, _VALIDITY_LABELS)
+
+    # Fallback for "valid unti... / valid upto..." pattern in text regions
+    if primary is None:
+        for r in regions:
+            m_v = re.search(r"valid\s*unt[a-z]*[.\s:]*([0-9/\.\-]+)", r.text, re.I)
+            if m_v:
+                p_v = parse_date_comprehensive(m_v.group(1))
+                if p_v:
+                    primary = p_v
+                    break
+
     return primary, transport
 
 
@@ -208,9 +277,14 @@ _ALL_LABEL_WORDS = frozenset(
 )
 
 
+def _is_authority_text(text: str) -> bool:
+    norm = text.upper()
+    return any(w in norm for w in ("ISSUING AUTHORITY", "DESIGNATION", "RTO", "R.T.O", "SIGNATURE", "OFFICE", "COMMISSIONER"))
+
+
 def _is_known_label(text: str) -> bool:
     norm = re.sub(r"[^A-Z0-9]+", " ", text.upper()).strip()
-    return norm in _ALL_LABEL_WORDS
+    return norm in _ALL_LABEL_WORDS or _is_authority_text(text)
 
 
 def _looks_like_value(text: str) -> bool:
@@ -219,16 +293,39 @@ def _looks_like_value(text: str) -> bool:
 
 
 def _find_name(regions: list[TextRegion]) -> Optional[str]:
-    value = find_label_value(regions, _NAME_LABELS)
-    if value and _looks_like_value(value) and not _is_known_label(value):
-        return value.strip()
+    # 1. Inline check: Name : <Value>
+    for r in regions:
+        m = re.search(r"\b(?:HOLDER'?S\s*NAME|FULL\s*NAME|NAME)\s*[:\-]?\s*([A-Z\s]{3,35})\b", r.text, re.IGNORECASE)
+        if m:
+            val = m.group(1).strip()
+            if _looks_like_value(val) and not _is_known_label(val) and not _is_authority_text(val):
+                return val
+
+    # 2. Multi-tier label search
+    for labels in [
+        ["HOLDER S NAME", "HOLDERS NAME", "HOLDER NAME", "NAME OF HOLDER"],
+        _NAME_LABELS,
+    ]:
+        value = find_label_value(regions, labels)
+        if value and _looks_like_value(value) and not _is_known_label(value) and not _is_authority_text(value):
+            cleaned = value.strip(" :,-/|")
+            if not any(ch.isdigit() for ch in cleaned):
+                return cleaned
     return None
 
 
 def _find_relation(regions: list[TextRegion]) -> Optional[str]:
+    # 1. Inline check: S/W/D : <Value>
+    for r in regions:
+        m = re.search(r"\b(?:S/W/D|S/D/W|S/O|D/O|W/O|FATHER)\s*[:\-]?\s*([A-Z\s]{3,35})\b", r.text, re.IGNORECASE)
+        if m:
+            val = m.group(1).strip()
+            if _looks_like_value(val) and not _is_known_label(val):
+                return val
+
     value = find_label_value(regions, _RELATION_LABELS)
-    if value and _looks_like_value(value) and not _is_known_label(value):
-        return value.strip()
+    if value and _looks_like_value(value) and not _is_known_label(value) and not _is_authority_text(value):
+        return value.strip(" :,-/|")
     return None
 
 

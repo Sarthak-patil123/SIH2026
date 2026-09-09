@@ -197,10 +197,117 @@ def find_label_row_left_edge(
     return leftmost
 
 
+_DATE_RE_COMPREHENSIVE = re.compile(
+    r"(?<!\d)("
+    r"\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}|"
+    r"\d{4}[/.\-]\d{1,2}[/.\-]\d{1,2}|"
+    r"\d{1,2}[/.\-\s](?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[a-z]*[/.\-\s]\d{2,4}|"
+    r"(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[a-z]*[/.\-\s]\d{1,2}[,./\-\s]+\d{2,4}"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_MONTH_MAP = {
+    "JAN": "01", "FEB": "02", "MAR": "03", "APR": "04", "MAY": "05", "JUN": "06",
+    "JUL": "07", "AUG": "08", "SEP": "09", "OCT": "10", "NOV": "11", "DEC": "12",
+}
+
+
+def parse_date_comprehensive(text: Optional[str]) -> Optional[str]:
+    """Extract and normalize any date representation into standard YYYY-MM-DD."""
+    if not text:
+        return None
+    m = _DATE_RE_COMPREHENSIVE.search(text)
+    if not m:
+        return None
+    raw = m.group(1).strip()
+    # Named month: 28/OCT/2024, 21-JUN-2007, 18 Jan 1957
+    m_alpha = re.match(r"^(\d{1,2})[/.\-\s]([A-Za-z]{3})[a-z]*[/.\-\s](\d{2,4})$", raw)
+    if m_alpha:
+        d, mon, y = m_alpha.groups()
+        mon_num = _MONTH_MAP.get(mon.upper()[:3], "01")
+        if len(y) == 2:
+            y = f"20{y}" if int(y) < 50 else f"19{y}"
+        return f"{y}-{mon_num}-{int(d):02d}"
+
+    m_alpha2 = re.match(r"^([A-Za-z]{3})[a-z]*[/.\-\s](\d{1,2})[,./\-\s]+(\d{2,4})$", raw)
+    if m_alpha2:
+        mon, d, y = m_alpha2.groups()
+        mon_num = _MONTH_MAP.get(mon.upper()[:3], "01")
+        if len(y) == 2:
+            y = f"20{y}" if int(y) < 50 else f"19{y}"
+        return f"{y}-{mon_num}-{int(d):02d}"
+
+    # Numeric formats
+    parts = re.split(r"[/.\-]", raw)
+    if len(parts) == 3:
+        if len(parts[0]) == 4:  # YYYY-MM-DD
+            y, m_str, d = parts
+            return f"{y}-{int(m_str):02d}-{int(d):02d}"
+        elif len(parts[2]) in (2, 4):  # DD-MM-YYYY
+            d, m_str, y = parts
+            if len(y) == 2:
+                y = f"20{y}" if int(y) < 50 else f"19{y}"
+            return f"{y}-{int(m_str):02d}-{int(d):02d}"
+    return raw
+
+
+def _looks_like_field_label(text: str) -> bool:
+    """Heuristic to avoid treating the next label as a field value."""
+    if not text or len(text.strip()) == 0:
+        return True
+    cleaned = text.strip()
+    # Dates and values with digits/brackets are not labels
+    if _DATE_RE_COMPREHENSIVE.search(cleaned):
+        return False
+    words = cleaned.split()
+    if len(words) > 5 or len(cleaned) > 35:
+        return False
+    if text.count("/") >= 3:
+        return True
+    normalised = _normalise_label_text(text)
+    padded = f" {normalised} "
+    for hint in _LABEL_HINTS:
+        if normalised == hint or normalised.startswith(f"{hint} ") or normalised.endswith(f" {hint}"):
+            return True
+        if f" {hint} " in padded and len(words) <= 3:
+            return True
+    return False
+
+
+def extract_inline_value(text: str, keywords: list[str]) -> Optional[str]:
+    """Check if the text region itself contains 'Keyword: Value' or 'Keyword<Value>'."""
+    if not text:
+        return None
+    m_bracket = re.search(r"[<\[(]([A-Za-z0-9/\s\.\-]+)[>\])]", text)
+    if m_bracket:
+        candidate = m_bracket.group(1).strip()
+        if candidate and not _looks_like_field_label(candidate):
+            return candidate
+
+    for kw in keywords:
+        norm_kw = _normalise_label_text(kw)
+        norm_text = _normalise_label_text(text)
+        if norm_kw in norm_text:
+            for delim in [":", " - ", "—", "–", " : "]:
+                if delim in text:
+                    parts = text.split(delim, 1)
+                    val = parts[1].strip(" >:,-/|")
+                    if val and len(val) >= 2 and not _looks_like_field_label(val):
+                        return val
+            pattern = re.compile(rf"^{re.escape(kw)}[\s:.\-—]+(.+)$", re.IGNORECASE)
+            m = pattern.match(text.strip())
+            if m:
+                val = m.group(1).strip(" :,-/|")
+                if val and len(val) >= 2 and not _looks_like_field_label(val):
+                    return val
+    return None
+
+
 def find_visual_value_near(
     regions: list[TextRegion],
     label_region: TextRegion,
-    max_y_distance: int = 80,
+    max_y_distance: int = 110,
 ) -> Optional[TextRegion]:
     """Find the OCR region immediately below a label region."""
     label_bottom = max(p[1] for p in label_region.bbox)
@@ -216,7 +323,7 @@ def find_visual_value_near(
         vertical_gap = top - label_bottom
         if -min_vertical_overlap <= vertical_gap < max_y_distance:
             x_distance = abs(left - label_left)
-            if x_distance < 200:
+            if x_distance < 300:
                 candidates.append((max(vertical_gap, 0) + x_distance * 0.3, region))
 
     if candidates:
@@ -228,17 +335,14 @@ def find_visual_value_near(
 def find_visual_value_right(
     regions: list[TextRegion],
     label_region: TextRegion,
-    max_x_distance: int = 450,
+    max_x_distance: int = 1200,
 ) -> Optional[TextRegion]:
-    """Find the value region on the same row, immediately to the right of a label.
-
-    KYC cards (PAN / Aadhaar / DL / Voter ID) commonly lay fields out as
-    "Label : value" on one line, unlike the passport's label-above-value form.
-    """
+    """Find the value region on the same row, immediately to the right of a label."""
     label_right = max(p[0] for p in label_region.bbox)
     label_top = min(p[1] for p in label_region.bbox)
     label_bottom = max(p[1] for p in label_region.bbox)
     label_height = max(label_bottom - label_top, 1)
+    label_cy = (label_top + label_bottom) / 2.0
 
     candidates = []
     for region in regions:
@@ -246,9 +350,14 @@ def find_visual_value_right(
             continue
         top = min(p[1] for p in region.bbox)
         bottom = max(p[1] for p in region.bbox)
+        reg_cy = (top + bottom) / 2.0
+        reg_height = max(bottom - top, 1)
+
         overlap = min(bottom, label_bottom) - max(top, label_top)
-        if overlap < label_height * 0.4:
+        vert_dist = abs(label_cy - reg_cy)
+        if overlap < label_height * 0.2 and vert_dist > max(label_height, reg_height) * 0.85:
             continue
+
         left = min(p[0] for p in region.bbox)
         gap = left - label_right
         if 0 <= gap < max_x_distance:
@@ -265,27 +374,47 @@ def find_visual_value_right(
 def find_label_value(
     regions: list[TextRegion],
     labels: list[str],
+    *,
+    max_x_distance: int = 1200,
+    max_y_distance: int = 110,
 ) -> Optional[str]:
-    """Resolve a label to its value text, preferring same-row-right then below."""
+    """Resolve a label to its value text, checking inline first, then right, then below."""
     label_region = find_visual_field(regions, labels)
     if label_region is None:
         return None
-    value = find_visual_value_right(regions, label_region) or find_visual_value_near(
-        regions, label_region
-    )
-    if value is None:
-        return None
-    text = value.text.strip()
-    return text or None
+
+    inline = extract_inline_value(label_region.text, labels)
+    if inline:
+        return inline
+
+    val_r = find_visual_value_right(regions, label_region, max_x_distance=max_x_distance)
+    if val_r is not None:
+        text = val_r.text.strip(" :,-/|")
+        if text and not _looks_like_field_label(text):
+            return text
+
+    val_b = find_visual_value_near(regions, label_region, max_y_distance=max_y_distance)
+    if val_b is not None:
+        text = val_b.text.strip(" :,-/|")
+        if text and not _looks_like_field_label(text):
+            return text
+
+    return None
 
 
 def _parse_date_flexible(text: str) -> Optional[date]:
     """Try multiple date formats to parse a visual date field."""
-    text = text.strip().replace("/", "-").replace(".", "-")
+    iso = parse_date_comprehensive(text)
+    if iso:
+        try:
+            return date.fromisoformat(iso)
+        except ValueError:
+            pass
+    text_clean = text.strip().replace("/", "-").replace(".", "-")
     formats = ["%Y-%m-%d", "%d-%m-%Y", "%d %b %Y", "%d %B %Y", "%Y%m%d"]
     for fmt in formats:
         try:
-            return datetime.strptime(text, fmt).date()
+            return datetime.strptime(text_clean, fmt).date()
         except ValueError:
             continue
     return None
@@ -297,17 +426,6 @@ def _normalise_label_text(text: str) -> str:
     text = text.replace("&", " AND ")
     text = re.sub(r"[^A-Z0-9]+", " ", text)
     return re.sub(r"\s+", " ", text).strip()
-
-
-def _looks_like_field_label(text: str) -> bool:
-    """Heuristic to avoid treating the next label as a field value."""
-    if not text or len(text.strip()) == 0:
-        return True
-    if text.count("/") >= 2:
-        return True
-    normalised = _normalise_label_text(text)
-    padded = f" {normalised} "
-    return any(f" {hint} " in padded for hint in _LABEL_HINTS)
 
 
 # ---------------------------------------------------------------------------

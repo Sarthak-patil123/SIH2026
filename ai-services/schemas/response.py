@@ -67,13 +67,14 @@ class FieldValue(BaseModel):
     """A single extracted field with provenance for LLM consumption."""
     value: str | None = None
     confidence: float = 0.0
-    source: Literal["mrz", "ocr"] = "ocr"   # which sub-pipeline provided this
+    source: Literal["mrz", "ocr", "llm", "derived"] = "ocr"   # which sub-pipeline provided this
 
 
 class ExtractedData(BaseModel):
     mrz: MRZData | None = None
     ocr_text_blocks: list[OCRTextBlock] = []
     rule_extracted_fields: dict[str, FieldValue] = {}
+    structured_data: dict[str, Any] | None = None
 
 
 class BiometricVerification(BaseModel):

@@ -26,7 +26,7 @@ def process_national_id(
     image_input: Union[str, bytes, Path, np.ndarray],
     *,
     id_type: NationalIdType = "auto",
-    use_llm: bool = False,
+    use_llm: bool = True,
 ) -> dict[str, Any]:
     """Process a National ID document through the OCR pipeline.
 
@@ -115,4 +115,12 @@ def _get_llm_payload(subtype: str, ocr_regions: list, fields: dict, enabled: boo
             "prompt_template": f"Extract {subtype.upper()} fields from OCR tokens into JSON format.",
             "result": fields,
         }
-    return {"status": "unimplemented"}
+    try:
+        from llm_parser import parse_document_with_llm
+        return {
+            "status": "success",
+            "result": parse_document_with_llm(ocr_regions, "national_id"),
+            "target_schema": target_schema,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "result": fields}

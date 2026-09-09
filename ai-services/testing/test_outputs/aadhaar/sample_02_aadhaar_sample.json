@@ -2,7 +2,7 @@
   "image": "sample_02_aadhaar_sample.jpg",
   "doc_type": "aadhaar",
   "status": "ok",
-  "elapsed_ms": 4423.4,
+  "elapsed_ms": 19764.3,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

@@ -246,6 +246,26 @@ def extract_aadhaar(regions: list[TextRegion]) -> AadhaarFields:
             if year_match:
                 fields.year_of_birth = year_match.group(1)
 
+    # Fallback search across all regions for DOB/YOB
+    if fields.date_of_birth is None and fields.year_of_birth is None:
+        for r in regions:
+            dm = _DATE_RE.search(r.text)
+            if dm:
+                fields.date_of_birth = dm.group(1)
+                break
+            ym = _YEAR_RE.search(r.text)
+            if ym:
+                y = ym.group(1)
+                # Birth years are usually <= 2018
+                if int(y) < 2020:
+                    fields.year_of_birth = y
+
+    # Fallback for Aadhaar number
+    if fields.aadhaar_number is None:
+        raw_12 = re.search(r"\b(\d{4})[\s-](\d{4})[\s-](\d{4})\b", cleaned)
+        if raw_12:
+            fields.aadhaar_number = f"{raw_12.group(1)} {raw_12.group(2)} {raw_12.group(3)}"
+
     has_address_label = find_visual_field(regions, ["ADDRESS", "पता"]) is not None
     is_front = (
         dob_region is not None or fields.gender is not None

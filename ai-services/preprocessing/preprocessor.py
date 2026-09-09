@@ -90,19 +90,27 @@ def _load_image(source: Union[str, bytes, Path, np.ndarray]) -> np.ndarray:
         raise ImageQualityError("INVALID_IMAGE") from exc
 
 
-def _check_resolution(img: np.ndarray) -> None:
+def _check_resolution(img: np.ndarray) -> tuple[np.ndarray, Optional[str]]:
     h, w = img.shape[:2]
     if min(h, w) < 20:
         raise ImageQualityError("IMAGE_TOO_SMALL")
+    warning = None
+    if min(h, w) < MIN_RESOLUTION:
+        warning = "SUBOPTIMAL_RESOLUTION_WARNING"
+        # Upscale smaller images so text is readable by OCR
+        scale = max(MIN_RESOLUTION / max(h, 1), MIN_RESOLUTION / max(w, 1), 1.5)
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LANCZOS4)
+    return img, warning
 
 
-def _check_blur(img: np.ndarray, threshold: float = BLUR_THRESHOLD) -> float:
-    """Return Laplacian variance as blur score. Raise ImageQualityError only if completely unreadable."""
+def _check_blur(img: np.ndarray, threshold: float = BLUR_THRESHOLD) -> tuple[float, Optional[str]]:
+    """Return Laplacian variance as blur score and optional warning."""
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    variance = cv2.Laplacian(gray, cv2.CV_64F).var()
-    if variance < 5.0 and min(img.shape[:2]) >= 200:
-        raise ImageQualityError("IMAGE_TOO_BLURRY")
-    return float(variance)
+    variance = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+    warning = "IMAGE_TOO_BLURRY" if variance < threshold else None
+    return variance, warning
 
 
 def _check_glare(img: np.ndarray) -> Optional[str]:
@@ -244,23 +252,22 @@ def preprocess(
     6. Normalisation (resize + conditional contrast)
     """
     img = _load_image(source)
-    _check_resolution(img)
-    blur_score = _check_blur(img, threshold=blur_threshold)
+    img, res_warning = _check_resolution(img)
+    blur_score, blur_warning = _check_blur(img, threshold=blur_threshold)
     glare_warning = _check_glare(img)
 
     corners, warnings = _detect_document(img)
 
     # Always emit numeric blur score so the router can surface it
     warnings.append(f"BLUR_SCORE:{blur_score:.2f}")
-    if blur_score < 70.0:
-        warnings.append("LOW_SHARPNESS_WARNING")
+    if blur_warning:
+        warnings.append(blur_warning)
+        # Apply mild unsharp masking to enhance text contrast for blurry inputs
+        gaussian = cv2.GaussianBlur(img, (0, 0), 2.0)
+        img = cv2.addWeighted(img, 1.4, gaussian, -0.4, 0)
 
-    if min(img.shape[:2]) < 180:
-        scale = 200.0 / min(img.shape[:2])
-        img = cv2.resize(img, (int(img.shape[1] * scale), int(img.shape[0] * scale)), interpolation=cv2.INTER_LINEAR)
-        warnings.append("SUBOPTIMAL_RESOLUTION_UPSCALED")
-    elif min(img.shape[:2]) < 600:
-        warnings.append("SUBOPTIMAL_RESOLUTION_WARNING")
+    if res_warning:
+        warnings.append(res_warning)
 
     if glare_warning:
         warnings.append(glare_warning)

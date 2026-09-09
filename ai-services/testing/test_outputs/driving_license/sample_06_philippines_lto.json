@@ -2,7 +2,7 @@
   "image": "sample_06_philippines_lto.jpg",
   "doc_type": "driving_license",
   "status": "ok",
-  "elapsed_ms": 4912.8,
+  "elapsed_ms": 17983.6,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

@@ -2,7 +2,7 @@
   "image": "sample_02_earlier_passport_ashutosh.jpg",
   "doc_type": "passport",
   "status": "ok",
-  "elapsed_ms": 15316.4,
+  "elapsed_ms": 28712.0,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",
@@ -104,7 +104,7 @@
     "fields": {},
     "mrz": null,
     "validation": {
-      "confidence": 0.229,
+      "confidence": 0.23,
       "errors": [
         "MRZ_NOT_DETECTED"
       ],

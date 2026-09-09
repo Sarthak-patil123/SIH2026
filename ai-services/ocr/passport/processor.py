@@ -27,7 +27,7 @@ logger = get_logger(__name__)
 def process_passport(
     image_input: Union[str, bytes, Path, np.ndarray],
     *,
-    use_llm: bool = False,
+    use_llm: bool = True,
 ) -> dict[str, Any]:
     """Process a passport image through the OCR and MRZ pipeline.
 
@@ -197,4 +197,12 @@ def _get_llm_payload(ocr_regions: list, rule_fields: dict, enabled: bool) -> dic
             "prompt_template": "Extract passport identity fields from OCR tokens into JSON schema.",
             "result": rule_fields,
         }
-    return {"status": "unimplemented"}
+    try:
+        from llm_parser import parse_document_with_llm
+        return {
+            "status": "success",
+            "result": parse_document_with_llm(ocr_regions, "passport"),
+            "target_schema": schema,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "result": rule_fields}

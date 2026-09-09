@@ -56,20 +56,28 @@ def get_system_status() -> dict:
         "llm_note": "LLM extraction is intentionally inactive per architecture specification.",
     }
     return status
+TESTING_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "testing", "test_images"))
 SAMPLE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "MRZ_Passport_Reader_From_Image-main", "MRZ_Passport_Reader_From_Image-main"))
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 @router.get("/samples/{filename}")
 async def get_sample_image(filename: str):
     """Serve sample test images directly for quick 1-click UI and automated testing."""
-    allowed = ["example1.jpg", "image.png", "passport1.jpg"]
-    if filename not in allowed:
-        raise HTTPException(status_code=404, detail=f"Filename {filename} not allowed. Choose from {allowed}")
-    file_path = os.path.join(SAMPLE_DIR, filename)
-    if not os.path.isfile(file_path):
-        raise HTTPException(status_code=404, detail=f"File {filename} not found at {file_path}")
-    media_type = "image/png" if filename.endswith(".png") else "image/jpeg"
-    return FileResponse(file_path, media_type=media_type)
+    clean_name = os.path.basename(filename)
+    for d in (TESTING_DIR, SAMPLE_DIR, ROOT_DIR):
+        if not os.path.isdir(d):
+            continue
+        p = os.path.join(d, clean_name)
+        if os.path.isfile(p):
+            media_type = "image/png" if clean_name.endswith(".png") else "image/jpeg"
+            return FileResponse(p, media_type=media_type)
+        for root, _, files in os.walk(d):
+            if clean_name in files:
+                found = os.path.join(root, clean_name)
+                media_type = "image/png" if clean_name.endswith(".png") else "image/jpeg"
+                return FileResponse(found, media_type=media_type)
+    raise HTTPException(status_code=404, detail=f"Sample file {clean_name} not found")
 
 
 @router.post("/preprocess")

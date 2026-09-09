@@ -2,7 +2,7 @@
   "image": "nat_sample_01_voter_card.jpg",
   "doc_type": "national_id",
   "status": "ok",
-  "elapsed_ms": 11039.0,
+  "elapsed_ms": 52743.7,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

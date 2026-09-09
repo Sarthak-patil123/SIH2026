@@ -118,6 +118,7 @@ DOB_PROOF_FIELDS: list[str] = [
     "date_of_birth",
     "father_name",
     "mother_name",
+    "gender",
     "registration_number",
     "place_of_birth",
     "issuing_authority",
@@ -134,6 +135,8 @@ VISA_FIELDS: list[str] = [
     "entries",
     "issue_date",
     "expiry_date",
+    "date_of_birth",
+    "gender",
     "issuing_post",
 ]
 
@@ -418,7 +421,7 @@ def _adapt_visa(raw: dict[str, Any]) -> AdaptedResult:
     return AdaptedResult(
         document_type="visa",
         subtype=None,
-        country=fields_raw.get("issuing_country") or (mrz_raw.get("issuing_country") if mrz_raw else None),
+        country=raw.get("country") or fields_raw.get("issuing_country") or (mrz_raw.get("issuing_country") if mrz_raw else None),
         status=raw.get("status", "success"),
         confidence=conf,
         extracted_fields=extracted,

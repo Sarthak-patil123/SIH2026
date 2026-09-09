@@ -2,7 +2,7 @@
   "image": "sample_04_aadhaar_pvc_back.jpg",
   "doc_type": "aadhaar",
   "status": "ok",
-  "elapsed_ms": 6578.0,
+  "elapsed_ms": 31627.1,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",
@@ -69,7 +69,7 @@
     "quality_warnings": [
       "BLUR_SCORE:491.34"
     ],
-    "raw_ocr_count": 19
+    "raw_ocr_count": 18
   },
   "raw_result": {
     "status": "success",
@@ -84,7 +84,7 @@
     "quality_warnings": [
       "BLUR_SCORE:491.34"
     ],
-    "raw_ocr_count": 19,
+    "raw_ocr_count": 18,
     "llm_extraction": {
       "status": "disabled",
       "message": "LLM extraction is inactive per architecture specification.",

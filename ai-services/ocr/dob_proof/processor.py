@@ -14,12 +14,19 @@ import numpy as np
 
 from core.logger import get_logger
 from ocr.engine import run_ocr
-from ocr.shared.validator import find_label_value, find_visual_field
+from ocr.shared.validator import find_label_value, find_visual_field, parse_date_comprehensive
 from preprocessing import preprocess
 
 logger = get_logger(__name__)
 
-_DATE_RE = re.compile(r"\b(\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4})\b")
+_DATE_RE = re.compile(
+    r"\b("
+    r"\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}|"
+    r"\d{4}[/.\-]\d{1,2}[/.\-]\d{1,2}|"
+    r"\d{1,2}[/.\-\s](?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[a-z]*[/.\-\s]\d{2,4}"
+    r")\b",
+    re.IGNORECASE,
+)
 
 _DOB_LABELS = [
     "DATE OF BIRTH", "DOB", "BORN ON", "BIRTH DATE", "DATE OF BIRTH IN WORDS",
@@ -34,6 +41,9 @@ _FATHER_LABELS = [
 ]
 _MOTHER_LABELS = [
     "NAME OF MOTHER", "MOTHER S NAME", "MOTHERS NAME", "MOTHER NAME", "माता का नाम",
+]
+_GENDER_LABELS = [
+    "SEX", "GENDER", "लिंग",
 ]
 _REG_NO_LABELS = [
     "REGISTRATION NO", "REGISTRATION NUMBER", "CERTIFICATE NO", "CERTIFICATE NUMBER",
@@ -54,7 +64,7 @@ _AUTHORITY_LABELS = [
 def process_dob_proof(
     image_input: Union[str, bytes, Path, np.ndarray],
     *,
-    use_llm: bool = False,
+    use_llm: bool = True,
 ) -> dict[str, Any]:
     """Process a DOB proof document (Birth Certificate / Class X Certificate).
 
@@ -80,15 +90,14 @@ def process_dob_proof(
     # Extract date of birth
     raw_dob = find_label_value(ocr_regions, _DOB_LABELS)
     if raw_dob:
-        m = _DATE_RE.search(raw_dob)
-        fields["date_of_birth"] = m.group(1) if m else raw_dob.strip()
+        fields["date_of_birth"] = parse_date_comprehensive(raw_dob) or raw_dob.strip()
     else:
         # Fallback: look for dates in whole text
         for r in ocr_regions:
             if any(h in r.text.upper() for h in ("DOB", "BIRTH", "BORN")):
-                m = _DATE_RE.search(r.text)
-                if m:
-                    fields["date_of_birth"] = m.group(1)
+                parsed = parse_date_comprehensive(r.text)
+                if parsed:
+                    fields["date_of_birth"] = parsed
                     break
 
     # Extract name
@@ -105,6 +114,17 @@ def process_dob_proof(
     if mother_val:
         fields["mother_name"] = mother_val.strip()
 
+    # Gender
+    gender_val = find_label_value(ocr_regions, _GENDER_LABELS)
+    if gender_val:
+        g_clean = gender_val.strip().upper()
+        if "MALE" in g_clean or g_clean == "M" or "पुरुष" in g_clean:
+            fields["gender"] = "M"
+        elif "FEMALE" in g_clean or g_clean == "F" or "महिला" in g_clean:
+            fields["gender"] = "F"
+        else:
+            fields["gender"] = g_clean
+
     # Registration / certificate number
     reg_val = find_label_value(ocr_regions, _REG_NO_LABELS)
     if reg_val:
@@ -113,8 +133,7 @@ def process_dob_proof(
     # Date of issue / registration
     doi_val = find_label_value(ocr_regions, _ISSUE_DATE_LABELS)
     if doi_val:
-        m = _DATE_RE.search(doi_val)
-        fields["issue_date"] = m.group(1) if m else doi_val.strip()
+        fields["issue_date"] = parse_date_comprehensive(doi_val) or doi_val.strip()
 
     # Place of birth
     pob_val = find_label_value(ocr_regions, _PLACE_OF_BIRTH_LABELS)
@@ -159,4 +178,12 @@ def _get_llm_payload(ocr_regions: list, fields: dict, enabled: bool) -> dict:
             "prompt_template": "Extract Birth / DOB proof fields from semi-structured certificate tokens.",
             "result": fields,
         }
-    return {"status": "unimplemented"}
+    try:
+        from llm_parser import parse_document_with_llm
+        return {
+            "status": "success",
+            "result": parse_document_with_llm(ocr_regions, "dob_proof"),
+            "target_schema": schema,
+        }
+    except Exception as exc:
+        return {"status": "error", "error": str(exc), "result": fields}

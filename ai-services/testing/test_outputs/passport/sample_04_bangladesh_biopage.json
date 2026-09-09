@@ -2,7 +2,7 @@
   "image": "sample_04_bangladesh_biopage.jpg",
   "doc_type": "passport",
   "status": "ok",
-  "elapsed_ms": 25590.8,
+  "elapsed_ms": 78977.6,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",
@@ -25,13 +25,13 @@
         "normalized": false
       },
       "given_names": {
-        "value": "Zleat",
+        "value": "Zlea",
         "confidence": 0.85,
         "source": "ocr",
         "normalized": false
       },
       "nationality": {
-        "value": "Ierly 7& / Personal No",
+        "value": "Irly 7& / Personal No",
         "confidence": 0.85,
         "source": "ocr",
         "normalized": false
@@ -104,14 +104,14 @@
     "document_type": "passport",
     "fields": {
       "passport_number": "P",
-      "given_names": "Zleat",
-      "nationality": "Ierly 7& / Personal No",
+      "given_names": "Zlea",
+      "nationality": "Irly 7& / Personal No",
       "date_of_birth": "ITT 78",
       "place_of_birth": "M"
     },
     "mrz": null,
     "validation": {
-      "confidence": 0.263,
+      "confidence": 0.265,
       "errors": [
         "MRZ_NOT_DETECTED"
       ],
@@ -146,8 +146,8 @@
       "prompt_template": "Extract passport identity fields from OCR tokens into JSON schema.",
       "result": {
         "passport_number": "P",
-        "given_names": "Zleat",
-        "nationality": "Ierly 7& / Personal No",
+        "given_names": "Zlea",
+        "nationality": "Irly 7& / Personal No",
         "date_of_birth": "ITT 78",
         "place_of_birth": "M"
       }

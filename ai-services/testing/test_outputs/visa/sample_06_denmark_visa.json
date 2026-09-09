@@ -2,7 +2,7 @@
   "image": "sample_06_denmark_visa.jpg",
   "doc_type": "visa",
   "status": "ok",
-  "elapsed_ms": 7292.3,
+  "elapsed_ms": 9960.8,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

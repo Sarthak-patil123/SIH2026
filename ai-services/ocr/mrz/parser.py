@@ -141,9 +141,9 @@ class MRZResult:
 # MRZ line detection
 # ---------------------------------------------------------------------------
 
-_MRZ_PATTERN = re.compile(r"^[A-Z0-9<]{40,44}$")
-_MRZ_PATTERN_RELAXED = re.compile(r"^[A-Z0-9<]{25,44}$")  # for truncated OCR output
-_MRZ_LINE1_PATTERN = re.compile(r"P[A-Z<][A-Z<]{3}[A-Z<]{20,39}")
+_MRZ_PATTERN = re.compile(r"^[A-Z0-9<]{36,48}$")
+_MRZ_PATTERN_RELAXED = re.compile(r"^[A-Z0-9<]{25,48}$")  # for truncated OCR output
+_MRZ_LINE1_PATTERN = re.compile(r"^P[A-Z0-9<]{35,47}$")
 _MRZ_LINE2_PATTERN = re.compile(r"[A-Z0-9<]{8,9}[0-9][A-Z]{3}[0-9]{6}[0-9][MFX<][0-9]{6}[0-9][A-Z0-9<]{1,14}[0-9<]{1,2}")
 
 
@@ -151,13 +151,14 @@ def _clean_mrz_text(raw: str) -> str:
     """Clean OCR text for MRZ matching — fix common substitution errors."""
     text = re.sub(r"\s+", "", raw.upper())
     # Common OCR substitutions for the '<' filler character
-    text = (
-        text.replace("«", "<")
-        .replace("‹", "<")
-        .replace(">", "<")
-        .replace("{", "<")
-        .replace("(", "<")
-    )
+    subs = {
+        "«": "<", "‹": "<", "»": "<", "›": "<",
+        ">": "<", "{": "<", "}": "<", "(": "<", ")": "<",
+        "[": "<", "]": "<", "_": "<", "~": "<", "^": "<",
+        "|": "<", "\\": "<", "/": "<", "=": "<",
+    }
+    for k, v in subs.items():
+        text = text.replace(k, v)
     # Filter non-MRZ characters
     text = re.sub(r"[^A-Z0-9<]", "", text)
     return text
@@ -187,7 +188,7 @@ def _is_valid_mrz_line2(text: str) -> bool:
 
 
 def _find_mrz_lines(regions: list[TextRegion]) -> Optional[tuple[str, str]]:
-    """Identify the two MRZ lines from OCR output, handling fragmented PaddleOCR boxes."""
+    """Identify the two MRZ lines from OCR output, handling fragmented PaddleOCR/EasyOCR boxes."""
     from ocr.engine import cluster_regions_by_line
 
     clustered = cluster_regions_by_line(regions)
@@ -258,8 +259,14 @@ def _find_mrz_lines(regions: list[TextRegion]) -> Optional[tuple[str, str]]:
             if _is_valid_mrz_line1(line1) and _is_valid_mrz_line2(line2):
                 return (_pad_to_44(line1), _pad_to_44(line2))
 
-    return None
+    # Fallback pass: if line 1 starts with P and both >= 36
+    for index in range(len(candidates) - 1):
+        line1 = candidates[index][1]
+        line2 = candidates[index + 1][1]
+        if line1.startswith("P") and len(line1) >= 36 and len(line2) >= 36:
+            return (_pad_to_44(line1), _pad_to_44(line2))
 
+    return None
 
 
 def _align_and_pad_td3_line1(line1: str) -> str:

@@ -698,6 +698,9 @@
       <button class="tab-btn" id="tab-nav-national-id" onclick="switchMainTab('national-id')">
         <span>🪪</span> National ID (Aadhaar / PAN / Voter)
       </button>
+      <button class="tab-btn" id="tab-nav-dob" onclick="switchMainTab('dob')">
+        <span>👶</span> DOB Proof (Birth Certificate)
+      </button>
       <button class="tab-btn" id="tab-nav-diagnostics" onclick="switchMainTab('diagnostics')">
         <span>🔬</span> Diagnostics & Components
       </button>
@@ -995,6 +998,25 @@
             Upload travel visa sticker / e-visa document. Runs PaddleOCR, travel MRZ parsing (MRVA / MRVB), and extracts visa number, validity dates, entries, and holder name.
           </p>
 
+          <!-- 1-Click Quick Test Toolbar -->
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.9rem; margin-bottom: 0.6rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--accent-sky); text-transform:uppercase; letter-spacing:0.04em;">⚡ 1-Click Browser Quick Test</span>
+              <span style="font-size:0.7rem; color:var(--text-faint);">Instant sample verification</span>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button type="button" id="btn-quick-visa-1" onclick="loadVisaSample('sample_01_indian_evisa.jpg')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(56, 189, 248, 0.15); border:1px solid rgba(56, 189, 248, 0.4); border-radius:var(--radius-sm); color:var(--accent-sky); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                📄 Indian e-Visa
+              </button>
+              <button type="button" id="btn-quick-visa-2" onclick="loadVisaSample('sample_02_india_tourist_visa_2007.jpg')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(99, 102, 241, 0.15); border:1px solid rgba(99, 102, 241, 0.4); border-radius:var(--radius-sm); color:var(--accent-indigo); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                🛂 Tourist Sticker
+              </button>
+              <button type="button" id="btn-quick-visa-3" onclick="loadVisaSample('sample_06_denmark_visa.jpg')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.4); border-radius:var(--radius-sm); color:var(--accent-emerald); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                🇪🇺 Schengen Visa
+              </button>
+            </div>
+          </div>
+
           <div class="form-group">
             <label class="form-label">Visa Document Image</label>
             <div class="dropzone" id="visa-dropzone">
@@ -1075,6 +1097,25 @@
           <p class="card-subtitle">
             Upload driving licence card image. Runs PaddleOCR text extraction, Sarathi / standard regex parsing, and extracts DL number, holder name, DOB, vehicle classes, and validity.
           </p>
+
+          <!-- 1-Click Quick Test Toolbar -->
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.9rem; margin-bottom: 0.6rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--accent-sky); text-transform:uppercase; letter-spacing:0.04em;">⚡ 1-Click Browser Quick Test</span>
+              <span style="font-size:0.7rem; color:var(--text-faint);">Instant sample verification</span>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button type="button" id="btn-quick-dl-1" onclick="loadDlSample('sample_02_india_idp.jpg')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(56, 189, 248, 0.15); border:1px solid rgba(56, 189, 248, 0.4); border-radius:var(--radius-sm); color:var(--accent-sky); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                🇮🇳 India IDP
+              </button>
+              <button type="button" id="btn-quick-dl-2" onclick="loadDlSample('sample_04_australia_dl.jpg')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(99, 102, 241, 0.15); border:1px solid rgba(99, 102, 241, 0.4); border-radius:var(--radius-sm); color:var(--accent-indigo); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                🇦🇺 Australia DL
+              </button>
+              <button type="button" id="btn-quick-dl-3" onclick="loadDlSample('sample_05_malaysia_dl.jpg')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.4); border-radius:var(--radius-sm); color:var(--accent-emerald); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                🇲🇾 Malaysia DL
+              </button>
+            </div>
+          </div>
 
           <div class="form-group">
             <label class="form-label">Driving Licence Image</label>
@@ -1157,6 +1198,25 @@
             Upload Aadhaar, PAN card, or Voter ID document. Select specific document type or use Auto-Detect. Extracts unique ID number, full name, DOB / YOB, gender, and address.
           </p>
 
+          <!-- 1-Click Quick Test Toolbar -->
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.9rem; margin-bottom: 0.6rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--accent-sky); text-transform:uppercase; letter-spacing:0.04em;">⚡ 1-Click Browser Quick Test</span>
+              <span style="font-size:0.7rem; color:var(--text-faint);">Instant sample verification</span>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button type="button" id="btn-quick-nid-1" onclick="loadNidSample('nat_sample_01_aadhaar_specimen_2024.png', 'aadhaar')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(56, 189, 248, 0.15); border:1px solid rgba(56, 189, 248, 0.4); border-radius:var(--radius-sm); color:var(--accent-sky); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                🪪 Aadhaar Card
+              </button>
+              <button type="button" id="btn-quick-nid-2" onclick="loadNidSample('nat_sample_01_pan_card_specimen.jpg', 'pan')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(99, 102, 241, 0.15); border:1px solid rgba(99, 102, 241, 0.4); border-radius:var(--radius-sm); color:var(--accent-indigo); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                💳 PAN Card
+              </button>
+              <button type="button" id="btn-quick-nid-3" onclick="loadNidSample('nat_sample_01_voter_card.jpg', 'voter_id')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.4); border-radius:var(--radius-sm); color:var(--accent-emerald); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                🗳️ Voter ID
+              </button>
+            </div>
+          </div>
+
           <div class="form-group">
             <label class="form-label">Select ID Type</label>
             <select class="form-select" id="nid-subtype">
@@ -1237,7 +1297,107 @@
     </section>
 
     <!-- =================================================================== -->
-    <!-- SECTION 5: COMPONENT DIAGNOSTICS & TEST TOOLS                       -->
+    <!-- SECTION 5: DOB PROOF / BIRTH CERTIFICATE OCR                        -->
+    <!-- =================================================================== -->
+    <section id="tab-dob" class="tab-content">
+      <div class="grid-2col">
+        <!-- Input Form -->
+        <div class="card">
+          <h2 class="card-title">Birth Certificate &amp; DOB Proof Processing</h2>
+          <p class="card-subtitle">
+            Upload Birth Certificate or official date of birth document. Runs PaddleOCR, extracts registration number, name, DOB, place of birth, father's/mother's name, gender, and issuing authority into structured canonical JSON.
+          </p>
+
+          <!-- 1-Click Quick Test Toolbar -->
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.9rem; margin-bottom: 0.6rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+              <span style="font-size:0.75rem; font-weight:700; color:var(--accent-sky); text-transform:uppercase; letter-spacing:0.04em;">⚡ 1-Click Browser Quick Test</span>
+              <span style="font-size:0.7rem; color:var(--text-faint);">Instant sample verification</span>
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+              <button type="button" id="btn-quick-dob-1" onclick="loadDobSample('sample_01_monroe_birth_cert.jpg')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(56, 189, 248, 0.15); border:1px solid rgba(56, 189, 248, 0.4); border-radius:var(--radius-sm); color:var(--accent-sky); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                👶 Birth Cert 1
+              </button>
+              <button type="button" id="btn-quick-dob-2" onclick="loadDobSample('sample_03_uk_birth_cert.jpg')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(99, 102, 241, 0.15); border:1px solid rgba(99, 102, 241, 0.4); border-radius:var(--radius-sm); color:var(--accent-indigo); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                🇬🇧 UK Birth Cert
+              </button>
+              <button type="button" id="btn-quick-dob-3" onclick="loadDobSample('sample_04_singapore_birth_cert.jpg')" style="flex:1; min-width:140px; padding:0.45rem 0.65rem; background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.4); border-radius:var(--radius-sm); color:var(--accent-emerald); font-weight:700; font-size:0.78rem; cursor:pointer;">
+                🇸🇬 Singapore Cert
+              </button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Birth Certificate / DOB Proof Document Image</label>
+            <div class="dropzone" id="dob-dropzone">
+              <input type="file" id="dob-file" accept="image/*">
+              <div class="dropzone-icon">👶</div>
+              <div class="dropzone-text">Upload Birth Certificate Image</div>
+              <div class="dropzone-hint">Hospital, municipal, or state certificate</div>
+            </div>
+            <div class="preview-box" id="dob-preview"><img id="dob-preview-img"></div>
+          </div>
+
+          <button class="btn-primary" id="dob-btn" onclick="runDobProcessing()">
+            <span>Process Birth Certificate</span>
+          </button>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="card">
+          <div class="card-title">
+            <span>DOB Proof Output</span>
+            <span id="dob-status-badge" class="badge badge-info">Awaiting Input</span>
+          </div>
+          <p class="card-subtitle">Extracted birth registry details and structured JSON response.</p>
+
+          <div id="dob-empty" class="results-empty">
+            <div class="results-empty-icon">👶</div>
+            <p>Upload a birth certificate or DOB proof and click Process to view results.</p>
+          </div>
+
+          <div id="dob-results" class="results-content">
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <div class="metric-label">Reg. Number</div>
+                <div class="metric-value" id="dob-card-number" style="font-size:1.05rem">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Child / Name</div>
+                <div class="metric-value" id="dob-card-name" style="font-size:1.05rem">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Date of Birth</div>
+                <div class="metric-value" id="dob-card-dob" style="font-size:1.05rem; color:var(--accent-emerald)">-</div>
+              </div>
+              <div class="metric-card">
+                <div class="metric-label">Gender</div>
+                <div class="metric-value" id="dob-card-gender" style="font-size:1.05rem">-</div>
+              </div>
+            </div>
+
+            <div class="card-title" style="font-size:0.95rem; margin-top:1.25rem;">Extracted Fields</div>
+            <div class="data-table-wrapper">
+              <table class="data-table">
+                <thead><tr><th>Field</th><th>Value</th><th>Confidence</th></tr></thead>
+                <tbody id="dob-fields-tbody"></tbody>
+              </table>
+            </div>
+
+            <div class="json-wrapper">
+              <div class="json-header">
+                <span class="form-label" style="margin:0">Birth Certificate JSON Output</span>
+                <button class="btn-copy" onclick="copyJson('dob-json-box')">📋 Copy JSON</button>
+              </div>
+              <pre class="json-box" id="dob-json-box"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- SECTION 6: COMPONENT DIAGNOSTICS & TEST TOOLS                       -->
     <!-- =================================================================== -->
     <section id="tab-diagnostics" class="tab-content">
       <div class="subtabs-bar">
@@ -1421,6 +1581,7 @@
     wireDropzone('visa-file', 'visa-preview', 'visa-preview-img');
     wireDropzone('dl-file', 'dl-preview', 'dl-preview-img');
     wireDropzone('nid-file', 'nid-preview', 'nid-preview-img');
+    wireDropzone('dob-file', 'dob-preview', 'dob-preview-img');
     wireDropzone('d-ocr-file', 'd-ocr-preview', 'd-ocr-preview-img');
     wireDropzone('d-lay-file', 'd-lay-preview', 'd-lay-preview-img');
     wireDropzone('d-prep-file', 'd-prep-preview', 'd-prep-preview-img');
@@ -1750,8 +1911,8 @@
         const adapted = data.adapted || {};
 
         document.getElementById('visa-card-number').innerText = flat.visa_number || flat.document_number || '-';
-        document.getElementById('visa-card-exp').innerText = flat.valid_until || flat.expiry_date || '-';
-        document.getElementById('visa-card-entries').innerText = flat.entries || flat.visa_type || 'STANDARD';
+        document.getElementById('visa-card-exp').innerText = flat.expiry_date || flat.valid_until || '-';
+        document.getElementById('visa-card-entries').innerText = flat.entries || flat.number_of_entries || flat.visa_type || 'STANDARD';
 
         const mrz = adapted.mrz;
         document.getElementById('visa-card-mrz').innerText = mrz ? (mrz.is_valid ? '✅ VALID' : '❌ INVALID') : 'N/A';
@@ -1810,10 +1971,10 @@
         const flat = data.flat_fields || {};
         const adapted = data.adapted || {};
 
-        document.getElementById('dl-card-number').innerText = flat.driving_license_number || flat.document_number || '-';
-        document.getElementById('dl-card-name').innerText = flat.full_name || flat.name || '-';
-        document.getElementById('dl-card-dob').innerText = flat.dob || '-';
-        document.getElementById('dl-card-validity').innerText = flat.expiry_date || flat.valid_until || '-';
+        document.getElementById('dl-card-number').innerText = flat.dl_number || flat.driving_license_number || flat.document_number || '-';
+        document.getElementById('dl-card-name').innerText = flat.name || flat.full_name || '-';
+        document.getElementById('dl-card-dob').innerText = flat.date_of_birth || flat.dob || '-';
+        document.getElementById('dl-card-validity').innerText = flat.validity_date || flat.expiry_date || flat.valid_until || '-';
 
         const tbody = document.getElementById('dl-fields-tbody');
         tbody.innerHTML = '';
@@ -1871,9 +2032,9 @@
         const adapted = data.adapted || {};
 
         document.getElementById('nid-card-type').innerText = (adapted.document_type || subtype).toUpperCase();
-        document.getElementById('nid-card-number').innerText = flat.aadhaar_number || flat.pan_number || flat.voter_id_number || flat.document_number || '-';
-        document.getElementById('nid-card-name').innerText = flat.full_name || flat.name || '-';
-        document.getElementById('nid-card-dob').innerText = flat.dob || flat.year_of_birth || '-';
+        document.getElementById('nid-card-number').innerText = flat.aadhaar_number || flat.pan_number || flat.voter_id_number || flat.epic_number || flat.document_number || '-';
+        document.getElementById('nid-card-name').innerText = flat.name || flat.full_name || '-';
+        document.getElementById('nid-card-dob').innerText = flat.date_of_birth || flat.dob || flat.year_of_birth || '-';
 
         const tbody = document.getElementById('nid-fields-tbody');
         tbody.innerHTML = '';
@@ -1898,6 +2059,104 @@
         btn.disabled = false;
         btn.innerHTML = '<span>Process National ID</span>';
       }
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. DOB PROOF / BIRTH CERTIFICATE PROCESSING
+    // -------------------------------------------------------------------------
+    async function runDobProcessing() {
+      const file = document.getElementById('dob-file').files[0];
+      if (!file) return alert('Please select a birth certificate / DOB proof image.');
+
+      const btn = document.getElementById('dob-btn');
+      const badge = document.getElementById('dob-status-badge');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Processing Birth Certificate...';
+      badge.className = 'badge badge-info';
+      badge.innerText = 'Processing';
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('doc_type', 'dob_proof');
+
+      try {
+        const res = await fetch('/test/adapted-doc-processor', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        document.getElementById('dob-empty').style.display = 'none';
+        document.getElementById('dob-results').style.display = 'block';
+
+        const flat = data.flat_fields || {};
+        const adapted = data.adapted || {};
+
+        document.getElementById('dob-card-number').innerText = flat.registration_number || flat.document_number || '-';
+        document.getElementById('dob-card-name').innerText = flat.name || flat.full_name || '-';
+        document.getElementById('dob-card-dob').innerText = flat.date_of_birth || flat.dob || '-';
+        document.getElementById('dob-card-gender').innerText = flat.gender || flat.sex || flat.issuing_authority || '-';
+
+        const tbody = document.getElementById('dob-fields-tbody');
+        tbody.innerHTML = '';
+        const extFields = adapted.extracted_fields || {};
+        for (const [k, fv] of Object.entries(extFields)) {
+          const val = fv ? fv.value : null;
+          const conf = fv ? Math.round((fv.confidence || 0) * 100) : 0;
+          if (val) {
+            tbody.innerHTML += `<tr><td><strong>${k}</strong></td><td>${val}</td><td>${conf}%</td></tr>`;
+          }
+        }
+
+        document.getElementById('dob-json-box').innerText = JSON.stringify(data, null, 2);
+
+        badge.className = 'badge badge-success';
+        badge.innerText = 'Success';
+      } catch (err) {
+        badge.className = 'badge badge-danger';
+        badge.innerText = 'Error';
+        alert('DOB Proof Processing Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span>Process Birth Certificate</span>';
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // QUICK TEST SAMPLE LOADERS (VISA, DL, NATIONAL ID, DOB)
+    // -------------------------------------------------------------------------
+    async function loadSingleDocSample(filename, fileInputId, previewBoxId, previewImgId, processFn) {
+      try {
+        const res = await fetch(`/test/samples/${filename}`);
+        if (!res.ok) throw new Error(`Could not fetch sample ${filename}`);
+        const blob = await res.blob();
+        const file = new File([blob], filename, { type: filename.endsWith('.png') ? 'image/png' : 'image/jpeg' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById(fileInputId).files = dt.files;
+        document.getElementById(previewImgId).src = URL.createObjectURL(blob);
+        document.getElementById(previewBoxId).style.display = 'block';
+        await processFn();
+      } catch (err) {
+        alert('Quick Test Error: ' + err.message);
+      }
+    }
+
+    async function loadVisaSample(filename) {
+      await loadSingleDocSample(filename, 'visa-file', 'visa-preview', 'visa-preview-img', runVisaProcessing);
+    }
+
+    async function loadDlSample(filename) {
+      await loadSingleDocSample(filename, 'dl-file', 'dl-preview', 'dl-preview-img', runDrivingLicenceProcessing);
+    }
+
+    async function loadNidSample(filename, subtype) {
+      if (subtype) {
+        document.getElementById('nid-subtype').value = subtype;
+      }
+      await loadSingleDocSample(filename, 'nid-file', 'nid-preview', 'nid-preview-img', runNationalIdProcessing);
+    }
+
+    async function loadDobSample(filename) {
+      await loadSingleDocSample(filename, 'dob-file', 'dob-preview', 'dob-preview-img', runDobProcessing);
     }
 
     // -------------------------------------------------------------------------

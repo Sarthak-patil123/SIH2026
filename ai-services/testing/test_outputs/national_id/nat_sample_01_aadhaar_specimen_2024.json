@@ -2,7 +2,7 @@
   "image": "nat_sample_01_aadhaar_specimen_2024.png",
   "doc_type": "national_id",
   "status": "ok",
-  "elapsed_ms": 4915.4,
+  "elapsed_ms": 18886.8,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

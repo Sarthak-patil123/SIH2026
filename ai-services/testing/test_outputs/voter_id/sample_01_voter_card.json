@@ -2,7 +2,7 @@
   "image": "sample_01_voter_card.jpg",
   "doc_type": "voter_id",
   "status": "ok",
-  "elapsed_ms": 11234.1,
+  "elapsed_ms": 48224.2,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

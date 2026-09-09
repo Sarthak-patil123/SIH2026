@@ -2,7 +2,7 @@
   "image": "sample_06_pan_specimen_00004.png",
   "doc_type": "pan",
   "status": "ok",
-  "elapsed_ms": 3669.9,
+  "elapsed_ms": 14188.5,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",
@@ -19,7 +19,7 @@
         "normalized": false
       },
       "name": {
-        "value": "Tiu",
+        "value": "Fsiute",
         "confidence": 0.85,
         "source": "ocr",
         "normalized": false
@@ -54,7 +54,7 @@
     "subtype": "pan",
     "country": "IND",
     "fields": {
-      "name": "Tiu"
+      "name": "Fsiute"
     },
     "quality_warnings": [
       "BLUR_SCORE:870.99",
@@ -72,7 +72,7 @@
       },
       "prompt_template": "Extract PAN fields from OCR tokens into JSON format.",
       "result": {
-        "name": "Tiu"
+        "name": "Fsiute"
       }
     }
   }

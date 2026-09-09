@@ -2,7 +2,7 @@
   "image": "sample_02_india_idp.jpg",
   "doc_type": "driving_license",
   "status": "ok",
-  "elapsed_ms": 12047.1,
+  "elapsed_ms": 58681.3,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

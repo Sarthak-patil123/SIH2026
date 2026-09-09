@@ -2,7 +2,7 @@
   "image": "sample_05_voter_rotated.jpg",
   "doc_type": "voter_id",
   "status": "ok",
-  "elapsed_ms": 10629.5,
+  "elapsed_ms": 15075.2,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

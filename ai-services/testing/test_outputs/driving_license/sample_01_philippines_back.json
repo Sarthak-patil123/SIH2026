@@ -2,7 +2,7 @@
   "image": "sample_01_philippines_back.jpg",
   "doc_type": "driving_license",
   "status": "ok",
-  "elapsed_ms": 15813.1,
+  "elapsed_ms": 15922.8,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

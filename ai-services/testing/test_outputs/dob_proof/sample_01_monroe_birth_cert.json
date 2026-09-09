@@ -2,7 +2,7 @@
   "image": "sample_01_monroe_birth_cert.jpg",
   "doc_type": "dob_proof",
   "status": "ok",
-  "elapsed_ms": 8813.5,
+  "elapsed_ms": 24613.1,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",
@@ -69,7 +69,7 @@
     "quality_warnings": [
       "BLUR_SCORE:899.45"
     ],
-    "raw_ocr_count": 128
+    "raw_ocr_count": 126
   },
   "raw_result": {
     "status": "success",
@@ -80,7 +80,7 @@
     "quality_warnings": [
       "BLUR_SCORE:899.45"
     ],
-    "raw_ocr_count": 128,
+    "raw_ocr_count": 126,
     "llm_extraction": {
       "status": "disabled",
       "message": "LLM extraction is inactive per architecture specification.",

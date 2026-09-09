@@ -17,6 +17,7 @@ from core.logger import get_logger
 from router.ocr_router import router as ocr_router
 from router.biometric_router import router as biometric_router
 from router.test_router import router as test_router
+from router.verify_router import router as verify_router
 
 logger = get_logger(__name__)
 
@@ -76,6 +77,7 @@ app.add_middleware(
 # Core production routers
 app.include_router(ocr_router)
 app.include_router(biometric_router)
+app.include_router(verify_router)
 
 # Component diagnostics and test suite router
 app.include_router(test_router)

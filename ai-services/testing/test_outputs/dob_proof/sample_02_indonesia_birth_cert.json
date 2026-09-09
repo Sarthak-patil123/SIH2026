@@ -2,7 +2,7 @@
   "image": "sample_02_indonesia_birth_cert.jpg",
   "doc_type": "dob_proof",
   "status": "ok",
-  "elapsed_ms": 36123.5,
+  "elapsed_ms": 110512.1,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

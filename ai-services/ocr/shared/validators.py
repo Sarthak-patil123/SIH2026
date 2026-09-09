@@ -96,12 +96,13 @@ def is_valid_epic(text: str) -> bool:
 # ---------------------------------------------------------------------------
 
 _DL_RE = re.compile(
-    r"(?<![A-Z0-9])(?:[A-Z][ \t-]*){2}(?:[0-9][ \t-]*){10,14}[0-9](?![A-Z0-9])"
+    r"(?<![A-Z0-9])(?:[A-Z][ \t\-/]*){2}(?:[0-9][ \t\-/]*){10,14}[0-9](?![A-Z0-9])"
 )
 
 
 def normalize_dl(text: str) -> str | None:
-    return _extract_identifier(text, _DL_RE)
+    match = _DL_RE.search(text.upper())
+    return re.sub(r"[ \t\-/]", "", match.group(0)) if match else None
 
 
 def is_valid_dl(text: str) -> bool:
