@@ -1,10 +1,51 @@
-fastapi==0.110.0
-uvicorn==0.29.0
-pydantic==2.6.4
-opencv-python-headless==4.9.0.80
+# ============================================================
+# AI Services — Pinned Requirements (Python 3.12, Windows CPU)
+# ============================================================
+# IMPORTANT: Do NOT pip install -r this directly.
+# Use setup_env.ps1 which installs in the correct order.
+#
+# Conflict resolution notes:
+#   - numpy MUST stay at 1.26.4 (paddlepaddle requirement, overrides insightface/albumentations)
+#   - protobuf MUST stay at 3.20.2 (paddlepaddle requirement, overrides onnxruntime/onnx)
+#   - onnxruntime 1.18.1 is the last version compatible with protobuf 3.20.x
+#   - insightface 0.7.3 installed via prebuilt wheel (avoids MSVC C++ build requirement)
+#   - torch 2.4.0+cpu from pytorch.org/whl/cpu (avoids CUDA deps, fbgemm fixed via libomp copy)
+#   - ultralytics pinned to 8.2.90 which supports torch 2.4.x
+# ============================================================
+
+# --- Web framework ---
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic>=2.7.0
+
+# --- Image processing (installed early) ---
+Pillow
+pillow-heif
+scikit-image
+
+# --- numpy: PINNED — must not be upgraded (paddlepaddle compat) ---
 numpy==1.26.4
-pytesseract==0.3.10
-pillow==10.3.0
-torch==2.2.2
-torchvision==0.17.2
-python-multipart==0.0.9
+
+# --- protobuf: PINNED — must not be upgraded (paddlepaddle compat) ---
+protobuf==3.20.2
+
+# --- OCR — PaddlePaddle CPU + PaddleOCR (installed by setup_env.ps1 first) ---
+# paddlepaddle==2.6.2    <-- installed first in setup_env.ps1, NOT here
+# paddleocr==2.8.1       <-- installed second in setup_env.ps1, NOT here
+
+# --- Face recognition — onnxruntime only (no torch dependency) ---
+# insightface installed via prebuilt .whl in setup_env.ps1
+onnxruntime==1.18.1
+
+# --- Layout detection (YOLOv8 — uses torch CPU) ---
+# torch/torchvision installed via pytorch.org/whl/cpu in setup_env.ps1
+ultralytics==8.2.90
+
+# --- Text processing ---
+rapidfuzz>=3.9.3
+
+# --- Utilities ---
+python-dateutil>=2.9.0
+pycountry>=24.6.1
+requests>=2.32.3

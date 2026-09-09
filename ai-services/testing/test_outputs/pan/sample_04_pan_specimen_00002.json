@@ -1,0 +1,85 @@
+{
+  "image": "sample_04_pan_specimen_00002.png",
+  "doc_type": "pan",
+  "status": "ok",
+  "elapsed_ms": 13725.7,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "national_id",
+    "subtype": "pan",
+    "country": "IND",
+    "status": "success",
+    "aggregate_confidence": 0.85,
+    "extracted_fields": {
+      "pan_number": {
+        "value": "KRVCJ0830C",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "name": {
+        "value": "PRIYA AGARWAL",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "father_name": {
+        "value": "VISH AL RFO",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:438.23",
+      "GLARE_DETECTED"
+    ],
+    "raw_ocr_count": 11
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "national_id",
+    "subtype": "pan",
+    "country": "IND",
+    "fields": {
+      "pan_number": "KRVCJ0830C",
+      "name": "PRIYA AGARWAL",
+      "father_name": "VISH AL RFO"
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:438.23",
+      "GLARE_DETECTED"
+    ],
+    "raw_ocr_count": 11,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "pan_number": "10-character alphanumeric",
+        "name": "string",
+        "father_name": "string",
+        "date_of_birth": "DD/MM/YYYY"
+      },
+      "prompt_template": "Extract PAN fields from OCR tokens into JSON format.",
+      "result": {
+        "pan_number": "KRVCJ0830C",
+        "name": "PRIYA AGARWAL",
+        "father_name": "VISH AL RFO"
+      }
+    }
+  }
+}

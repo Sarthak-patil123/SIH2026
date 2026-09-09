@@ -1,0 +1,121 @@
+{
+  "image": "sample_05_kerala_ration.jpg",
+  "doc_type": "aadhaar",
+  "status": "ok",
+  "elapsed_ms": 42019.9,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "national_id",
+    "subtype": "aadhaar",
+    "country": "IND",
+    "status": "success",
+    "aggregate_confidence": 0.85,
+    "extracted_fields": {
+      "aadhaar_number": {
+        "value": "1102 0123 4501",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "name": {
+        "value": "@Besads",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": "03-02-2021",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "gender": {
+        "value": "MALE",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "address": {
+        "value": "aholn\" GaOjand mmid, (Office Phone Number), ojela\", 01/5000, muond @JabInud, (Thaluk Supply Officer)",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "pincode": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "mobile_last4": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "vid": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "BLUR_SCORE:6317.14",
+      "GLARE_DETECTED",
+      "PERSPECTIVE_CORRECTION_DISCARDED"
+    ],
+    "raw_ocr_count": 90
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "national_id",
+    "subtype": "aadhaar",
+    "country": "IND",
+    "fields": {
+      "aadhaar_number": "1102 0123 4501",
+      "name": "@Besads",
+      "date_of_birth": "03-02-2021",
+      "gender": "MALE",
+      "address": "aholn\" GaOjand mmid, (Office Phone Number), ojela\", 01/5000, muond @JabInud, (Thaluk Supply Officer)",
+      "checksum_valid": false,
+      "aadhaar_masked": false,
+      "aadhaar_last4": "4501"
+    },
+    "quality_warnings": [
+      "BLUR_SCORE:6317.14",
+      "GLARE_DETECTED",
+      "PERSPECTIVE_CORRECTION_DISCARDED"
+    ],
+    "raw_ocr_count": 90,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "aadhaar_number": "12-digit UID",
+        "name": "string",
+        "date_of_birth": "DD/MM/YYYY or YYYY",
+        "gender": "MALE | FEMALE | TRANSGENDER",
+        "address": "string",
+        "pincode": "6-digit code"
+      },
+      "prompt_template": "Extract AADHAAR fields from OCR tokens into JSON format.",
+      "result": {
+        "aadhaar_number": "1102 0123 4501",
+        "name": "@Besads",
+        "date_of_birth": "03-02-2021",
+        "gender": "MALE",
+        "address": "aholn\" GaOjand mmid, (Office Phone Number), ojela\", 01/5000, muond @JabInud, (Thaluk Supply Officer)",
+        "checksum_valid": false,
+        "aadhaar_masked": false,
+        "aadhaar_last4": "4501"
+      }
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "image": "nat_sample_02_pan_specimen_00000.png",
+  "doc_type": "national_id",
+  "status": "ok",
+  "elapsed_ms": 13743.4,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "national_id",
+    "subtype": "pan",
+    "country": "IND",
+    "status": "success",
+    "aggregate_confidence": 0.85,
+    "extracted_fields": {
+      "pan_number": {
+        "value": "DDGAH3295Y",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "name": {
+        "value": "MANOJ DESAI",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "father_name": {
+        "value": "NEHA AGARWAL",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": "03/11/2003",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "BLUR_SCORE:865.11",
+      "GLARE_DETECTED"
+    ],
+    "raw_ocr_count": 11
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "national_id",
+    "subtype": "pan",
+    "country": "IND",
+    "fields": {
+      "pan_number": "DDGAH3295Y",
+      "name": "MANOJ DESAI",
+      "father_name": "NEHA AGARWAL",
+      "date_of_birth": "03/11/2003"
+    },
+    "quality_warnings": [
+      "BLUR_SCORE:865.11",
+      "GLARE_DETECTED"
+    ],
+    "raw_ocr_count": 11,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "pan_number": "10-character alphanumeric",
+        "name": "string",
+        "father_name": "string",
+        "date_of_birth": "DD/MM/YYYY"
+      },
+      "prompt_template": "Extract PAN fields from OCR tokens into JSON format.",
+      "result": {
+        "pan_number": "DDGAH3295Y",
+        "name": "MANOJ DESAI",
+        "father_name": "NEHA AGARWAL",
+        "date_of_birth": "03/11/2003"
+      }
+    }
+  }
+}

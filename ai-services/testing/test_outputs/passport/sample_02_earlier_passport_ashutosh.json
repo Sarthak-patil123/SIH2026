@@ -1,0 +1,141 @@
+{
+  "image": "sample_02_earlier_passport_ashutosh.jpg",
+  "doc_type": "passport",
+  "status": "ok",
+  "elapsed_ms": 28712.0,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "passport",
+    "subtype": null,
+    "country": null,
+    "status": "success",
+    "aggregate_confidence": 0.0,
+    "extracted_fields": {
+      "passport_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "surname": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "given_names": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "nationality": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "country_code": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "sex": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "expiry_date": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "personal_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "place_of_birth": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_issue": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "place_of_issue": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [
+        "MRZ_NOT_DETECTED"
+      ],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:4172.42"
+    ],
+    "raw_ocr_count": 73
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "passport",
+    "fields": {},
+    "mrz": null,
+    "validation": {
+      "confidence": 0.23,
+      "errors": [
+        "MRZ_NOT_DETECTED"
+      ],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:4172.42"
+    ],
+    "layout_regions": [
+      "text",
+      "passport_number"
+    ],
+    "raw_ocr_count": 73,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "passport_number": "string",
+        "surname": "string",
+        "given_names": "string",
+        "nationality": "string",
+        "date_of_birth": "YYYY-MM-DD",
+        "place_of_birth": "string",
+        "sex": "M | F | X",
+        "date_of_issue": "YYYY-MM-DD",
+        "place_of_issue": "string",
+        "expiry_date": "YYYY-MM-DD"
+      },
+      "prompt_template": "Extract passport identity fields from OCR tokens into JSON schema.",
+      "result": {}
+    }
+  }
+}

@@ -8,6 +8,8 @@ import { caseRoutes } from './modules/cases/case.routes';
 import { documentRoutes } from './modules/documents/document.routes';
 import { alertRoutes } from './modules/alerts/alert.routes';
 import { chatbotRoutes } from './modules/chatbot/chatbot.routes';
+import { ocrRoutes } from './modules/ocr/ocr.routes';
+import { faceRoutes } from './modules/face-verification/face.routes';
 
 export const app = express();
 
@@ -31,6 +33,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/ocr', ocrRoutes);
+app.use('/api/face-verification', faceRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 
 // ── Health check ──────────────────────────────────────────────────────────────

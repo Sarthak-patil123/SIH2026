@@ -1,0 +1,19 @@
+{
+  "run_timestamp": "2026-09-09T06:01:54.947497+00:00",
+  "total_elapsed_seconds": 234.05,
+  "per_type": {
+    "aadhaar": {
+      "total": 6,
+      "ok": 6,
+      "errors": 0,
+      "avg_confidence": 0.425,
+      "avg_elapsed_ms": 39006.1,
+      "error_cases": []
+    }
+  },
+  "totals": {
+    "cases": 6,
+    "ok": 6,
+    "errors": 0
+  }
+}

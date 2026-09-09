@@ -1,12 +1,100 @@
+# Node / JavaScript Modules & Builds
 node_modules/
+*/node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Build outputs
 dist/
 build/
+out/
 .next/
+.turbo/
+.cache/
+
+# Python Virtual Environments & Modules
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+*/.venv/
+**/.venv/
+**/venv/
+**/env/
+
+# Python Bytecode & Caches
 __pycache__/
+*/__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
 *.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+*.egg
+pip-wheel-metadata/
+wheels/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage/
+htmlcov/
+
+# Environment Variables & Secrets
 .env
+.env.*
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# OS Generated Files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE & Editor Files
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# AI / ML Models, Weights & Downloads
+models/
+weights/
+*.pt
+*.pth
+*.onnx
+*.engine
+*.tflite
+*.weights
+.insightface/
+.paddleocr/
+.cache/huggingface/
+.cache/paddle/
+
+# Storage & Database Volumes
 storage/*
 !storage/.gitkeep
 postgres_data/
@@ -15,3 +103,40 @@ coverage/
 # Python virtual environment
 ai-services/venv/
 frontend/tsconfig.tsbuildinfo
+minio_data/
+redis_data/
+*.db
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# External models / tools / OCR clones
+document-ocr-main/
+document-ocr*/
+*document-ocr*/
+MRZ_Passport_Reader_From_Image-main/
+mrz_passport_Reader_from_image/
+*MRZ_Passport_Reader*/
+*mrz_passport_Reader*/
+*mrz_passport*/
+*MRZ_Passport*/
+PaddleOCR-main/
+paddleocr/
+PaddleOCR/
+*PaddleOCR*/
+*paddleocr*/
+insightface-master/
+insightface/
+*insightface*/
+Passport-Verification-System-main/
+passport-verification-system-main/
+*Passport-Verification-System*/
+*passport-verification-system*/
+
+# Scratch scripts & temporary tests
+scratch/
+*/scratch/
+**/scratch/
+scratch_*.py

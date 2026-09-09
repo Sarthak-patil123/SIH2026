@@ -1,0 +1,293 @@
+"""
+Extractor for Indian Aadhaar cards (front and back).
+
+Front fields: Aadhaar number, name, date/year of birth, gender.
+Back fields:  address, pincode.
+
+Aadhaar has no Latin field labels for the name (it sits above the DOB line), so
+the name is found spatially relative to the DOB/gender block. The Aadhaar number
+and its Verhoeff checksum are handled in ocr.shared.validators.
+"""
+
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
+from typing import Optional
+
+from ocr.engine import TextRegion
+from ocr.shared.validator import find_label_value, find_visual_field
+from ocr.shared.validators import extract_aadhaar_number, is_valid_aadhaar
+
+_DATE_RE = re.compile(r"\b(\d{1,2}[/.\-]\d{1,2}[/.\-]\d{4})\b")
+_YEAR_RE = re.compile(r"\b(19\d{2}|20\d{2})\b")
+_PINCODE_RE = re.compile(r"\b(\d{6})\b")
+
+# A Virtual ID is 16 digits, printed grouped 4-4-4-4 (optionally spaced) — or as
+# a bare 16-digit run. Either form must be removed before Aadhaar extraction.
+_VID_RE = re.compile(r"\b\d{4}\s?\d{4}\s?\d{4}\s?\d{4}\b")
+_VID_LABEL_RE = re.compile(r"\bVID\b", re.IGNORECASE)
+
+# Masked Aadhaar: leading groups are X'd out and only the final 4 digits show,
+# e.g. "XXXX XXXX 9012" / "xxxxxxxx9012" / "**** **** 9012".
+_MASKED_AADHAAR_RE = re.compile(
+    r"(?:[Xx*]{4}[\s-]?){2}(\d{4})\b"
+)
+
+_GENDER_WORDS = {
+    "MALE": "MALE",
+    "FEMALE": "FEMALE",
+    "TRANSGENDER": "TRANSGENDER",
+}
+
+# Hindi (Devanagari) gender words map to the same canonical values.
+_GENDER_HINDI = {
+    "पुरुष": "MALE",
+    "महिला": "FEMALE",
+    "स्त्री": "FEMALE",
+    "किन्नर": "TRANSGENDER",
+    "ट्रांसजेंडर": "TRANSGENDER",
+}
+
+# Header / label noise that must never be mistaken for the holder name.
+_NAME_STOPWORDS = {
+    "GOVERNMENT", "GOVT", "INDIA", "BHARAT", "AADHAAR", "AADHAR", "UNIQUE",
+    "IDENTIFICATION", "AUTHORITY", "UIDAI", "MALE", "FEMALE", "TRANSGENDER",
+    "DOB", "YEAR", "BIRTH", "YOB", "ADDRESS", "MOBILE", "VID", "ENROLLMENT",
+    "ENROLMENT", "GENDER", "DATE", "NUMBER", "CARD", "DOWNLOAD", "ISSUE",
+    "ISSUED", "HELP", "EMAIL", "WWW", "PHONE", "MERA", "AADHAR", "VALID",
+}
+
+# Care-of prefixes that introduce the address on the back.
+_CARE_OF_RE = re.compile(r"\b([SCDWscdw])\s*/\s*[Oo]\b")
+
+
+@dataclass
+class AadhaarFields:
+    aadhaar_number: Optional[str] = None
+    name: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    year_of_birth: Optional[str] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
+    pincode: Optional[str] = None
+    checksum_valid: bool = False
+    # --- additive fields (do not rename existing ones) ---
+    aadhaar_masked: bool = False
+    aadhaar_last4: Optional[str] = None
+    vid: Optional[str] = None
+
+
+def _devanagari_ratio(text: str) -> float:
+    """Fraction of alphabetic characters that fall in the Devanagari block."""
+    letters = [c for c in text if c.isalpha()]
+    if not letters:
+        return 0.0
+    devanagari = sum(1 for c in letters if "ऀ" <= c <= "ॿ")
+    return devanagari / len(letters)
+
+
+def _is_name_like(text: str) -> bool:
+    stripped = text.strip()
+    if len(stripped) < 3 or any(ch.isdigit() for ch in stripped):
+        return False
+    letters = [c for c in stripped if c.isalpha()]
+    if not letters:
+        return False
+    if _devanagari_ratio(stripped) > 0.5:
+        return False
+    if sum(1 for c in letters if ord(c) > 127) / len(letters) > 0.5:
+        return False
+    if _CARE_OF_RE.search(stripped):
+        return False
+    words = re.sub(r"[^A-Z ]", " ", stripped.upper()).split()
+    if not words:
+        return False
+    return not any(w in _NAME_STOPWORDS for w in words)
+
+
+def _find_gender(regions: list[TextRegion]) -> Optional[str]:
+    for region in regions:
+        text = region.text
+        upper = re.sub(r"[^A-Z]", " ", text.upper())
+        padded = f" {upper} "
+        for word, value in _GENDER_WORDS.items():
+            if f" {word} " in padded:
+                return value
+        for word, value in _GENDER_HINDI.items():
+            if word in text:
+                return value
+    return None
+
+
+def _find_dob_region(regions: list[TextRegion]) -> Optional[TextRegion]:
+    """Locate the region carrying the date/year of birth."""
+    labelled_with_date: Optional[TextRegion] = None
+    labelled: Optional[TextRegion] = None
+    bare_date: Optional[TextRegion] = None
+
+    for region in regions:
+        upper = region.text.upper()
+        has_birth_label = (
+            "DOB" in upper
+            or "YEAR OF BIRTH" in upper
+            or "YOB" in upper
+            or "BIRTH" in upper
+            or "जन्म" in region.text
+        )
+        has_date = bool(_DATE_RE.search(region.text))
+        if has_birth_label and has_date and labelled_with_date is None:
+            labelled_with_date = region
+        elif has_birth_label and labelled is None:
+            labelled = region
+        elif has_date and bare_date is None:
+            bare_date = region
+
+    return labelled_with_date or labelled or bare_date
+
+
+def _find_name(
+    regions: list[TextRegion],
+    dob_region: Optional[TextRegion],
+    *,
+    is_front: bool,
+) -> Optional[str]:
+    candidates = [r for r in regions if _is_name_like(r.text)]
+    if not candidates:
+        return None
+    if dob_region is not None:
+        dob_top = min(p[1] for p in dob_region.bbox)
+        dob_left = min(p[0] for p in dob_region.bbox)
+        above = [r for r in candidates if max(p[1] for p in r.bbox) <= dob_top + 5]
+        if above:
+            above.sort(
+                key=lambda r: (
+                    dob_top - max(p[1] for p in r.bbox),
+                    abs(min(p[0] for p in r.bbox) - dob_left),
+                )
+            )
+            return above[0].text.strip()
+    if not is_front:
+        return None
+    candidates.sort(key=lambda r: min(p[1] for p in r.bbox))
+    return candidates[0].text.strip()
+
+
+def _find_address(regions: list[TextRegion]) -> Optional[str]:
+    label = find_visual_field(regions, ["ADDRESS", "पता"])
+    if label is None:
+        return None
+    label_bottom = max(p[1] for p in label.bbox)
+    label_top = min(p[1] for p in label.bbox)
+    lines = []
+    for region in regions:
+        if region is label:
+            continue
+        top = min(p[1] for p in region.bbox)
+        bottom = max(p[1] for p in region.bbox)
+        on_label_row = bottom > label_top and top < label_bottom
+        if not on_label_row and (top < label_bottom - 10 or top - label_bottom > 300):
+            continue
+        text = region.text.strip()
+        if _devanagari_ratio(text) > 0.5:
+            continue
+        if not any(c.isalpha() for c in text) and sum(c.isdigit() for c in text) >= 8:
+            continue
+        if len(text) >= 2:
+            lines.append((top, text))
+    lines.sort(key=lambda x: x[0])
+    if not lines:
+        inline = find_label_value(regions, ["ADDRESS"])
+        return inline
+    return ", ".join(text for _, text in lines[:6])
+
+
+def _strip_vid(text: str) -> tuple[str, Optional[str]]:
+    """Remove 16-digit VID sequences from ``text`` and return (cleaned, vid)."""
+    found: Optional[str] = None
+
+    def _replace(match: re.Match[str]) -> str:
+        nonlocal found
+        if found is None:
+            digits = re.sub(r"\D", "", match.group(0))
+            found = f"{digits[0:4]} {digits[4:8]} {digits[8:12]} {digits[12:16]}"
+        return " "
+
+    cleaned = _VID_RE.sub(_replace, text)
+    return cleaned, found
+
+
+def extract_aadhaar(regions: list[TextRegion]) -> AadhaarFields:
+    fields = AadhaarFields()
+    joined = " ".join(r.text for r in regions if r.text.strip())
+
+    cleaned, fields.vid = _strip_vid(joined)
+
+    fields.aadhaar_number = extract_aadhaar_number(cleaned)
+    fields.checksum_valid = is_valid_aadhaar(cleaned)
+
+    if fields.aadhaar_number is None:
+        masked = _MASKED_AADHAAR_RE.search(cleaned)
+        if masked:
+            fields.aadhaar_masked = True
+            fields.aadhaar_last4 = masked.group(1)
+    elif fields.aadhaar_number:
+        fields.aadhaar_last4 = fields.aadhaar_number.split()[-1]
+
+    fields.gender = _find_gender(regions)
+
+    dob_region = _find_dob_region(regions)
+    if dob_region is not None:
+        date_match = _DATE_RE.search(dob_region.text)
+        if date_match:
+            fields.date_of_birth = date_match.group(1)
+        else:
+            year_match = _YEAR_RE.search(dob_region.text)
+            if year_match:
+                fields.year_of_birth = year_match.group(1)
+
+    # Fallback search across all regions for DOB/YOB
+    if fields.date_of_birth is None and fields.year_of_birth is None:
+        for r in regions:
+            dm = _DATE_RE.search(r.text)
+            if dm:
+                fields.date_of_birth = dm.group(1)
+                break
+            ym = _YEAR_RE.search(r.text)
+            if ym:
+                y = ym.group(1)
+                # Birth years are usually <= 2018
+                if int(y) < 2020:
+                    fields.year_of_birth = y
+
+    # Fallback for Aadhaar number
+    if fields.aadhaar_number is None:
+        raw_12 = re.search(r"\b(\d{4})[\s-](\d{4})[\s-](\d{4})\b", cleaned)
+        if raw_12:
+            fields.aadhaar_number = f"{raw_12.group(1)} {raw_12.group(2)} {raw_12.group(3)}"
+
+    has_address_label = find_visual_field(regions, ["ADDRESS", "पता"]) is not None
+    is_front = (
+        dob_region is not None or fields.gender is not None
+    ) and not has_address_label
+    fields.name = _find_name(regions, dob_region, is_front=is_front)
+
+    address = _find_address(regions)
+    if address:
+        fields.address = address
+        pincode = _PINCODE_RE.search(address)
+        fields.pincode = pincode.group(1) if pincode else None
+
+    if fields.pincode is None:
+        for r in reversed(regions):
+            m = _PINCODE_RE.search(r.text)
+            if m:
+                cand = m.group(1)
+                # Ensure it's not a portion of the Aadhaar number
+                if not (fields.aadhaar_number and cand in fields.aadhaar_number.replace(" ", "")):
+                    # Indian PIN codes start with digits 1-9
+                    if cand[0] in "123456789":
+                        fields.pincode = cand
+                        break
+
+    return fields

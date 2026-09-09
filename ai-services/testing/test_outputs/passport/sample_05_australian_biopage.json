@@ -1,0 +1,185 @@
+{
+  "image": "sample_05_australian_biopage.jpg",
+  "doc_type": "passport",
+  "status": "ok",
+  "elapsed_ms": 59240.1,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "passport",
+    "subtype": null,
+    "country": "AUS",
+    "status": "success",
+    "aggregate_confidence": 0.85,
+    "extracted_fields": {
+      "passport_number": {
+        "value": "RA0123456",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "surname": {
+        "value": "CITIZEN",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "given_names": {
+        "value": "JANE                     K",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "nationality": {
+        "value": "4US",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "country_code": {
+        "value": "AUS",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": "1991-05-04",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "sex": {
+        "value": "F",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "expiry_date": {
+        "value": "2032-08-01",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "personal_number": {
+        "value": "99999000T",
+        "confidence": 0.85,
+        "source": "ocr",
+        "normalized": false
+      },
+      "place_of_birth": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_issue": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "place_of_issue": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": {
+      "is_valid": true,
+      "mrz_type": "TD3",
+      "raw_lines": [
+        "P<AUSCITIZEN<<JANE<<<<<<<<<<<<<<<<<<<<<K<<<<",
+        "RA012345644US9105045F3208014<99999000T<<<<86"
+      ],
+      "checksums": {
+        "passport_number": true,
+        "date_of_birth": true,
+        "expiry_date": true,
+        "overall_valid": true
+      }
+    },
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:107.77"
+    ],
+    "raw_ocr_count": 36
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "passport",
+    "fields": {
+      "passport_number": "RA0123456",
+      "surname": "CITIZEN",
+      "given_names": "JANE                     K",
+      "nationality": "4US",
+      "date_of_birth": "1991-05-04",
+      "sex": "F",
+      "expiry_date": "2032-08-01",
+      "personal_number": "99999000T",
+      "country_code": "AUS"
+    },
+    "mrz": {
+      "type": "TD3",
+      "is_valid": true,
+      "raw_lines": [
+        "P<AUSCITIZEN<<JANE<<<<<<<<<<<<<<<<<<<<<K<<<<",
+        "RA012345644US9105045F3208014<99999000T<<<<86"
+      ],
+      "checksums": {
+        "passport_number": true,
+        "date_of_birth": true,
+        "expiry_date": true,
+        "overall_valid": true
+      }
+    },
+    "validation": {
+      "confidence": 0.681,
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:107.77"
+    ],
+    "layout_regions": [
+      "text",
+      "passport_number",
+      "photo",
+      "mrz"
+    ],
+    "raw_ocr_count": 36,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "passport_number": "string",
+        "surname": "string",
+        "given_names": "string",
+        "nationality": "string",
+        "date_of_birth": "YYYY-MM-DD",
+        "place_of_birth": "string",
+        "sex": "M | F | X",
+        "date_of_issue": "YYYY-MM-DD",
+        "place_of_issue": "string",
+        "expiry_date": "YYYY-MM-DD"
+      },
+      "prompt_template": "Extract passport identity fields from OCR tokens into JSON schema.",
+      "result": {
+        "passport_number": "RA0123456",
+        "surname": "CITIZEN",
+        "given_names": "JANE                     K",
+        "nationality": "4US",
+        "date_of_birth": "1991-05-04",
+        "sex": "F",
+        "expiry_date": "2032-08-01",
+        "personal_number": "99999000T",
+        "country_code": "AUS"
+      }
+    }
+  }
+}

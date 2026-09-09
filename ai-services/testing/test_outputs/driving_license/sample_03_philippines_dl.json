@@ -1,0 +1,134 @@
+{
+  "image": "sample_03_philippines_dl.png",
+  "doc_type": "driving_license",
+  "status": "ok",
+  "elapsed_ms": 9286.6,
+  "error": null,
+  "adapted_result": {
+    "adapter_version": "1.0",
+    "document_type": "driving_license",
+    "subtype": null,
+    "country": "IND",
+    "status": "success",
+    "aggregate_confidence": 0.0,
+    "extracted_fields": {
+      "dl_number": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "name": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "relation_name": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "date_of_birth": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "issue_date": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "validity_date": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "validity_date_transport": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "class_of_vehicle": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "blood_group": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "address": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "rto_code": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "hazardous_valid_till": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      },
+      "hill_valid_till": {
+        "value": null,
+        "confidence": 0.0,
+        "source": "ocr",
+        "normalized": false
+      }
+    },
+    "mrz": null,
+    "validation": {
+      "errors": [],
+      "warnings": []
+    },
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:298.64"
+    ],
+    "raw_ocr_count": 3
+  },
+  "raw_result": {
+    "status": "success",
+    "document_type": "driving_license",
+    "country": "IND",
+    "fields": {},
+    "is_valid_format": false,
+    "quality_warnings": [
+      "NO_DOCUMENT_BOUNDARY_DETECTED",
+      "BLUR_SCORE:298.64"
+    ],
+    "raw_ocr_count": 3,
+    "llm_extraction": {
+      "status": "disabled",
+      "message": "LLM extraction is inactive per architecture specification.",
+      "target_schema": {
+        "dl_number": "state code + RTO + serial number",
+        "name": "string",
+        "relation_name": "father / husband / guardian name",
+        "date_of_birth": "DD/MM/YYYY",
+        "issue_date": "DD/MM/YYYY",
+        "validity_date": "DD/MM/YYYY",
+        "class_of_vehicle": "e.g. LMV, MCWG",
+        "blood_group": "string",
+        "address": "string"
+      },
+      "prompt_template": "Extract Driving Licence fields from OCR tokens into JSON format.",
+      "result": {}
+    }
+  }
+}
