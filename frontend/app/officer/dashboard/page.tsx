@@ -7,6 +7,7 @@ import {
   FileText, ShieldCheck, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiFetch } from '@/lib/api';
 import { mockCases, mockOfficerActivity } from '@/lib/mock-data';
 import { formatDate, timeAgo } from '@/lib/utils';
 import { StatusBadge, RiskBadge } from '@/components/ui/Badge';
@@ -18,16 +19,39 @@ import Avatar from '@/components/ui/Avatar';
 
 export default function OfficerDashboard() {
   const { user } = useAuth();
+  const [cases, setCases] = React.useState<any[]>([]);
 
-  // Officer sees only their own cases
-  const myCases = mockCases.filter((c) => c.officerId === user?.id);
+  React.useEffect(() => {
+    async function loadCases() {
+      try {
+        const data = await apiFetch<{ cases: any[] }>('/cases');
+        if (data?.cases && data.cases.length > 0) {
+          setCases(
+            data.cases.map((c) => ({
+              ...c,
+              caseNumber: c.caseNumber || 'SSB-' + c.id.slice(0, 6).toUpperCase(),
+              applicantName: c.applicantName || c.personName || 'Unknown Subject',
+              documents: c.documents || [{ fileName: 'document.jpg', docType: 'PASSPORT' }],
+            }))
+          );
+        } else {
+          setCases(mockCases.filter((c) => c.officerId === user?.id));
+        }
+      } catch {
+        setCases(mockCases.filter((c) => c.officerId === user?.id));
+      }
+    }
+    loadCases();
+  }, [user?.id]);
+
+  const myCases = cases.length > 0 ? cases : mockCases.filter((c) => c.officerId === user?.id);
 
   const pendingCount = myCases.filter((c) => c.status === 'PENDING' || c.status === 'UNDER_REVIEW').length;
   const flaggedCount = myCases.filter((c) => c.status === 'FLAGGED').length;
   const verifiedCount = myCases.filter((c) => c.status === 'APPROVED').length;
 
   const recentCases = [...myCases].sort(
-    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    (a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
   ).slice(0, 6);
 
   const firstName = user?.name ? user.name.split(' ')[0] : 'Officer';

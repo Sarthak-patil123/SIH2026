@@ -1,4 +1,5 @@
 """FastAPI application — unified entrypoint for the identity document verification service."""
+# Reload triggered: 2026-09-09 23:16
 import os
 # Set PaddlePaddle env vars before any paddle import to prevent source checks and oneDNN issues
 os.environ.setdefault("PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK", "True")

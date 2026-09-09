@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Search, FileText, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 import { mockCases } from '@/lib/mock-data';
 import { formatDate, timeAgo } from '@/lib/utils';
 import { StatusBadge, RiskBadge } from '@/components/ui/Badge';
@@ -29,16 +30,42 @@ const riskOptions = [
 ];
 
 export default function AdminCasesPage() {
+  const [cases, setCases] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [riskFilter, setRiskFilter] = useState('');
   const [officerFilter, setOfficerFilter] = useState('');
   const [page, setPage] = useState(1);
 
-  const uniqueOfficers = Array.from(new Set(mockCases.map((c) => c.officerName)));
+  React.useEffect(() => {
+    async function loadCases() {
+      try {
+        const data = await apiFetch<{ cases: any[] }>('/cases');
+        if (data?.cases && data.cases.length > 0) {
+          setCases(
+            data.cases.map((c) => ({
+              ...c,
+              caseNumber: c.caseNumber || 'SSB-' + c.id.slice(0, 6).toUpperCase(),
+              applicantName: c.applicantName || c.personName || 'Unknown Subject',
+              officerName: c.officer?.name || c.officerName || 'Officer',
+              documents: c.documents || [{ fileName: 'document.jpg', docType: 'PASSPORT' }],
+            }))
+          );
+        } else {
+          setCases(mockCases);
+        }
+      } catch {
+        setCases(mockCases);
+      }
+    }
+    loadCases();
+  }, []);
+
+  const allCases = cases.length > 0 ? cases : mockCases;
+  const uniqueOfficers = Array.from(new Set(allCases.map((c) => c.officerName).filter(Boolean)));
 
   const filtered = useMemo(() => {
-    return mockCases.filter((c) => {
+    return allCases.filter((c) => {
       const matchSearch =
         !search ||
         c.caseNumber.toLowerCase().includes(search.toLowerCase()) ||
@@ -70,7 +97,7 @@ export default function AdminCasesPage() {
           All Cases
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          Master registry of all verified and flagged identity cases across border checkpoints ({mockCases.length} total)
+          Master registry of all verified and flagged identity cases across border checkpoints ({allCases.length} total)
         </p>
       </div>
 

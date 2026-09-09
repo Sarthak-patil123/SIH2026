@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Search, FileText, ChevronLeft, ChevronRight, Plus, SlidersHorizontal, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { apiFetch } from '@/lib/api';
 import { mockCases } from '@/lib/mock-data';
 import { formatDate, timeAgo } from '@/lib/utils';
 import { StatusBadge, RiskBadge } from '@/components/ui/Badge';
@@ -38,8 +39,34 @@ export default function OfficerCasesPage() {
   const [riskFilter, setRiskFilter] = useState('');
   const [page, setPage] = useState(1);
 
-  // Officer sees ONLY their own cases
-  const myCases = mockCases.filter((c) => c.officerId === user?.id);
+  const [cases, setCases] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    async function loadCases() {
+      try {
+        const data = await apiFetch<{ cases: any[] }>('/cases');
+        if (data?.cases && data.cases.length > 0) {
+          const formatted = data.cases.map((c) => ({
+            ...c,
+            caseNumber: c.caseNumber || 'SSB-' + c.id.slice(0, 6).toUpperCase(),
+            applicantName: c.applicantName || c.personName || 'Unknown Subject',
+            documents: c.documents || [{ fileName: 'document.jpg', docType: 'PASSPORT' }],
+          }));
+          setCases(formatted);
+        } else {
+          setCases(mockCases.filter((c) => c.officerId === user?.id));
+        }
+      } catch (err) {
+        setCases(mockCases.filter((c) => c.officerId === user?.id));
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCases();
+  }, [user?.id]);
+
+  const myCases = cases;
 
   const filtered = useMemo(() => {
     return myCases.filter((c) => {

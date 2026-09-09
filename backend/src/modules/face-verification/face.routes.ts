@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { faceController } from "./face.controller";
+import { authenticate } from "../../middleware/auth.middleware";
 
 export const faceRoutes = Router();
 
@@ -27,12 +28,13 @@ const compareUpload = upload.fields([
   { name: "face2", maxCount: 1 },
 ]);
 
-// POST /api/face-verification/verify (document + selfie)
-faceRoutes.post("/verify", verifyUpload, (req, res, next) =>
+// POST /api/face-verification/verify (document + selfie) — JWT-protected
+faceRoutes.post("/verify", authenticate, verifyUpload, (req, res, next) =>
   faceController.verifyDocumentFace(req, res, next)
 );
 
-// POST /api/face-verification/compare (image1 + image2)
-faceRoutes.post("/compare", compareUpload, (req, res, next) =>
+// POST /api/face-verification/compare (image1 + image2) — JWT-protected
+faceRoutes.post("/compare", authenticate, compareUpload, (req, res, next) =>
   faceController.compareFaces(req, res, next)
 );
+

@@ -43,3 +43,43 @@ export async function apiFetch<T = unknown>(
 
   return response.json() as Promise<T>;
 }
+
+/**
+ * apiUpload — sends a multipart/form-data request (for file uploads).
+ * Do NOT pass Content-Type; the browser sets it automatically with the
+ * correct boundary when the body is a FormData instance.
+ */
+export async function apiUpload<T = unknown>(
+  path: string,
+  formData: FormData
+): Promise<T> {
+  const headers: Record<string, string> = {};
+
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('idverify_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let errorMsg = `Upload failed: ${response.status} ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body?.error) errorMsg = body.error;
+      if (body?.message) errorMsg = body.message;
+    } catch {
+      // not JSON — use default message
+    }
+    throw new Error(errorMsg);
+  }
+
+  return response.json() as Promise<T>;
+}

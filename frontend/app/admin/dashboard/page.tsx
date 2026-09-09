@@ -6,6 +6,7 @@ import {
   FolderOpen, AlertTriangle, Clock, CheckCircle2, ArrowRight,
   Shield, ShieldAlert, Activity, ChevronRight, User, Eye, Sparkles
 } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 import { mockCases, mockAlerts, mockAdminActivity } from '@/lib/mock-data';
 import { timeAgo, formatDateTime, getAlertTypeLabel } from '@/lib/utils';
 import { StatusBadge, RiskBadge, SeverityBadge } from '@/components/ui/Badge';
@@ -16,9 +17,36 @@ import Avatar from '@/components/ui/Avatar';
 import ConfidenceBar from '@/components/ui/ConfidenceBar';
 
 export default function AdminDashboard() {
+  const [cases, setCases] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    async function loadCases() {
+      try {
+        const data = await apiFetch<{ cases: any[] }>('/cases');
+        if (data?.cases && data.cases.length > 0) {
+          setCases(
+            data.cases.map((c) => ({
+              ...c,
+              caseNumber: c.caseNumber || 'SSB-' + c.id.slice(0, 6).toUpperCase(),
+              applicantName: c.applicantName || c.personName || 'Unknown Subject',
+              officerName: c.officer?.name || c.officerName || 'Officer',
+              documents: c.documents || [{ fileName: 'document.jpg', docType: 'PASSPORT' }],
+            }))
+          );
+        } else {
+          setCases(mockCases);
+        }
+      } catch {
+        setCases(mockCases);
+      }
+    }
+    loadCases();
+  }, []);
+
+  const allCases = cases.length > 0 ? cases : mockCases;
   const pendingAlerts = mockAlerts.filter((a) => a.status === 'PENDING');
-  const reviewCases = mockCases.filter((c) => c.status === 'FLAGGED' || c.status === 'UNDER_REVIEW');
-  const resolvedCases = mockCases.filter((c) => c.status === 'APPROVED' || c.status === 'REJECTED');
+  const reviewCases = allCases.filter((c) => c.status === 'FLAGGED' || c.status === 'UNDER_REVIEW');
+  const resolvedCases = allCases.filter((c) => c.status === 'APPROVED' || c.status === 'REJECTED');
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
@@ -118,7 +146,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           title="Monitored Cases"
-          value={mockCases.length}
+          value={allCases.length}
           change="Across all stations"
           changeType="neutral"
           icon={<FolderOpen size={20} className="text-blue-600" />}

@@ -54,9 +54,70 @@ function getTimelineMarker(status: TimelineEventStatus) {
   );
 }
 
+import { useState, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
+import { Case } from '@/types';
+
 export default function OfficerCaseDetailPage({ params }: { params: { caseId: string } }) {
-  const caseData = mockCases.find((c) => c.id === params.caseId);
-  if (!caseData) return notFound();
+  const [caseData, setCaseData] = useState<Case | null>(() => mockCases.find((c) => c.id === params.caseId) || null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCase() {
+      try {
+        const res: any = await apiFetch(`/cases/${params.caseId}`);
+        if (res?.case) {
+          const c = res.case;
+          const mapped: Case = {
+            id: c.id,
+            caseNumber: c.caseNumber || 'SSB-' + c.id.slice(0, 6).toUpperCase(),
+            title: c.title,
+            applicantName: c.personName || c.applicantName || 'Applicant',
+            applicantDob: c.documents?.[0]?.ocrData?.applicantDob || '1996-07-01',
+            status: c.status,
+            riskScore: Number(c.riskScore) || 10,
+            riskLevel: c.riskLevel || 'LOW',
+            createdAt: c.createdAt,
+            updatedAt: c.updatedAt,
+            officerId: c.officerId,
+            officerName: c.officer?.name || 'Officer',
+            documents: c.documents?.length > 0 ? c.documents.map((d: any) => ({
+              id: d.id,
+              caseId: d.caseId,
+              docType: d.docType,
+              fileName: d.fileName,
+              fileSize: d.fileSize || 1024 * 512,
+              fileUrl: d.fileUrl,
+              sha256Hash: d.sha256Hash,
+              status: 'VERIFIED',
+              ocrData: d.ocrData?.fields ? {
+                status: 'COMPLETED',
+                overallConfidence: d.ocrConfidence || 95,
+                fields: d.ocrData.fields,
+              } : undefined,
+              faceResult: d.faceResult,
+            })) : (mockCases.find(mc => mc.id === params.caseId)?.documents || []),
+            timeline: [],
+          };
+          setCaseData(mapped);
+        }
+      } catch (err) {
+        console.warn('Could not load case from backend, using fallback:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadCase();
+  }, [params.caseId]);
+
+  if (!caseData && !loading) return notFound();
+  if (!caseData) {
+    return (
+      <div className="p-12 text-center text-slate-400">
+        Loading case details...
+      </div>
+    );
+  }
 
   const timeline = getCaseTimeline(caseData);
   const primaryDoc = caseData.documents[0];

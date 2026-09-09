@@ -11,21 +11,73 @@ export class CaseController {
   async createCase(req: Request, res: Response, next?: NextFunction): Promise<void> {
     try {
       const user = req.user;
-      const { title, description, riskLevel, riskScore, personName } = req.body;
+      const { title, description, riskLevel, riskScore, personName, status, documents, flagReason, officerObservations } = req.body;
 
       if (!title) {
         res.status(400).json({ error: 'Title is required.' });
         return;
       }
 
+      const caseStatus = status === 'FLAGGED' ? CaseStatus.FLAGGED : CaseStatus.PENDING;
+      const assignedOfficerId = user?.id || req.body.assignedTo || req.body.officerId;
+
+      if (!assignedOfficerId) {
+        res.status(400).json({ error: 'Officer ID is required.' });
+        return;
+      }
+
+      const calculatedRiskLevel =
+        (riskLevel as RiskLevel) ||
+        (riskScore !== undefined && Number(riskScore) > 60
+          ? RiskLevel.HIGH
+          : riskScore !== undefined && Number(riskScore) > 30
+          ? RiskLevel.MEDIUM
+          : RiskLevel.LOW);
+
       const created = await prisma.case.create({
         data: {
           title,
           personName: personName || 'Unknown Subject',
-          riskLevel: (riskLevel as RiskLevel) || RiskLevel.LOW,
-          riskScore: riskScore ?? 10.0,
-          officerId: user?.id || req.body.assignedTo,
-          status: CaseStatus.PENDING,
+          riskLevel: calculatedRiskLevel,
+          riskScore: riskScore !== undefined ? Number(riskScore) : 10.0,
+          officerId: assignedOfficerId,
+          status: caseStatus,
+          ...(documents && Array.isArray(documents) && documents.length > 0
+            ? {
+                documents: {
+                  create: documents.map((d: any) => ({
+                    fileName: d.fileName || 'document.jpg',
+                    fileUrl: d.fileUrl || '/storage/default.jpg',
+                    docType: d.docType || 'UNKNOWN',
+                    sha256Hash: d.sha256Hash || 'pending-hash',
+                    ocrConfidence: d.ocrConfidence !== undefined && d.ocrConfidence !== null ? Number(d.ocrConfidence) : null,
+                    ocrData: d.ocrData || null,
+                    faceResult: d.faceResult || null,
+                    tamperResult: d.tamperResult || null,
+                  })),
+                },
+              }
+            : {}),
+          auditLogs: {
+            create: [
+              {
+                action: caseStatus === CaseStatus.FLAGGED ? 'CASE_FLAGGED' : 'CASE_CREATED',
+                actorId: assignedOfficerId,
+                details: {
+                  title,
+                  personName: personName || 'Unknown Subject',
+                  riskScore,
+                  flagReason: flagReason || null,
+                  officerObservations: officerObservations || null,
+                },
+                eventHash: Buffer.from(`${Date.now()}-${assignedOfficerId}`).toString('hex'),
+              },
+            ],
+          },
+        },
+        include: {
+          documents: true,
+          auditLogs: true,
         },
       });
 
