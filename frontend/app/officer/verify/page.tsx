@@ -635,15 +635,58 @@ export default function OfficerVerifyPage() {
       const consistency = checkCrossDocumentConsistency();
       const hasDiscrepancy = consistency && !consistency.isFullyConsistent;
 
-      const riskScore =
-        finalDecision === 'flag' ? 78.0 : hasDiscrepancy ? 45.0 : Math.max(8.0, 100 - avgConfidence);
+      // ── Dynamic Multi-Factor Risk Assessment ───────────────────────────────
+      let computedRisk = 0;
+
+      // 1. OCR Confidence Deficit (up to 25 pts)
+      const confDeficit = Math.max(0, 100 - avgConfidence);
+      computedRisk += Math.min(25, Math.round(confDeficit * 0.4));
+
+      // 2. Failed MRZ Checksum / Tamper Signals (up to 30 pts)
+      let checksumFailed = false;
+      for (const d of documents) {
+        const checks = d.rawJson?.extracted_data?.mrz?.checksums;
+        if (checks) {
+          if (checks.document_number === false || checks.date_of_birth === false || checks.expiry_date === false) {
+            checksumFailed = true;
+            computedRisk += 25;
+            break;
+          }
+        }
+      }
+
+      // 3. Facial Biometric Mismatch (up to 35 pts)
+      if (faceStep === 'done' && faceResult) {
+        if (faceResult.status === 'MISMATCH') {
+          computedRisk += 35;
+        } else if (faceResult.similarity < 75) {
+          computedRisk += Math.round((75 - faceResult.similarity) * 0.8);
+        }
+      }
+
+      // 4. Cross-Document Consistency Discrepancy (up to 25 pts)
+      if (hasDiscrepancy) {
+        computedRisk += 22;
+      }
+
+      // 5. Officer Explicit Flagging
+      if (finalDecision === 'flag') {
+        // If officer flagged manually, add baseline alert weight but preserve dynamic range
+        computedRisk = Math.max(62, computedRisk + 30);
+      }
+
+      // Clamp between 5 and 98
+      const riskScore = Math.min(98, Math.max(5, Math.round(computedRisk)));
+
+      const calculatedRiskLevel =
+        riskScore >= 60 ? 'HIGH' : riskScore >= 30 ? 'MEDIUM' : 'LOW';
 
       const payload = {
         title: `Multi-Document Screening (${documents.length} Docs) — ${primaryName}`,
         personName: primaryName,
         status: finalDecision === 'flag' ? 'FLAGGED' : 'PENDING',
         riskScore,
-        riskLevel: finalDecision === 'flag' ? 'HIGH' : hasDiscrepancy ? 'MEDIUM' : 'LOW',
+        riskLevel: calculatedRiskLevel,
         flagReason: finalDecision === 'flag' ? flagReason : undefined,
         officerObservations:
           finalDecision === 'flag'
