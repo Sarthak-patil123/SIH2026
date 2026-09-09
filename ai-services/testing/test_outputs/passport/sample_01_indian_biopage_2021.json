@@ -2,7 +2,7 @@
   "image": "sample_01_indian_biopage_2021.jpg",
   "doc_type": "passport",
   "status": "ok",
-  "elapsed_ms": 38005.2,
+  "elapsed_ms": 33645.6,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

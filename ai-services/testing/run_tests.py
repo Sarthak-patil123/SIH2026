@@ -28,6 +28,9 @@ Output structure
 """
 from __future__ import annotations
 
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import argparse
 import json
 import sys

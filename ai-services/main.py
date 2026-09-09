@@ -1,4 +1,7 @@
 """FastAPI application — unified entrypoint for the identity document verification service."""
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 from contextlib import asynccontextmanager
 from pathlib import Path
 

@@ -2,7 +2,7 @@
   "image": "sample_05_jersey_birth_cert.jpg",
   "doc_type": "dob_proof",
   "status": "ok",
-  "elapsed_ms": 7171.8,
+  "elapsed_ms": 24928.3,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

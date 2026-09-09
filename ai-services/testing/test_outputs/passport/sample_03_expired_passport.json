@@ -2,7 +2,7 @@
   "image": "sample_03_expired_passport.jpg",
   "doc_type": "passport",
   "status": "ok",
-  "elapsed_ms": 13850.2,
+  "elapsed_ms": 14473.3,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",
@@ -105,7 +105,7 @@
     "fields": {},
     "mrz": null,
     "validation": {
-      "confidence": 0.277,
+      "confidence": 0.278,
       "errors": [
         "MRZ_NOT_DETECTED"
       ],

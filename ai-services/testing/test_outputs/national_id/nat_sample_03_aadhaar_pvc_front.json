@@ -2,7 +2,7 @@
   "image": "nat_sample_03_aadhaar_pvc_front.jpg",
   "doc_type": "national_id",
   "status": "ok",
-  "elapsed_ms": 8074.9,
+  "elapsed_ms": 40205.9,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

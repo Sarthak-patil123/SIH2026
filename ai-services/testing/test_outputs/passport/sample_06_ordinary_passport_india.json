@@ -2,7 +2,7 @@
   "image": "sample_06_ordinary_passport_india.jpg",
   "doc_type": "passport",
   "status": "ok",
-  "elapsed_ms": 12419.7,
+  "elapsed_ms": 51164.7,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

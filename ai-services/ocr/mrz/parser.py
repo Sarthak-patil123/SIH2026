@@ -141,28 +141,29 @@ class MRZResult:
 # MRZ line detection
 # ---------------------------------------------------------------------------
 
-_MRZ_PATTERN = re.compile(r"^[A-Z0-9<]{40,44}$")
-_MRZ_LINE1_PATTERN = re.compile(r"P[A-Z<][A-Z<]{3}[A-Z<]{35,39}")
+_MRZ_PATTERN = re.compile(r"^[A-Z0-9<]{36,48}$")
+_MRZ_LINE1_PATTERN = re.compile(r"^P[A-Z0-9<]{35,47}$")
 
 
 def _clean_mrz_text(raw: str) -> str:
     """Clean OCR text for MRZ matching — fix common substitution errors."""
     text = re.sub(r"\s+", "", raw.upper())
     # Common OCR substitutions for the '<' filler character
-    text = (
-        text.replace("«", "<")
-        .replace("‹", "<")
-        .replace(">", "<")
-        .replace("{", "<")
-        .replace("(", "<")
-    )
+    subs = {
+        "«": "<", "‹": "<", "»": "<", "›": "<",
+        ">": "<", "{": "<", "}": "<", "(": "<", ")": "<",
+        "[": "<", "]": "<", "_": "<", "~": "<", "^": "<",
+        "|": "<", "\\": "<", "/": "<", "=": "<",
+    }
+    for k, v in subs.items():
+        text = text.replace(k, v)
     # Filter non-MRZ characters
     text = re.sub(r"[^A-Z0-9<]", "", text)
     return text
 
 
 def _find_mrz_lines(regions: list[TextRegion]) -> Optional[tuple[str, str]]:
-    """Identify the two MRZ lines from OCR output, handling fragmented PaddleOCR boxes."""
+    """Identify the two MRZ lines from OCR output, handling fragmented PaddleOCR/EasyOCR boxes."""
     from ocr.engine import cluster_regions_by_line
 
     candidates: list[tuple[float, str]] = []
@@ -174,7 +175,7 @@ def _find_mrz_lines(regions: list[TextRegion]) -> Optional[tuple[str, str]]:
             y_pos = min((p[1] for p in region.bbox), default=0) if region.bbox else 0
             candidates.append((float(y_pos), text))
 
-    # Also check horizontally clustered lines (crucial when PaddleOCR splits an MRZ line)
+    # Also check horizontally clustered lines
     clustered = cluster_regions_by_line(regions)
     for line in clustered:
         joined_raw = "".join(r.text for r in line)
@@ -190,22 +191,23 @@ def _find_mrz_lines(regions: list[TextRegion]) -> Optional[tuple[str, str]]:
     for index in range(len(candidates) - 1):
         line1 = candidates[index][1]
         line2 = candidates[index + 1][1]
-        if _MRZ_LINE1_PATTERN.fullmatch(line1) and not _MRZ_LINE1_PATTERN.fullmatch(line2):
-            return (_pad_to_44(line1), _pad_to_44(line2))
+        if line1.startswith("P") and len(line1) >= 36 and len(line2) >= 36:
+            return (_normalize_mrz_line(line1), _normalize_mrz_line(line2))
 
-    # Fallback: if line1 starts with 'P' and both are 40-44 chars
-    for index in range(len(candidates) - 1):
-        line1 = candidates[index][1]
-        line2 = candidates[index + 1][1]
-        if line1.startswith("P") and len(line1) >= 40 and len(line2) >= 40:
-            return (_pad_to_44(line1), _pad_to_44(line2))
+    # Second pass: if any candidate starts with P
+    p_indices = [i for i, c in enumerate(candidates) if c[1].startswith("P")]
+    for idx in p_indices:
+        if idx + 1 < len(candidates):
+            return (_normalize_mrz_line(candidates[idx][1]), _normalize_mrz_line(candidates[idx + 1][1]))
 
     return None
 
 
-def _pad_to_44(line: str) -> str:
-    """Pad MRZ line to 44 characters with '<' if shorter."""
-    return line.ljust(44, "<")[:44]
+def _normalize_mrz_line(line: str) -> str:
+    """Normalize MRZ line to exactly 44 characters."""
+    if len(line) > 44:
+        return line[:44]
+    return line.ljust(44, "<")
 
 
 # ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
   "image": "sample_06_labor_card.jpg",
   "doc_type": "aadhaar",
   "status": "ok",
-  "elapsed_ms": 5675.2,
+  "elapsed_ms": 55196.0,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

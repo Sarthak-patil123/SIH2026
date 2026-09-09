@@ -110,6 +110,13 @@ class DrivingLicenceFields:
 
 def _find_dl_number(regions: list[TextRegion]) -> Optional[str]:
     for region in regions:
+        m = re.search(
+            r"(?:LICEN[CS]E\s*NO|DL\s*NO|DL)[\s.:\-]*([A-Z]{2}[ -]?[0-9]{2}[ -]?[0-9]{4}[ -]?[0-9]{5,8})",
+            region.text,
+            re.IGNORECASE,
+        )
+        if m:
+            return m.group(1).strip().replace(" ", "")
         dl = normalize_dl(region.text)
         if dl:
             return dl
@@ -152,6 +159,14 @@ def _labelled_date(
     *,
     label_region: Optional[TextRegion] = None,
 ) -> Optional[str]:
+    # 1. Inline check on any region containing label + date
+    for r in regions:
+        for lbl in labels:
+            if re.search(rf"\b{re.escape(lbl)}\b", r.text, re.IGNORECASE):
+                dt = _first_date(r.text)
+                if dt:
+                    return dt
+
     if label_region is None:
         label_region = find_visual_field(regions, labels)
     if label_region is None:
@@ -184,6 +199,10 @@ def _find_validity_date(regions: list[TextRegion]) -> tuple[Optional[str], Optio
 
     if primary is None and transport is not None:
         primary = transport
+
+    # Fallback: check for "Validity : <DATE>" inline
+    if primary is None:
+        primary = _labelled_date(regions, _VALIDITY_LABELS)
 
     return primary, transport
 
@@ -219,6 +238,14 @@ def _looks_like_value(text: str) -> bool:
 
 
 def _find_name(regions: list[TextRegion]) -> Optional[str]:
+    # 1. Inline check: Name : <Value>
+    for r in regions:
+        m = re.search(r"\bNAME\s*[:\-]?\s*([A-Z\s]{3,35})\b", r.text, re.IGNORECASE)
+        if m:
+            val = m.group(1).strip()
+            if _looks_like_value(val) and not _is_known_label(val):
+                return val
+
     value = find_label_value(regions, _NAME_LABELS)
     if value and _looks_like_value(value) and not _is_known_label(value):
         return value.strip()
@@ -226,6 +253,14 @@ def _find_name(regions: list[TextRegion]) -> Optional[str]:
 
 
 def _find_relation(regions: list[TextRegion]) -> Optional[str]:
+    # 1. Inline check: S/W/D : <Value>
+    for r in regions:
+        m = re.search(r"\b(?:S/W/D|S/D/W|S/O|D/O|W/O|FATHER)\s*[:\-]?\s*([A-Z\s]{3,35})\b", r.text, re.IGNORECASE)
+        if m:
+            val = m.group(1).strip()
+            if _looks_like_value(val) and not _is_known_label(val):
+                return val
+
     value = find_label_value(regions, _RELATION_LABELS)
     if value and _looks_like_value(value) and not _is_known_label(value):
         return value.strip()

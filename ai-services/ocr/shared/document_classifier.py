@@ -29,18 +29,28 @@ from ocr.shared.validators import (
 # avoid generic phrases like "GOVERNMENT OF INDIA" that appear on several docs.
 # ---------------------------------------------------------------------------
 
-_PAN_KEYWORDS = ["INCOME TAX DEPARTMENT", "PERMANENT ACCOUNT NUMBER", "INCOME TAX"]
+_PAN_KEYWORDS = [
+    "INCOME TAX DEPARTMENT", "PERMANENT ACCOUNT NUMBER", "INCOME TAX", "GOVT OF INDIA", "FATHERS NAME",
+]
 _AADHAAR_KEYWORDS = [
     "AADHAAR", "AADHAR", "UNIQUE IDENTIFICATION", "UIDAI", "MERA AADHAAR",
-    "ENROLLMENT NO", "VID",
+    "ENROLLMENT NO", "VID", "HELP UIDAI GOV IN", "WWW UIDAI GOV IN",
 ]
 _DL_KEYWORDS = [
     "DRIVING LICENCE", "DRIVING LICENSE", "TRANSPORT DEPARTMENT",
-    "MOTOR VEHICLE", "FORM 7",
+    "MOTOR VEHICLE", "FORM 7", "LICENCE TO DRIVE", "LICENSE TO DRIVE",
+    "LICENCE NO", "LICENSE NO", "DL NO", "AUTHORISATION TO DRIVE",
+    "AUTHORIZATION TO DRIVE", "VEHICLES THROUGHOUT INDIA", "UNION OF INDIA",
+    "INVCRG", "LMV", "MCWG", "HGMV", "RTO",
+]
+_VISA_KEYWORDS = [
+    "VISA", "TOURIST VISA", "E-VISA", "EVISA", "ENTRY VISA", "BUSINESS VISA",
+    "OCI", "VISA NO", "NUMBER OF ENTRIES", "MULTIPLE", "SINGLE ENTRY",
+    "STAY UPTO", "VALID FOR", "INDIAN MISSION", "SPECIAL ENDORSEMENT",
 ]
 _VOTER_KEYWORDS = [
     "ELECTION COMMISSION", "ELECTORS PHOTO IDENTITY", "ELECTOR",
-    "ELECTION", "IDENTITY CARD",
+    "ELECTION", "IDENTITY CARD", "EPIC NO", "VOTER",
 ]
 _NREGA_EXPLICIT_KEYWORDS = [
     "MAHATMA GANDHI NATIONAL RURAL EMPLOYMENT GUARANTEE ACT",
@@ -57,7 +67,7 @@ _NREGA_RURAL_CONTEXT = [
 ]
 _NPR_TITLE_KEYWORDS = ["NATIONAL POPULATION REGISTER"]
 _NPR_ISSUER_KEYWORDS = ["REGISTRAR GENERAL", "CENSUS COMMISSIONER"]
-_PASSPORT_KEYWORDS = ["PASSPORT", "REPUBLIC OF INDIA PASSPORT"]
+_PASSPORT_KEYWORDS = ["PASSPORT", "REPUBLIC OF INDIA PASSPORT", "TRAVEL DOCUMENT"]
 
 
 @dataclass
@@ -124,6 +134,7 @@ def classify_document(regions: list[TextRegion]) -> DocumentClassification:
         _count_keyword_matches([joined_normalised], _NPR_TITLE_KEYWORDS),
     )
     npr_issuer_kw = _count_keyword_matches(normalised_regions, _NPR_ISSUER_KEYWORDS)
+    visa_kw = _count_keyword_matches(normalised_regions, _VISA_KEYWORDS)
     passport_kw = _count_keyword_matches(normalised_regions, _PASSPORT_KEYWORDS)
 
     nrega_hindi_titles = (
@@ -205,6 +216,8 @@ def classify_document(regions: list[TextRegion]) -> DocumentClassification:
     elif has_npr_acronym and npr_issuer_kw:
         add("npr_letter", 8, "NPR_ISSUER_CONTEXT")
 
+    if visa_kw:
+        add("visa", 2 * visa_kw, f"VISA_KEYWORDS_{visa_kw}")
     if passport_kw:
         add("passport", 2 * passport_kw, f"PASSPORT_KEYWORDS_{passport_kw}")
     if has_mrz:

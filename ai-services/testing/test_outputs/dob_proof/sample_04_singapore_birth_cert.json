@@ -2,7 +2,7 @@
   "image": "sample_04_singapore_birth_cert.jpg",
   "doc_type": "dob_proof",
   "status": "ok",
-  "elapsed_ms": 4185.7,
+  "elapsed_ms": 13418.2,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

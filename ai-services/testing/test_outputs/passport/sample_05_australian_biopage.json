@@ -2,7 +2,7 @@
   "image": "sample_05_australian_biopage.jpg",
   "doc_type": "passport",
   "status": "ok",
-  "elapsed_ms": 12085.6,
+  "elapsed_ms": 59240.1,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

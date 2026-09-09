@@ -2,7 +2,7 @@
   "image": "sample_06_uk_birth_cert_3.jpg",
   "doc_type": "dob_proof",
   "status": "ok",
-  "elapsed_ms": 5945.0,
+  "elapsed_ms": 18450.3,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

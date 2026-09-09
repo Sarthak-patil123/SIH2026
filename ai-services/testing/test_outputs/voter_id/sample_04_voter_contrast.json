@@ -2,7 +2,7 @@
   "image": "sample_04_voter_contrast.jpg",
   "doc_type": "voter_id",
   "status": "ok",
-  "elapsed_ms": 11004.9,
+  "elapsed_ms": 12919.2,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

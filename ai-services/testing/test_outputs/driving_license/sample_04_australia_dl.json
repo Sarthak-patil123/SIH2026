@@ -2,7 +2,7 @@
   "image": "sample_04_australia_dl.jpg",
   "doc_type": "driving_license",
   "status": "ok",
-  "elapsed_ms": 3744.3,
+  "elapsed_ms": 17139.0,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

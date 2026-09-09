@@ -2,7 +2,7 @@
   "image": "nat_sample_03_voter_cropped.jpg",
   "doc_type": "national_id",
   "status": "ok",
-  "elapsed_ms": 10543.6,
+  "elapsed_ms": 56655.2,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

@@ -2,7 +2,7 @@
   "image": "sample_01_indian_evisa.jpg",
   "doc_type": "visa",
   "status": "ok",
-  "elapsed_ms": 11757.8,
+  "elapsed_ms": 26305.6,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

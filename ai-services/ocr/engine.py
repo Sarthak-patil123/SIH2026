@@ -60,35 +60,14 @@ _LANG_MAP = {
 
 
 def _get_ocr(lang: str = "en"):
-    """Get or create a cached OCR engine instance (PaddleOCR primary, EasyOCR fallback).
+    """Get or create a cached OCR engine instance (EasyOCR primary).
 
     Raises:
-        OCRModelInitError: if both PaddleOCR and EasyOCR initialisation fail.
+        OCRModelInitError: if OCR engine initialisation fails.
     """
     if lang in _ocr_instances:
         return _ocr_instances[lang]
 
-    # Primary engine: PaddleOCR
-    paddle_exc = None
-    try:
-        from paddleocr import PaddleOCR
-        with _lock:
-            if lang in _ocr_instances:
-                return _ocr_instances[lang]
-
-            paddle_lang = _LANG_MAP.get(lang, "en")
-            try:
-                instance = PaddleOCR(use_angle_cls=True, lang=paddle_lang)
-            except TypeError:
-                instance = PaddleOCR(lang=paddle_lang)
-
-            _ocr_instances[lang] = instance
-            return _ocr_instances[lang]
-    except Exception as exc:
-        paddle_exc = exc
-        logger.info("PaddleOCR not available (%s), checking for EasyOCR fallback...", exc)
-
-    # Resilient fallback: EasyOCR
     try:
         import easyocr
         with _lock:
@@ -98,16 +77,14 @@ def _get_ocr(lang: str = "en"):
             easy_langs = ["en"]
             if lang in ("hi", "devanagari"):
                 easy_langs = ["hi", "en"]
-            reader = easyocr.Reader(easy_langs, gpu=False)
+            reader = easyocr.Reader(easy_langs, gpu=False, verbose=False)
             instance = ("easyocr", reader)
             _ocr_instances[lang] = instance
-            logger.info("Using EasyOCR engine fallback (langs=%s)", easy_langs)
+            logger.info("Using EasyOCR engine (langs=%s)", easy_langs)
             return _ocr_instances[lang]
-    except Exception as easy_exc:
-        logger.exception("OCR model initialisation failed for both PaddleOCR and EasyOCR")
-        raise OCRModelInitError(
-            f"MODEL_INIT_FAILED: PaddleOCR failed ({paddle_exc}) and EasyOCR failed ({easy_exc})"
-        ) from easy_exc
+    except Exception as exc:
+        logger.exception("OCR model initialisation failed: %s", exc)
+        raise OCRModelInitError(f"MODEL_INIT_FAILED: {exc}") from exc
 
 
 def _call_paddleocr(ocr_instance, image: np.ndarray):
@@ -248,8 +225,18 @@ def run_ocr(
     try:
         result = _call_paddleocr(ocr, image)
     except Exception as exc:
-        logger.exception("PaddleOCR inference failed (lang=%s)", use_lang)
-        raise OCREngineError(f"OCR_INFERENCE_FAILED: {exc}") from exc
+        logger.warning("Primary OCR engine failed (%s), falling back to EasyOCR...", exc)
+        try:
+            import easyocr
+            easy_langs = ["en"]
+            if use_lang in ("hi", "devanagari"):
+                easy_langs = ["hi", "en"]
+            reader = easyocr.Reader(easy_langs, gpu=False)
+            _ocr_instances[use_lang] = ("easyocr", reader)
+            result = _call_paddleocr(_ocr_instances[use_lang], image)
+        except Exception as fallback_exc:
+            logger.exception("Both primary OCR and fallback failed")
+            raise OCREngineError(f"OCR_INFERENCE_FAILED: {fallback_exc}") from fallback_exc
 
     regions = _parse_paddleocr_results(result)
 

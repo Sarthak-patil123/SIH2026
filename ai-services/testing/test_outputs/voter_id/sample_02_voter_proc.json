@@ -2,7 +2,7 @@
   "image": "sample_02_voter_proc.jpg",
   "doc_type": "voter_id",
   "status": "ok",
-  "elapsed_ms": 10826.8,
+  "elapsed_ms": 44389.1,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",
@@ -80,8 +80,7 @@
     },
     "quality_warnings": [
       "NO_DOCUMENT_BOUNDARY_DETECTED",
-      "BLUR_SCORE:70.00",
-      "LOW_SHARPNESS_WARNING"
+      "BLUR_SCORE:70.00"
     ],
     "raw_ocr_count": 13
   },
@@ -96,8 +95,7 @@
     },
     "quality_warnings": [
       "NO_DOCUMENT_BOUNDARY_DETECTED",
-      "BLUR_SCORE:70.00",
-      "LOW_SHARPNESS_WARNING"
+      "BLUR_SCORE:70.00"
     ],
     "raw_ocr_count": 13,
     "llm_extraction": {

@@ -1,67 +1,19 @@
 {
-  "run_at": "2026-09-08T08:29:21.238074+00:00",
-  "totals": {
-    "cases": 48,
-    "ok": 48,
-    "errors": 0,
-    "pass_rate": "100.0%"
-  },
-  "by_doc_type": {
+  "run_timestamp": "2026-09-09T06:01:54.947497+00:00",
+  "total_elapsed_seconds": 234.05,
+  "per_type": {
     "aadhaar": {
       "total": 6,
       "ok": 6,
       "errors": 0,
       "avg_confidence": 0.425,
-      "avg_elapsed_ms": 8333.5
-    },
-    "dob_proof": {
-      "total": 6,
-      "ok": 6,
-      "errors": 0,
-      "avg_confidence": 0.212,
-      "avg_elapsed_ms": 12215.4
-    },
-    "driving_license": {
-      "total": 6,
-      "ok": 6,
-      "errors": 0,
-      "avg_confidence": 0.094,
-      "avg_elapsed_ms": 7691.2
-    },
-    "national_id": {
-      "total": 6,
-      "ok": 6,
-      "errors": 0,
-      "avg_confidence": 0.567,
-      "avg_elapsed_ms": 6945.2
-    },
-    "pan": {
-      "total": 6,
-      "ok": 6,
-      "errors": 0,
-      "avg_confidence": 0.708,
-      "avg_elapsed_ms": 5396.4
-    },
-    "passport": {
-      "total": 6,
-      "ok": 6,
-      "errors": 0,
-      "avg_confidence": 0.255,
-      "avg_elapsed_ms": 19544.7
-    },
-    "visa": {
-      "total": 6,
-      "ok": 6,
-      "errors": 0,
-      "avg_confidence": 0.189,
-      "avg_elapsed_ms": 7380.8
-    },
-    "voter_id": {
-      "total": 6,
-      "ok": 6,
-      "errors": 0,
-      "avg_confidence": 0.354,
-      "avg_elapsed_ms": 10353.3
+      "avg_elapsed_ms": 39006.1,
+      "error_cases": []
     }
+  },
+  "totals": {
+    "cases": 6,
+    "ok": 6,
+    "errors": 0
   }
 }

@@ -2,7 +2,7 @@
   "image": "sample_03_aadhaar_pvc_front.jpg",
   "doc_type": "aadhaar",
   "status": "ok",
-  "elapsed_ms": 8123.0,
+  "elapsed_ms": 39961.2,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

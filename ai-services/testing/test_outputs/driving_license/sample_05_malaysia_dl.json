@@ -2,7 +2,7 @@
   "image": "sample_05_malaysia_dl.jpg",
   "doc_type": "driving_license",
   "status": "ok",
-  "elapsed_ms": 7756.0,
+  "elapsed_ms": 26508.9,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",

@@ -2,7 +2,7 @@
   "image": "sample_05_kerala_ration.jpg",
   "doc_type": "aadhaar",
   "status": "ok",
-  "elapsed_ms": 7747.3,
+  "elapsed_ms": 42019.9,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",
@@ -37,7 +37,7 @@
         "normalized": false
       },
       "address": {
-        "value": "aholm\" GaOjand mmid, (Office Phone Number), ojela\", 01/5000, muond @JabInud, (Thaluk Supply Officer)",
+        "value": "aholn\" GaOjand mmid, (Office Phone Number), ojela\", 01/5000, muond @JabInud, (Thaluk Supply Officer)",
         "confidence": 0.85,
         "source": "ocr",
         "normalized": false
@@ -83,7 +83,7 @@
       "name": "@Besads",
       "date_of_birth": "03-02-2021",
       "gender": "MALE",
-      "address": "aholm\" GaOjand mmid, (Office Phone Number), ojela\", 01/5000, muond @JabInud, (Thaluk Supply Officer)",
+      "address": "aholn\" GaOjand mmid, (Office Phone Number), ojela\", 01/5000, muond @JabInud, (Thaluk Supply Officer)",
       "checksum_valid": false,
       "aadhaar_masked": false,
       "aadhaar_last4": "4501"
@@ -111,7 +111,7 @@
         "name": "@Besads",
         "date_of_birth": "03-02-2021",
         "gender": "MALE",
-        "address": "aholm\" GaOjand mmid, (Office Phone Number), ojela\", 01/5000, muond @JabInud, (Thaluk Supply Officer)",
+        "address": "aholn\" GaOjand mmid, (Office Phone Number), ojela\", 01/5000, muond @JabInud, (Thaluk Supply Officer)",
         "checksum_valid": false,
         "aadhaar_masked": false,
         "aadhaar_last4": "4501"

@@ -2,7 +2,7 @@
   "image": "sample_03_voter_cropped.jpg",
   "doc_type": "voter_id",
   "status": "ok",
-  "elapsed_ms": 10405.4,
+  "elapsed_ms": 18934.5,
   "error": null,
   "adapted_result": {
     "adapter_version": "1.0",
