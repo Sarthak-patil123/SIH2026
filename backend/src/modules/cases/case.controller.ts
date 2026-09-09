@@ -99,7 +99,10 @@ export class CaseController {
       const where = user?.role === Role.OFFICER ? { officerId: user.id } : {};
       const cases = await prisma.case.findMany({
         where,
-        include: { officer: { select: { id: true, name: true, email: true } } },
+        include: {
+          officer: { select: { id: true, name: true, email: true } },
+          documents: true,
+        },
         orderBy: { createdAt: 'desc' },
       });
       res.json({ cases });
@@ -113,6 +116,139 @@ export class CaseController {
   // Alias for listCases
   async listCases(req: Request, res: Response, next?: NextFunction): Promise<void> {
     return this.getCases(req, res, next);
+  }
+
+  /**
+   * GET /api/cases/activity
+   * Returns dynamic recent activity events from audit logs & cases for the sidebar
+   */
+  async getRecentActivity(req: Request, res: Response, next?: NextFunction): Promise<void> {
+    try {
+      const user = req.user;
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 10));
+      const caseWhere = user?.role === Role.OFFICER ? { officerId: user.id } : {};
+
+      // 1. Check for real audit logs
+      const auditLogs = await prisma.auditLog.findMany({
+        where: user?.role === Role.OFFICER ? { case: { officerId: user.id } } : {},
+        take: limit * 2,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          case: {
+            select: {
+              id: true,
+              personName: true,
+              status: true,
+              riskLevel: true,
+            },
+          },
+        },
+      });
+
+      let activities: any[] = [];
+
+      if (auditLogs.length > 0) {
+        activities = auditLogs.map((log) => {
+          const caseRef = 'SSB-' + log.caseId.slice(0, 6).toUpperCase();
+          const subject = log.case?.personName || 'Applicant';
+          let description = '';
+          let type: 'INFO' | 'SUCCESS' | 'WARNING' | 'DANGER' = 'INFO';
+
+          switch (log.action) {
+            case 'CASE_FLAGGED':
+              description = `Case ${caseRef} flagged for review`;
+              type = 'WARNING';
+              break;
+            case 'CASE_CREATED':
+              description = `Verification initiated for ${subject} (${caseRef})`;
+              type = 'INFO';
+              break;
+            case 'DOCUMENT_UPLOADED':
+              description = `Document uploaded for ${subject} (${caseRef})`;
+              type = 'INFO';
+              break;
+            case 'DECISION_APPROVED':
+              description = `Case ${caseRef} approved & verified`;
+              type = 'SUCCESS';
+              break;
+            case 'DECISION_REJECTED':
+              description = `Decision recorded: ${caseRef} REJECTED`;
+              type = 'DANGER';
+              break;
+            default:
+              description = `${log.action.replace(/_/g, ' ')} (${caseRef})`;
+              type = log.case?.riskLevel === RiskLevel.HIGH ? 'DANGER' : 'INFO';
+              break;
+          }
+
+          return {
+            id: log.id,
+            caseId: log.caseId,
+            caseNumber: caseRef,
+            applicantName: subject,
+            action: log.action,
+            time: new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            description,
+            type,
+            createdAt: log.createdAt,
+          };
+        });
+      }
+
+      // If audit logs are fewer than requested limit, supplement with recent cases
+      if (activities.length < limit) {
+        const recentCases = await prisma.case.findMany({
+          where: caseWhere,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: { documents: true },
+        });
+
+        for (const c of recentCases) {
+          const caseRef = 'SSB-' + c.id.slice(0, 6).toUpperCase();
+          const alreadyLogged = activities.some((a) => a.caseId === c.id || a.description.includes(caseRef));
+          if (!alreadyLogged) {
+            let type: 'INFO' | 'SUCCESS' | 'WARNING' | 'DANGER' = 'INFO';
+            let description = '';
+
+            if (c.status === CaseStatus.APPROVED) {
+              description = `Case ${caseRef} approved (${c.personName})`;
+              type = 'SUCCESS';
+            } else if (c.status === CaseStatus.REJECTED) {
+              description = `Case ${caseRef} rejected (${c.personName})`;
+              type = 'DANGER';
+            } else if (c.status === CaseStatus.FLAGGED || c.riskLevel === RiskLevel.HIGH) {
+              description = `Case ${caseRef} flagged for review (${c.personName})`;
+              type = 'WARNING';
+            } else {
+              description = `Verification file opened for ${c.personName} (${caseRef})`;
+              type = 'INFO';
+            }
+
+            activities.push({
+              id: 'case-' + c.id,
+              caseId: c.id,
+              caseNumber: caseRef,
+              applicantName: c.personName,
+              action: c.status,
+              time: new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              description,
+              type,
+              createdAt: c.createdAt,
+            });
+          }
+        }
+      }
+
+      // Sort activities descending by creation timestamp
+      activities.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      res.json({ activities: activities.slice(0, limit) });
+    } catch (err) {
+      console.error('[CaseController.getRecentActivity]', err);
+      if (next) next(err);
+      else res.status(500).json({ error: 'Failed to retrieve recent activity.' });
+    }
   }
 
   /**

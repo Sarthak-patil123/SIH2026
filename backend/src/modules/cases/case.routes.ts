@@ -19,6 +19,11 @@ caseRoutes.get('/', requireRole(Role.OFFICER, Role.ADMIN), (req, res, next) =>
   caseController.getCases(req, res, next)
 );
 
+// GET /api/cases/activity — Recent dynamic activity stream for sidebar
+caseRoutes.get('/activity', requireRole(Role.OFFICER, Role.ADMIN), (req, res, next) =>
+  caseController.getRecentActivity(req, res, next)
+);
+
 // GET /api/cases/:caseId — Officer (own only) or Admin (any)
 caseRoutes.get('/:caseId', requireRole(Role.OFFICER, Role.ADMIN), (req, res, next) =>
   caseController.getCaseById(req, res, next)

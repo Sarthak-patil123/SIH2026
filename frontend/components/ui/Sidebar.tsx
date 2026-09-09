@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, FolderOpen, ScanLine, Bell, ClipboardList,
-  User, LogOut, Shield, ChevronLeft, ChevronRight, Menu, X, MessageSquare
+  User, LogOut, Shield, ChevronLeft, ChevronRight, Menu, X, MessageSquare, Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +27,7 @@ const officerSections: NavSection[] = [
       { label: 'Dashboard', href: '/officer/dashboard', icon: <LayoutDashboard size={18} /> },
       { label: 'My Cases', href: '/officer/cases', icon: <FolderOpen size={18} /> },
       { label: 'New Verification', href: '/officer/verify', icon: <ScanLine size={18} /> },
+      { label: 'Recent Activity', href: '/officer/activity', icon: <Activity size={18} /> },
     ],
   },
   {

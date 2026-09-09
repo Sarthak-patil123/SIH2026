@@ -31,6 +31,24 @@ const riskOptions = [
   { value: 'HIGH', label: 'High Risk' },
 ];
 
+function getCaseConfidence(c: any): number {
+  if (c.documents && Array.isArray(c.documents) && c.documents.length > 0) {
+    const scores = c.documents
+      .map((d: any) => d.ocrConfidence ?? d.ocrData?.overallConfidence)
+      .filter((s: any) => typeof s === 'number' && s > 0);
+    if (scores.length > 0) {
+      return Math.round(scores.reduce((sum: number, s: number) => sum + s, 0) / scores.length);
+    }
+  }
+  if (typeof c.ocrConfidence === 'number' && c.ocrConfidence > 0) {
+    return Math.round(c.ocrConfidence);
+  }
+  if (c.riskScore !== undefined && c.riskScore !== null) {
+    return Math.round(Math.max(10, 100 - Number(c.riskScore)));
+  }
+  return 92;
+}
+
 export default function OfficerCasesPage() {
   const { user } = useAuth();
 
@@ -159,14 +177,14 @@ export default function OfficerCasesPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Case ID</th>
-                <th>Applicant</th>
-                <th>Document</th>
-                <th>AI Confidence Score</th>
-                <th>Risk Level</th>
-                <th>Status</th>
-                <th>Recorded</th>
-                <th>Action</th>
+                <th className="w-56 min-w-[200px] pl-6 pr-6 py-3.5">Case ID</th>
+                <th className="px-4 py-3.5">Applicant</th>
+                <th className="px-4 py-3.5">Document</th>
+                <th className="px-4 py-3.5 min-w-[150px]">AI Confidence Score</th>
+                <th className="px-4 py-3.5">Risk Level</th>
+                <th className="px-4 py-3.5">Status</th>
+                <th className="px-4 py-3.5">Recorded</th>
+                <th className="px-4 py-3.5">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -182,15 +200,20 @@ export default function OfficerCasesPage() {
                 </tr>
               ) : (
                 paginated.map((c) => {
-                  const doc = c.documents[0];
-                  const confidence = Math.max(0, 100 - c.riskScore);
+                  const docCount = c.documents?.length || 1;
+                  const primaryDocType = c.documents?.[0]?.docType ?? 'PASSPORT';
+                  const confidence = getCaseConfidence(c);
                   return (
                     <tr key={c.id}>
-                      <td>
-                        <span className="font-mono text-xs font-bold text-slate-900 block">{c.caseNumber}</span>
-                        <span className="text-[10px] text-slate-400">{timeAgo(c.createdAt)}</span>
+                      <td className="w-56 min-w-[200px] pl-6 pr-6 py-4">
+                        <div className="space-y-1">
+                          <span className="inline-block font-mono text-xs font-bold text-slate-900 bg-slate-100/90 border border-slate-200/80 px-2.5 py-1 rounded-lg tracking-wider shadow-2xs">
+                            {c.caseNumber}
+                          </span>
+                          <span className="block text-[11px] text-slate-400 font-medium pl-0.5">{timeAgo(c.createdAt)}</span>
+                        </div>
                       </td>
-                      <td>
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-2.5">
                           <Avatar name={c.applicantName} size="sm" />
                           <div className="min-w-0">
@@ -199,27 +222,32 @@ export default function OfficerCasesPage() {
                           </div>
                         </div>
                       </td>
-                      <td>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-slate-500">
-                            <FileText size={13} />
-                          </div>
-                          <span className="text-xs text-slate-700 font-medium">{doc?.docType ?? 'PASSPORT'}</span>
+                      <td className="px-4 py-4">
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
+                            <FileText size={13} className="text-slate-500" />
+                            {primaryDocType.replace('_', ' ')}
+                          </span>
+                          {docCount > 1 && (
+                            <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-md">
+                              +{docCount - 1} more proof{docCount > 2 ? 's' : ''}
+                            </span>
+                          )}
                         </div>
                       </td>
-                      <td>
+                      <td className="px-4 py-4 min-w-[150px]">
                         <ConfidenceBar value={confidence} segmentsCount={10} />
                       </td>
-                      <td>
+                      <td className="px-4 py-4">
                         <RiskBadge level={c.riskLevel} />
                       </td>
-                      <td>
+                      <td className="px-4 py-4">
                         <StatusBadge status={c.status} />
                       </td>
-                      <td className="text-xs text-slate-500 tabular-nums">
+                      <td className="px-4 py-4 text-xs text-slate-500 tabular-nums">
                         {formatDate(c.createdAt)}
                       </td>
-                      <td>
+                      <td className="px-4 py-4">
                         <Link
                           href={`/officer/cases/${c.id}`}
                           className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 hover:underline"
