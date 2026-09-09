@@ -327,30 +327,48 @@ export default function OfficerVerifyPage() {
       // A. MRZ Fields
       if (data?.extracted_data?.mrz?.fields) {
         const mrz = data.extracted_data.mrz.fields;
-        const mrzConf = Math.round((data.extracted_data.mrz.confidence || 0.95) * 100);
+        const checks = data.extracted_data.mrz.checksums || {};
+        const ruleFields = data.extracted_data.rule_extracted_fields || {};
+
+        // Helper to retrieve authentic field confidence
+        const getFieldConf = (fieldKey: string, checksumValid?: boolean, defaultHigh: number = 98) => {
+          if (checksumValid === true) return 99;
+          if (ruleFields[fieldKey]?.confidence != null) {
+            return Math.round(ruleFields[fieldKey].confidence * 100);
+          }
+          if (checksumValid === false) return 65;
+          return defaultHigh;
+        };
 
         if (mrz.given_names || mrz.surname) {
           let nameParts = [mrz.given_names, mrz.surname].filter(Boolean).join(' ');
           nameParts = nameParts.replace(/K\s+/g, ' ').replace(/<+/g, ' ').replace(/\s+/g, ' ').trim();
-          parsedFields.push({ label: 'Full Name', value: nameParts, confidence: mrzConf, source: 'MRZ', editValue: nameParts });
+          const nameConf = Math.round((ruleFields.given_names?.confidence || ruleFields.surname?.confidence || data.extracted_data.mrz.confidence || 0.88) * 100);
+          parsedFields.push({ label: 'Full Name', value: nameParts, confidence: nameConf, source: 'MRZ', editValue: nameParts });
         }
         if (mrz.document_number) {
-          parsedFields.push({ label: 'Document Number', value: mrz.document_number, confidence: mrzConf, source: 'MRZ', editValue: mrz.document_number });
+          const docConf = getFieldConf('document_number', checks.document_number, 99);
+          parsedFields.push({ label: 'Document Number', value: mrz.document_number, confidence: docConf, source: 'MRZ', editValue: mrz.document_number });
         }
         if (mrz.nationality) {
-          parsedFields.push({ label: 'Nationality', value: mrz.nationality === 'IND' ? 'INDIAN (IND)' : mrz.nationality, confidence: mrzConf, source: 'MRZ', editValue: mrz.nationality });
+          const natConf = getFieldConf('nationality', undefined, 98);
+          parsedFields.push({ label: 'Nationality', value: mrz.nationality === 'IND' ? 'INDIAN (IND)' : mrz.nationality, confidence: natConf, source: 'MRZ', editValue: mrz.nationality });
         }
         if (mrz.date_of_birth) {
-          parsedFields.push({ label: 'Date of Birth', value: mrz.date_of_birth, confidence: mrzConf, source: 'MRZ', editValue: mrz.date_of_birth });
+          const dobConf = getFieldConf('date_of_birth', checks.date_of_birth, 99);
+          parsedFields.push({ label: 'Date of Birth', value: mrz.date_of_birth, confidence: dobConf, source: 'MRZ', editValue: mrz.date_of_birth });
         }
         if (mrz.sex) {
-          parsedFields.push({ label: 'Gender', value: mrz.sex === 'M' ? 'MALE' : mrz.sex === 'F' ? 'FEMALE' : mrz.sex, confidence: mrzConf, source: 'MRZ', editValue: mrz.sex });
+          const sexConf = getFieldConf('sex', undefined, 98);
+          parsedFields.push({ label: 'Gender', value: mrz.sex === 'M' ? 'MALE' : mrz.sex === 'F' ? 'FEMALE' : mrz.sex, confidence: sexConf, source: 'MRZ', editValue: mrz.sex });
         }
         if (mrz.expiry_date) {
-          parsedFields.push({ label: 'Date of Expiry', value: mrz.expiry_date, confidence: mrzConf, source: 'MRZ', editValue: mrz.expiry_date });
+          const expConf = getFieldConf('expiry_date', checks.expiry_date, 99);
+          parsedFields.push({ label: 'Date of Expiry', value: mrz.expiry_date, confidence: expConf, source: 'MRZ', editValue: mrz.expiry_date });
         }
         if (mrz.country_code) {
-          parsedFields.push({ label: 'Issuing Country', value: mrz.country_code === 'IND' ? 'INDIA (IND)' : mrz.country_code, confidence: mrzConf, source: 'MRZ', editValue: mrz.country_code });
+          const countryConf = getFieldConf('country_code', undefined, 98);
+          parsedFields.push({ label: 'Issuing Country', value: mrz.country_code === 'IND' ? 'INDIA (IND)' : mrz.country_code, confidence: countryConf, source: 'MRZ', editValue: mrz.country_code });
         }
       }
 

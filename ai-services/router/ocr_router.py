@@ -224,6 +224,78 @@ async def extract_document(
                 raw_lines = f_dict.get("mrz_raw") or []
                 mrz_type = "TD1"
 
+    def _get_region_confidence(val_str: str) -> float:
+        """Find the real neural OCR confidence of the text region containing the value."""
+        if not val_str or not ocr_regions:
+            return round(float(ocr_conf_mean if ocr_conf_mean > 0 else 0.88), 3)
+        val_clean = str(val_str).lower().replace(" ", "").replace("-", "").replace("/", "")
+        best_conf = None
+        for r in ocr_regions:
+            r_text = r.text.lower().replace(" ", "").replace("-", "").replace("/", "")
+            if val_clean in r_text or r_text in val_clean:
+                if best_conf is None or r.confidence > best_conf:
+                    best_conf = r.confidence
+        if best_conf is not None:
+            return round(float(best_conf), 3)
+        return round(float(ocr_conf_mean if ocr_conf_mean > 0 else 0.88), 3)
+
+    if mrz_result is not None:
+            # Per-field confidence mapping based on individual mathematical check digits & neural OCR
+            mrz_field_confs: dict[str, float] = {}
+
+            # Document Number: if check digit passed, 0.99; otherwise optical region conf (capped at 0.75 if failed)
+            if doc_valid:
+                mrz_field_confs["document_number"] = 0.99
+            else:
+                mrz_field_confs["document_number"] = min(0.75, _get_region_confidence(doc_num or ""))
+
+            # Date of Birth: if check digit passed, 0.99; otherwise optical region conf
+            if dob_valid:
+                mrz_field_confs["date_of_birth"] = 0.99
+            else:
+                mrz_field_confs["date_of_birth"] = min(0.75, _get_region_confidence(dob or ""))
+
+            # Expiry Date: if check digit passed, 0.99; otherwise optical region conf
+            if exp_valid:
+                mrz_field_confs["expiry_date"] = 0.99
+            else:
+                mrz_field_confs["expiry_date"] = min(0.75, _get_region_confidence(exp or ""))
+
+            # Personal Number / Optional Check
+            if personal_valid:
+                mrz_field_confs["personal_number"] = 0.98
+            elif personal_num:
+                mrz_field_confs["personal_number"] = _get_region_confidence(personal_num)
+
+            # Nationality & Country Code: standard 3-letter ICAO alphabetic codes
+            if nationality and len(nationality) == 3 and nationality.isalpha():
+                mrz_field_confs["nationality"] = 0.98
+            elif nationality:
+                mrz_field_confs["nationality"] = _get_region_confidence(nationality)
+
+            if country_code and len(country_code) == 3 and country_code.isalpha():
+                mrz_field_confs["country_code"] = 0.98
+            elif country_code:
+                mrz_field_confs["country_code"] = _get_region_confidence(country_code)
+
+            # Sex: standard ICAO single-char designation
+            if sex in ("M", "F", "X", "<"):
+                mrz_field_confs["sex"] = 0.98
+            elif sex:
+                mrz_field_confs["sex"] = _get_region_confidence(sex)
+
+            # Names (no separate check digit exists in MRZ; strictly optical region confidence)
+            if surname:
+                mrz_field_confs["surname"] = _get_region_confidence(surname)
+            if given_names:
+                mrz_field_confs["given_names"] = _get_region_confidence(given_names)
+
+            # Overall MRZ confidence: authentic average of populated field confidences
+            if mrz_field_confs:
+                overall_mrz_conf = round(sum(mrz_field_confs.values()) / len(mrz_field_confs), 3)
+            else:
+                overall_mrz_conf = 0.95 if all_valid else 0.75
+
             mrz_data = MRZData(
                 is_valid_format=True,
                 mrz_type=mrz_type,
@@ -247,26 +319,11 @@ async def extract_document(
                     composite=composite_valid,
                     all_valid=all_valid,
                 ),
-                confidence=1.0 if all_valid else 0.6,
+                confidence=overall_mrz_conf,
             )
 
     # ── Step 6: Document field extraction ────────────────────────────────────
     rule_fields: dict[str, FieldValue] = {}
-
-    def _get_region_confidence(val_str: str) -> float:
-        """Find the real neural OCR confidence of the text region containing the value."""
-        if not val_str or not ocr_regions:
-            return round(float(ocr_conf_mean if ocr_conf_mean > 0 else 0.88), 3)
-        val_clean = str(val_str).lower().replace(" ", "").replace("-", "").replace("/", "")
-        best_conf = None
-        for r in ocr_regions:
-            r_text = r.text.lower().replace(" ", "").replace("-", "").replace("/", "")
-            if val_clean in r_text or r_text in val_clean:
-                if best_conf is None or r.confidence > best_conf:
-                    best_conf = r.confidence
-        if best_conf is not None:
-            return round(float(best_conf), 3)
-        return round(float(ocr_conf_mean if ocr_conf_mean > 0 else 0.88), 3)
 
     def _fields_from_dataclass(obj, default_conf: float, source: str) -> dict[str, FieldValue]:
         """Convert a dataclass result into FieldValue dict, using genuine OCR region confidence."""
@@ -279,13 +336,13 @@ async def extract_document(
                 out[fname] = FieldValue(value=v_str, confidence=real_conf, source=source)
         return out
 
-    # Passport / national_id with MRZ → populate from MRZ first
-    # Passport / national_id with MRZ → populate from MRZ first
+    # Passport / national_id with MRZ → populate from MRZ first with per-field confidence
     if _normalised_type in ("passport", "national_id") and mrz_data and mrz_data.fields:
         f = mrz_data.fields
         for key, val in f.model_dump().items():
             if val:
-                rule_fields[key] = FieldValue(value=val, confidence=mrz_data.confidence, source="mrz")
+                f_conf = mrz_field_confs.get(key, mrz_data.confidence) if "mrz_field_confs" in locals() else mrz_data.confidence
+                rule_fields[key] = FieldValue(value=val, confidence=f_conf, source="mrz")
 
     # If passport, supplement visual fields from the biodata page (place of birth, issue date, etc.)
     if _normalised_type == "passport":
