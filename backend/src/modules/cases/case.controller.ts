@@ -382,5 +382,3 @@ export class CaseController {
     }
   }
 }
-
-export const caseController = new CaseController();

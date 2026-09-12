@@ -44,7 +44,8 @@ export interface LoginResponse {
   token: string;
 }
 
-export interface AuthResponse {
+export interface LoginResponse {
+  user: AuthUserResponse;
   token: string;
   user: AuthUserResponse | Omit<UserRecord, 'passwordHash'>;
 }
