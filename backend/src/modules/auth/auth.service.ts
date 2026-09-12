@@ -121,16 +121,8 @@ export class AuthService {
   }
 }
 
-export class AuthError extends Error {
-  constructor(message: string, public statusCode: number) {
-    super(message);
-    this.name = 'AuthError';
-  }
-}
+export const authService = new AuthService();
 
-// ---------------------------------------------------------------------------
-// Domain error class
-// ---------------------------------------------------------------------------
 export class AuthError extends Error {
   constructor(message: string, public statusCode: number) {
     super(message);

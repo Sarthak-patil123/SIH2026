@@ -5,7 +5,6 @@ import { requireRole } from '../../middleware/role.middleware';
 import { caseController } from './case.controller';
 
 export const caseRoutes = Router();
-const ctrl = new CaseController();
 
 // All case routes require authentication
 caseRoutes.use(authenticate);

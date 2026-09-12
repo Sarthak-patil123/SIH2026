@@ -37,6 +37,7 @@ export class AuthController {
         res.status(500).json({ error: 'Failed to register user.' });
       }
     }
+  }
 
   /**
    * POST /api/auth/login
@@ -82,18 +83,6 @@ export class AuthController {
 
   /**
    * POST /api/auth/logout
-   */
-  logout(_req: Request, res: Response): void {
-    res.clearCookie('token', {
-      httpOnly: true,
-      secure: config.nodeEnv === 'production',
-      sameSite: 'lax',
-    });
-    res.status(200).json({ message: 'Logged out successfully.' });
-  }
-
-  /**
-   * POST /api/auth/logout
    * Clears the HttpOnly cookie
    */
   logout(_req: Request, res: Response): void {
@@ -105,3 +94,5 @@ export class AuthController {
     res.status(200).json({ message: 'Logged out successfully.' });
   }
 }
+
+export const authController = new AuthController();

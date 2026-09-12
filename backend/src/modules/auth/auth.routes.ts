@@ -3,7 +3,6 @@ import { authController } from './auth.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 
 export const authRoutes = Router();
-const ctrl = new AuthController();
 
 // POST /api/auth/register — create a new user account
 authRoutes.post('/register', (req, res, next) =>
