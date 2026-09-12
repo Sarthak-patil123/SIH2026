@@ -1,9 +1,8 @@
-import { Request, Response } from 'express';
-import { AuthService, AuthError } from './auth.service';
-import { LoginDTO } from './auth.types';
+import { Request, Response, NextFunction } from 'express';
+import { authService, AuthError } from './auth.service';
+import { LoginDTO, RegisterRequest } from './auth.types';
+import { validateLogin, validateRegister } from './auth.validation';
 import { config } from '../../config';
-
-const authService = new AuthService();
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
@@ -14,30 +13,55 @@ const COOKIE_OPTIONS = {
 
 export class AuthController {
   /**
-   * POST /api/auth/login
-   * Body: { email: string; password: string }
+   * POST /api/auth/register
+   * Body: { email: string; password: string; role?: string }
    */
-  async login(req: Request, res: Response): Promise<void> {
-    const dto: LoginDTO = req.body;
-
-    if (!dto.email || !dto.password) {
-      res.status(400).json({ error: 'Email and password are required.' });
+  async register(req: Request, res: Response, next?: NextFunction): Promise<void> {
+    const validation = validateRegister(req.body);
+    if (!validation.valid) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', details: validation.errors });
       return;
     }
 
     try {
-      const { user, token } = await authService.login(dto);
-
-      // Set JWT as HttpOnly cookie
-      res.cookie('token', token, COOKIE_OPTIONS);
-
-      res.status(200).json({
-        user,
-        token, // also return in body for API clients
-      });
+      const dto: RegisterRequest = req.body;
+      const result = await authService.register(dto);
+      res.cookie('token', result.token, COOKIE_OPTIONS);
+      res.status(201).json(result);
     } catch (err) {
       if (err instanceof AuthError) {
         res.status(err.statusCode).json({ error: err.message });
+      } else if (next) {
+        next(err);
+      } else {
+        res.status(500).json({ error: 'Failed to register user.' });
+      }
+    }
+
+  /**
+   * POST /api/auth/login
+   * Body: { email: string; password: string }
+   */
+  async login(req: Request, res: Response, next?: NextFunction): Promise<void> {
+    const validation = validateLogin(req.body);
+    if (!validation.valid) {
+      res.status(400).json({ error: 'VALIDATION_ERROR', details: validation.errors });
+      return;
+    }
+
+    try {
+      const dto: LoginDTO = req.body;
+      const result = await authService.login(dto);
+
+      // Set JWT as HttpOnly cookie
+      res.cookie('token', result.token, COOKIE_OPTIONS);
+
+      res.status(200).json(result);
+    } catch (err) {
+      if (err instanceof AuthError) {
+        res.status(err.statusCode).json({ error: err.message });
+      } else if (next) {
+        next(err);
       } else {
         console.error('[AuthController.login] Unexpected error:', err);
         res.status(500).json({ error: 'Internal server error. Please try again.' });
@@ -46,8 +70,7 @@ export class AuthController {
   }
 
   /**
-   * GET /api/auth/me  (protected by authenticate middleware)
-   * Returns the current authenticated user from req.user
+   * GET /api/auth/me (protected by authenticate middleware)
    */
   me(req: Request, res: Response): void {
     if (!req.user) {
@@ -55,6 +78,18 @@ export class AuthController {
       return;
     }
     res.status(200).json({ user: req.user });
+  }
+
+  /**
+   * POST /api/auth/logout
+   */
+  logout(_req: Request, res: Response): void {
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: config.nodeEnv === 'production',
+      sameSite: 'lax',
+    });
+    res.status(200).json({ message: 'Logged out successfully.' });
   }
 
   /**

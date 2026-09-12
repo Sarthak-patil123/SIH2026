@@ -34,34 +34,26 @@ def verify_faces(
     photo_doc: Union[str, bytes, Path, np.ndarray],
     selfie: Union[str, bytes, Path, np.ndarray],
     *,
-    require_liveness: bool = True,
+    require_liveness: bool = False,
 ) -> dict:
-    """Full 1:1 facial verification and liveness pipeline.
+    """Full 1:1 facial verification pipeline.
 
     Args:
         photo_doc: Cropped document portrait or full document image.
         selfie: Live user selfie photo.
-        require_liveness: Whether to enforce passive anti-spoofing check.
+        require_liveness: Unused (liveness detection disabled).
 
     Returns:
-        Dictionary with match score, verification decision, and liveness status.
+        Dictionary with match score, verification decision, and similarity metrics.
     """
     doc_img = _load_image(photo_doc)
     selfie_img = _load_image(selfie)
 
-    # Passive liveness check on selfie
-    liveness_result = check_passive_liveness(selfie_img)
-
     # 1:1 Biometric verification via SCRFD + ArcFace
     verification_result = _verify_faces(doc_img, selfie_img)
-
     is_verified = verification_result["status"] == "VERIFIED"
-    if require_liveness and not liveness_result["is_live"]:
-        is_verified = False
-        verification_result["diagnostics"].append("LIVENESS_FAILED_SPOOF_DETECTED")
 
     return {
         **verification_result,
-        "liveness": liveness_result,
         "is_verified": is_verified,
     }

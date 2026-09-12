@@ -2,23 +2,19 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { PrismaClient, Role } from '@prisma/client';
 import { config } from '../../config';
-import { LoginDTO, AuthUserResponse, JWTPayload, LoginResponse } from './auth.types';
+import { LoginDTO, RegisterRequest, AuthUserResponse, JWTPayload, LoginResponse } from './auth.types';
 
 const prisma = new PrismaClient();
 
 // ---------------------------------------------------------------------------
 // Fallback demo users — used when PostgreSQL is unavailable (demo/hackathon mode)
-// The password field is plain-text here; it gets compared via bcrypt at runtime.
-// We use bcrypt.compare(inputPassword, storedHash) but for simplicity in demo
-// mode we store the PLAIN password and compare directly — the real bcrypt
-// comparison still happens for DB users. This avoids needing pre-generated hashes.
 // ---------------------------------------------------------------------------
 interface FallbackUser {
   id: string;
   email: string;
   name: string;
   role: Role;
-  password: string; // plain-text, demo only
+  password: string;
 }
 
 const FALLBACK_USERS: FallbackUser[] = [
@@ -38,12 +34,10 @@ const FALLBACK_USERS: FallbackUser[] = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Helper: sign a JWT
-// ---------------------------------------------------------------------------
 function signToken(user: AuthUserResponse): string {
   const payload: JWTPayload = {
     sub: user.id,
+    userId: user.id,
     email: user.email,
     name: user.name,
     role: user.role,
@@ -51,13 +45,31 @@ function signToken(user: AuthUserResponse): string {
   return jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
 }
 
-// ---------------------------------------------------------------------------
-// AuthService
-// ---------------------------------------------------------------------------
 export class AuthService {
-  /**
-   * Authenticate user: try database first, fall back to demo users.
-   */
+  async register(dto: RegisterRequest): Promise<LoginResponse> {
+    const email = dto.email.toLowerCase().trim();
+    const existing = await prisma.user.findUnique({ where: { email } }).catch(() => null);
+    if (existing) {
+      throw new AuthError('Email already registered.', 409);
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const role = dto.role && ['ADMIN', 'admin'].includes(dto.role) ? Role.ADMIN : Role.OFFICER;
+    const name = dto.name || email.split('@')[0];
+
+    const created = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        name,
+        role,
+      },
+      select: { id: true, email: true, name: true, role: true },
+    });
+
+    return { user: created, token: signToken(created) };
+  }
+
   async login(dto: LoginDTO): Promise<LoginResponse> {
     const email = dto.email.toLowerCase().trim();
 
@@ -74,12 +86,10 @@ export class AuthService {
       dbUser = found as { id: string; email: string; name: string; role: Role; passwordHash: string | null } | null;
       dbAvailable = true;
     } catch {
-      // DB unavailable — fall through to in-memory demo users
       console.warn('[AuthService] Database unavailable — using fallback demo users.');
     }
 
     if (dbAvailable) {
-      // DB responded — enforce database authentication strictly
       if (!dbUser) throw new AuthError('Invalid email or password.', 401);
       if (!dbUser.passwordHash) throw new AuthError('Account not configured for password login.', 401);
 
@@ -108,6 +118,13 @@ export class AuthService {
       role: fallback.role,
     };
     return { user: authUser, token: signToken(authUser) };
+  }
+}
+
+export class AuthError extends Error {
+  constructor(message: string, public statusCode: number) {
+    super(message);
+    this.name = 'AuthError';
   }
 }
 

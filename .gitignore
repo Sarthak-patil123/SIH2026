@@ -13,6 +13,45 @@ postgres_data/
 coverage/
 
 # Python virtual environment
+ai-services/venv/
+frontend/tsconfig.tsbuildinfo
+minio_data/
+redis_data/
+*.db
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# External models / tools / OCR clones
+document-ocr-main/
+document-ocr*/
+*document-ocr*/
+MRZ_Passport_Reader_From_Image-main/
+mrz_passport_Reader_from_image/
+*MRZ_Passport_Reader*/
+*mrz_passport_Reader*/
+*mrz_passport*/
+*MRZ_Passport*/
+PaddleOCR-main/
+paddleocr/
+PaddleOCR/
+*PaddleOCR*/
+*paddleocr*/
+insightface-master/
+insightface/
+*insightface*/
+Passport-Verification-System-main/
+passport-verification-system-main/
+*Passport-Verification-System*/
+*passport-verification-system*/
+
+# Scratch scripts & temporary tests
+scratch/
+*/scratch/
+**/scratch/
+scratch_*.py
 venv/
 .venv/
 ai-services/venv/

@@ -343,6 +343,13 @@ def run_ocr(
         logger.warning("Unsupported image shape for OCR: %s", getattr(image, "shape", None))
         return []
 
+    # Adaptive upscaling for low-resolution document images (e.g. mobile thumbnails/crops)
+    h, w = image.shape[:2]
+    scale = 1.0
+    if max(h, w) < 1400 and max(h, w) > 0:
+        scale = min(4.0, 1400.0 / max(h, w))
+        image = cv2.resize(image, (int(round(w * scale)), int(round(h * scale))), interpolation=cv2.INTER_CUBIC)
+
     use_lang = lang or "en"
     ocr = _get_ocr(use_lang)
 
@@ -368,17 +375,18 @@ def run_ocr(
 
     regions = _parse_paddleocr_results(result)
 
-    # Universal Multilingual Auto-Detection:
-    # If no language was forced, detect dominant non-Latin script and fuse multilingual outputs
-    if lang is None:
-        target_script = _detect_dominant_script(regions)
-        if target_script and target_script != "en":
-            try:
-                script_regions = run_ocr(image, lang=target_script)
-                if script_regions:
-                    return _merge_bilingual_regions(regions, script_regions)
-            except Exception as exc:
-                logger.warning("Multilingual OCR fusion for script '%s' failed: %s", target_script, exc)
+    # Rescale bounding boxes back to original image dimensions if upscaled
+    if scale != 1.0 and scale > 0:
+        for r in regions:
+            r.bbox = [[int(round(pt[0] / scale)), int(round(pt[1] / scale))] for pt in r.bbox]
+
+    # Auto-detect non-Latin and retry with multilingual/devanagari
+    if lang is None and _is_likely_non_latin(regions):
+        try:
+            return run_ocr(image, lang="devanagari")
+        except Exception as exc:
+            logger.warning("Fallback to devanagari OCR failed: %s; keeping latin results", exc)
+            return regions
 
     return regions
 

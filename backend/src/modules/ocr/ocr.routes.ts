@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { ocrController } from "./ocr.controller";
+import { authenticate } from "../../middleware/auth.middleware";
 
 export const ocrRoutes = Router();
 
@@ -17,12 +18,12 @@ const ocrUpload = upload.fields([
   { name: "image", maxCount: 1 },
 ]);
 
-// POST /api/ocr/extract
-ocrRoutes.post("/extract", ocrUpload, (req, res, next) =>
+// POST /api/ocr/extract — JWT-protected
+ocrRoutes.post("/extract", authenticate, ocrUpload, (req, res, next) =>
   ocrController.extract(req, res, next)
 );
 
-// POST /api/ocr
-ocrRoutes.post("/", ocrUpload, (req, res, next) =>
+// POST /api/ocr — JWT-protected (alias)
+ocrRoutes.post("/", authenticate, ocrUpload, (req, res, next) =>
   ocrController.extract(req, res, next)
 );

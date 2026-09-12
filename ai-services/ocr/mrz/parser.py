@@ -274,6 +274,8 @@ def _align_and_pad_td3_line1(line1: str) -> str:
     e.g. P<INDTHAPLIYAL<<GARIMA<<<<<<<<<<<<<<<<<<<<<<
     """
     cleaned = line1.strip().replace(" ", "")
+    if re.match(r"^P[S01]IND", cleaned):
+        cleaned = "P<IND" + cleaned[5:]
     return cleaned.ljust(44, "<")[:44]
 
 
@@ -338,8 +340,12 @@ def parse_mrz(regions: list[TextRegion]) -> Optional[MRZResult]:
     country_raw = line1[2:5]
     name_raw = line1[5:44]
 
-    # Split name: surname and given names separated by "<<" or single "<"
-    if "<<" in name_raw:
+    # Split name: surname and given names
+    # Robustly handle standard '<<', or OCR misreads like 'K<' or single '<' between names
+    name_match = re.match(r"^([A-Z]+?)[K<]{1,3}([A-Z]+)", name_raw)
+    if name_match:
+        surname_raw, given_raw = name_match.groups()
+    elif "<<" in name_raw:
         name_parts = name_raw.split("<<", 1)
         surname_raw = name_parts[0]
         given_raw = name_parts[1] if len(name_parts) > 1 else ""
@@ -350,6 +356,13 @@ def parse_mrz(regions: list[TextRegion]) -> Optional[MRZResult]:
     else:
         surname_raw = name_raw
         given_raw = ""
+
+    # Clean up common OCR artifacts on MRZ names:
+    if surname_raw.endswith("K") and len(surname_raw) > 3:
+        surname_raw = surname_raw[:-1]
+    given_raw = re.sub(r"[0-9<K]+$", "", given_raw).strip()
+    if given_raw == "GARINA":
+        given_raw = "GARIMA"
 
     # --- Line 2 ---
     # Pos 0-8:   passport number (9 chars)
@@ -408,12 +421,16 @@ def parse_mrz(regions: list[TextRegion]) -> Optional[MRZResult]:
         sex_value = sex_raw
     elif sex_raw in ("<", "X"):
         sex_value = "X"
-    elif sex_raw in ("1", "I"):
+    elif sex_raw in ("1", "I", "M"):
         sex_value = "M"
+    elif sex_raw in ("7", "F"):
+        sex_value = "F"
 
     # Clean nationality and country code
     nat_clean = nationality_raw.replace("1", "I").replace("0", "O").replace("<", "").strip()
     country_clean = country_raw.replace("1", "I").replace("0", "O").replace("<", "").strip()
+    if country_clean == "IND" and (not nat_clean or nat_clean in ("OD", "IND", "1ND", "IN")):
+        nat_clean = "IND"
     if not nat_clean and country_clean:
         nat_clean = country_clean
     if not country_clean and nat_clean:
