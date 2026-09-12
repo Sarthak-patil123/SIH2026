@@ -1,85 +1,98 @@
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Static Frontend API mock layer — returns mock data without network requests
+import { mockCases, mockAlerts, mockAuditLogs, mockAdminActivity } from './mock-data';
+
+export const API_BASE_URL = 'http://static-frontend-mock/api';
 
 /**
- * apiFetch — thin wrapper around fetch that:
- * 1. Sends credentials (HttpOnly cookies) with every request
- * 2. Adds Authorization Bearer header if a token is available in localStorage
- * 3. Always sends/accepts JSON
+ * apiFetch — Static mock wrapper that resolves immediately with mock responses
  */
 export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
+  // Simulate tiny delay for realistic UI transitions
+  await new Promise((res) => setTimeout(res, 60));
 
-  // Attach token from localStorage as a fallback (for non-browser API clients)
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('idverify_token');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+  const cleanPath = path.split('?')[0];
+
+  if (cleanPath === '/cases' || cleanPath.startsWith('/cases?')) {
+    return { cases: mockCases } as unknown as T;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    credentials: 'include', // send HttpOnly cookies automatically
-    headers,
-  });
-
-  if (!response.ok) {
-    let errorMsg = `Request failed: ${response.status} ${response.statusText}`;
-    try {
-      const body = await response.json();
-      if (body?.error) errorMsg = body.error;
-    } catch {
-      // not JSON — use default message
-    }
-    throw new Error(errorMsg);
+  if (cleanPath.startsWith('/cases/activity')) {
+    return { activities: mockAdminActivity } as unknown as T;
   }
 
-  return response.json() as Promise<T>;
+  if (cleanPath.startsWith('/cases/')) {
+    const caseId = cleanPath.replace('/cases/', '');
+    const found = mockCases.find((c) => c.id === caseId || c.caseNumber === caseId);
+    return { case: found || mockCases[0] } as unknown as T;
+  }
+
+  if (cleanPath === '/alerts') {
+    return { alerts: mockAlerts } as unknown as T;
+  }
+
+  if (cleanPath === '/audit') {
+    return { logs: mockAuditLogs } as unknown as T;
+  }
+
+  if (cleanPath === '/chatbot/ask') {
+    return {
+      answer: 'This is a static response. IDVerify is running in static frontend mode.',
+    } as unknown as T;
+  }
+
+  return {} as T;
 }
 
 /**
- * apiUpload — sends a multipart/form-data request (for file uploads).
- * Do NOT pass Content-Type; the browser sets it automatically with the
- * correct boundary when the body is a FormData instance.
+ * apiUpload — Static mock file upload simulation
  */
 export async function apiUpload<T = unknown>(
   path: string,
   formData: FormData
 ): Promise<T> {
-  const headers: Record<string, string> = {};
+  await new Promise((res) => setTimeout(res, 300));
 
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('idverify_token');
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+  if (path.includes('ocr')) {
+    return {
+      document_metadata: {
+        detected_type: 'PASSPORT',
+        document_country: 'INDIA',
+      },
+      quality_assessment: {
+        passed: true,
+        blur_score: 94.2,
+        glare_detected: false,
+        warnings: [],
+      },
+      pipeline_summary: {
+        overall_confidence: 96.5,
+        execution_time_ms: 180,
+        ocr_confidence_mean: 96.5,
+      },
+      extracted_data: {
+        fields: {
+          'Full Name': { value: 'RAJESH KUMAR', confidence: 98.4 },
+          'Date of Birth': { value: '12 MAY 1998', confidence: 96.2 },
+          'Nationality': { value: 'INDIAN', confidence: 99.1 },
+          'Gender': { value: 'MALE', confidence: 99.8 },
+          'Passport Number': { value: 'N1234567', confidence: 97.5 },
+          'Date of Expiry': { value: '14 JAN 2030', confidence: 94.8 },
+        },
+      },
+    } as unknown as T;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: 'POST',
-    credentials: 'include',
-    headers,
-    body: formData,
-  });
-
-  if (!response.ok) {
-    let errorMsg = `Upload failed: ${response.status} ${response.statusText}`;
-    try {
-      const body = await response.json();
-      if (body?.error) errorMsg = body.error;
-      if (body?.message) errorMsg = body.message;
-    } catch {
-      // not JSON — use default message
-    }
-    throw new Error(errorMsg);
+  if (path.includes('face')) {
+    return {
+      status: 'VERIFIED',
+      similarity_percent: 94.8,
+      is_match: true,
+      match_score: 0.948,
+    } as unknown as T;
   }
 
-  return response.json() as Promise<T>;
+  return {} as T;
 }

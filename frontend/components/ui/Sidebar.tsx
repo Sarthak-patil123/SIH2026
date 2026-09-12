@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, FolderOpen, ScanLine, Bell, ClipboardList,
-  User, LogOut, Shield, ChevronLeft, ChevronRight, Menu, X, MessageSquare, Activity
+  User, LogOut, Shield, ChevronLeft, ChevronRight, Menu, X, MessageSquare, Activity, FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,6 +28,7 @@ const officerSections: NavSection[] = [
       { label: 'My Cases', href: '/officer/cases', icon: <FolderOpen size={18} /> },
       { label: 'New Verification', href: '/officer/verify', icon: <ScanLine size={18} /> },
       { label: 'Recent Activity', href: '/officer/activity', icon: <Activity size={18} /> },
+      { label: 'Reports', href: '/officer/reports', icon: <FileText size={18} /> },
     ],
   },
   {
@@ -52,6 +53,7 @@ const adminSections: NavSection[] = [
       { label: 'Alerts', href: '/admin/alerts', icon: <Bell size={18} /> },
       { label: 'Audit Trail', href: '/admin/audit', icon: <ClipboardList size={18} /> },
       { label: 'AI Chatbot', href: '/admin/chatbot', icon: <MessageSquare size={18} /> },
+      { label: 'Reports', href: '/admin/reports', icon: <FileText size={18} /> },
     ],
   },
   {

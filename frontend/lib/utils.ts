@@ -126,8 +126,8 @@ export function getAlertSeverityClasses(severity: AlertSeverity): string {
   return map[severity];
 }
 
-export function getAlertTypeLabel(type: AlertType): string {
-  const labels: Record<AlertType, string> = {
+export function getAlertTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
     FACE_MISMATCH: 'Face Mismatch',
     OCR_INCONSISTENCY: 'OCR Inconsistency',
     EXPIRED_DOCUMENT: 'Expired Document',
@@ -135,7 +135,7 @@ export function getAlertTypeLabel(type: AlertType): string {
     CROSS_DOCUMENT_MISMATCH: 'Cross-Document Mismatch',
     SUSPICIOUS_IDENTITY: 'Suspicious Identity',
   };
-  return labels[type];
+  return labels[type] ?? type.replace(/_/g, ' ');
 }
 
 export function getDocTypeLabel(type: string): string {

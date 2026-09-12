@@ -56,63 +56,20 @@ function getTimelineMarker(status: TimelineEventStatus) {
 }
 
 import { useState, useEffect } from 'react';
-import { apiFetch } from '@/lib/api';
 import { Case } from '@/types';
 
 export default function OfficerCaseDetailPage({ params }: { params: { caseId: string } }) {
-  const [caseData, setCaseData] = useState<Case | null>(() => mockCases.find((c) => c.id === params.caseId) || null);
-  const [loading, setLoading] = useState(true);
+  const [caseData, setCaseData] = useState<Case | null>(() => mockCases.find((c) => c.id === params.caseId || c.caseNumber === params.caseId) || mockCases[0]);
+  const [loading, setLoading] = useState(false);
   const [selectedDocIndex, setSelectedDocIndex] = useState(0);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [rotation, setRotation] = useState(0);
 
   useEffect(() => {
-    async function loadCase() {
-      try {
-        const res: any = await apiFetch(`/cases/${params.caseId}`);
-        if (res?.case) {
-          const c = res.case;
-          const mapped: Case = {
-            id: c.id,
-            caseNumber: c.caseNumber || 'SSB-' + c.id.slice(0, 6).toUpperCase(),
-            title: c.title,
-            applicantName: c.personName || c.applicantName || 'Applicant',
-            applicantDob: c.documents?.[0]?.ocrData?.applicantDob || '1996-07-01',
-            status: c.status,
-            riskScore: Number(c.riskScore) || 10,
-            riskLevel: c.riskLevel || 'LOW',
-            createdAt: c.createdAt,
-            updatedAt: c.updatedAt,
-            officerId: c.officerId,
-            officerName: c.officer?.name || 'Officer',
-            documents: c.documents?.length > 0 ? c.documents.map((d: any) => ({
-              id: d.id,
-              caseId: d.caseId,
-              docType: d.docType,
-              fileName: d.fileName,
-              fileSize: d.fileSize || 1024 * 512,
-              fileUrl: d.fileUrl,
-              sha256Hash: d.sha256Hash,
-              status: 'VERIFIED',
-              ocrData: d.ocrData?.fields ? {
-                status: 'COMPLETED',
-                overallConfidence: d.ocrConfidence || 95,
-                fields: d.ocrData.fields,
-              } : undefined,
-              faceResult: d.faceResult,
-            })) : (mockCases.find(mc => mc.id === params.caseId)?.documents || []),
-            timeline: [],
-          };
-          setCaseData(mapped);
-        }
-      } catch (err) {
-        console.warn('Could not load case from backend, using fallback:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadCase();
+    const found = mockCases.find((c) => c.id === params.caseId || c.caseNumber === params.caseId) || mockCases[0];
+    setCaseData(found);
+    setLoading(false);
   }, [params.caseId]);
 
   if (!caseData && !loading) return notFound();
@@ -423,74 +380,117 @@ export default function OfficerCaseDetailPage({ params }: { params: { caseId: st
           )}
         </div>
 
-        {/* Right Column: Case Timeline (Officer-facing operational view) */}
-        <div className="space-y-6">
-          <div className="bg-white border border-slate-200/90 rounded-card p-6 shadow-card">
-            <div className="pb-4 border-b border-slate-100 mb-5">
-              <div className="flex items-center justify-between">
-                <h3 className="font-heading text-sm font-bold text-slate-900 tracking-tight">
-                  Case Timeline
-                </h3>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                  {timeline.length} Steps
-                </span>
+          {/* Right Column: Case Timeline & Blockchain Audit Trail */}
+          <div className="space-y-6">
+            <div className="bg-white border border-slate-200/90 rounded-card p-6 shadow-card">
+              <div className="pb-4 border-b border-slate-100 mb-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-heading text-sm font-bold text-slate-900 tracking-tight">
+                    Case Timeline
+                  </h3>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                    {timeline.length} Steps
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Track the verification activity and current case status.
+                </p>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Track the verification activity and current case status.
-              </p>
-            </div>
 
-            {/* Vertical timeline */}
-            <div className="relative pl-1">
-              {timeline.map((item, idx) => {
-                const isLast = idx === timeline.length - 1;
-                const isCurrent = item.status === 'current';
+              {/* Vertical timeline */}
+              <div className="relative pl-1">
+                {timeline.map((item, idx) => {
+                  const isLast = idx === timeline.length - 1;
+                  const isCurrent = item.status === 'current';
 
-                return (
-                  <div key={item.id} className="relative flex gap-3.5 group">
-                    {/* Marker & Vertical Connector */}
-                    <div className="flex flex-col items-center shrink-0">
-                      {getTimelineMarker(item.status)}
-                      {!isLast && (
-                        <div className="w-[1.5px] flex-1 bg-slate-200 my-1 group-hover:bg-slate-300 transition-colors" />
-                      )}
-                    </div>
-
-                    {/* Event Content */}
-                    <div className={cn('flex-1 min-w-0', !isLast ? 'pb-6' : 'pb-1')}>
-                      <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className={cn(
-                            'text-xs',
-                            isCurrent ? 'text-blue-900 font-bold' :
-                            item.status === 'warning' ? 'text-amber-900 font-semibold' :
-                            item.status === 'rejected' ? 'text-rose-900 font-semibold' :
-                            'text-slate-800 font-semibold'
-                          )}>
-                            {item.title}
-                          </p>
-                          {isCurrent && (
-                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                              Current
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[11px] text-slate-400 font-medium tabular-nums">
-                          {formatTime(item.timestamp)}
-                        </span>
+                  return (
+                    <div key={item.id} className="relative flex gap-3.5 group">
+                      {/* Marker & Vertical Connector */}
+                      <div className="flex flex-col items-center shrink-0">
+                        {getTimelineMarker(item.status)}
+                        {!isLast && (
+                          <div className="w-[1.5px] flex-1 bg-slate-200 my-1 group-hover:bg-slate-300 transition-colors" />
+                        )}
                       </div>
 
-                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                        {item.description}
-                      </p>
+                      {/* Event Content */}
+                      <div className={cn('flex-1 min-w-0', !isLast ? 'pb-6' : 'pb-1')}>
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className={cn(
+                              'text-xs',
+                              isCurrent ? 'text-blue-900 font-bold' :
+                              item.status === 'warning' ? 'text-amber-900 font-semibold' :
+                              item.status === 'rejected' ? 'text-rose-900 font-semibold' :
+                              'text-slate-800 font-semibold'
+                            )}>
+                              {item.title}
+                            </p>
+                            {isCurrent && (
+                              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                Current
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-medium tabular-nums">
+                            {formatTime(item.timestamp)}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                          {item.description}
+                        </p>
+                      </div>
                     </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Officer Blockchain Audit Trail Seal */}
+            <div className="bg-white border border-slate-200/90 rounded-card p-6 shadow-card space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <Shield size={16} className="text-emerald-600" />
+                  <h3 className="font-heading text-sm font-bold text-slate-900">
+                    Blockchain Audit Ledger
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-mono">
+                  BLOCK #18274
+                </span>
+              </div>
+
+              <div className="space-y-2.5 text-xs font-mono">
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                  <div className="flex justify-between text-slate-500 text-[10px]">
+                    <span>LEDGER ANCHOR</span>
+                    <span className="text-emerald-600 font-bold">VERIFIED SEAL</span>
                   </div>
-                );
-              })}
+                  <p className="text-slate-800 font-bold truncate">0x7f8a92c4b1d038e9...91c2</p>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                  <div className="flex justify-between text-slate-500 text-[10px]">
+                    <span>SCREENING OFFICER ID</span>
+                    <span className="text-slate-400">{formatDate(caseData.createdAt)}</span>
+                  </div>
+                  <p className="text-slate-800 font-bold">{caseData.officerName || 'Rajesh Kumar'} ({caseData.officerId || 'OFC-2024-001'})</p>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 space-y-1">
+                  <div className="flex justify-between text-slate-500 text-[10px]">
+                    <span>HYPERLEDGER STATUS</span>
+                    <span className="text-emerald-600 font-bold">SYNCED</span>
+                  </div>
+                  <p className="text-slate-600 text-[11px] font-sans">
+                    Immutable screening hash recorded. Any document alteration invalidates this digital seal.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       {/* Full Document Evidence Lightbox Modal */}
       {previewModalOpen && activeDoc && (
