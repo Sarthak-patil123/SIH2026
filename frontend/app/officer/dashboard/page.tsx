@@ -73,7 +73,7 @@ export default function OfficerDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800 text-xs">
           <div>
             <span className="text-slate-400 block text-[11px] uppercase font-bold tracking-wider">Total Cases Solved</span>
-            <p className="text-xl font-bold font-heading text-white mt-0.5">{verifiedCount + flaggedCount} <span className="text-xs text-blue-400 font-normal font-sans">Resolved</span></p>
+            <p className="text-xl font-bold font-heading text-white mt-0.5">{verifiedCount + flaggedCount} <span className="text-blue-400">Resolved</span></p>
           </div>
           <div>
             <span className="text-slate-400 block text-[11px] uppercase font-bold tracking-wider">Active In Queue</span>
@@ -222,13 +222,12 @@ export default function OfficerDashboard() {
                     <td className="px-4 py-4 min-w-[150px]">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-md border ${
-                            riskScore > 60
+                          className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-md border ${riskScore > 60
                               ? 'text-rose-700 bg-rose-50 border-rose-200'
                               : riskScore > 30
-                              ? 'text-amber-700 bg-amber-50 border-amber-200'
-                              : 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                          }`}
+                                ? 'text-amber-700 bg-amber-50 border-amber-200'
+                                : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                            }`}
                         >
                           {riskScore}/100
                         </span>

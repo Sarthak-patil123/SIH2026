@@ -100,19 +100,24 @@ const PRESETS = [
 export default function OfficerVerifyPage() {
   const { user } = useAuth();
   const [step, setStep] = useState<Step>(1);
-  const [activeScenario, setActiveScenario] = useState<'clean' | 'discrepancy' | 'tampered'>('discrepancy');
+  const [activeScenario, setActiveScenario] = useState<'clean' | 'discrepancy' | 'tampered'>('tampered');
 
   // Documents in intake (starts empty so officer uploads fresh credentials)
   const [docs, setDocs] = useState<VerificationDocument[]>([]);
-  const [crossDocScore, setCrossDocScore] = useState<number>(44);
-  const [crossDiscrepancies, setCrossDiscrepancies] = useState<CrossDocDiscrepancy[]>(() => getPresetDiscrepancies('discrepancy'));
-  const [faceScore, setFaceScore] = useState<number>(88.2);
-  const [faceMatch, setFaceMatch] = useState<boolean>(true);
+  const [crossDocScore, setCrossDocScore] = useState<number>(26);
+  const [crossDiscrepancies, setCrossDiscrepancies] = useState<CrossDocDiscrepancy[]>(() => getPresetDiscrepancies('tampered'));
+  const [faceScore, setFaceScore] = useState<number>(34.6);
+  const [faceMatch, setFaceMatch] = useState<boolean>(false);
 
   // Upload states
-  const [uploadedDocPreview, setUploadedDocPreview] = useState<string | null>(null);
   const [userFaceImage, setUserFaceImage] = useState<string | null>(null);
   const [comparingFace, setComparingFace] = useState<boolean>(false);
+  const [biometricScanned, setBiometricScanned] = useState<boolean>(false);
+
+  // Forensic Scanning Simulation State (takes time for demo authenticity)
+  const [isForensicAnalyzing, setIsForensicAnalyzing] = useState<boolean>(false);
+  const [forensicProgress, setForensicProgress] = useState<number>(0);
+  const [forensicStage, setForensicStage] = useState<string>('');
 
   // Retry counter (Max 3 tries)
   const [retryCount, setRetryCount] = useState<number>(0);
@@ -121,7 +126,7 @@ export default function OfficerVerifyPage() {
   // Final Decision & Submission state
   const [officerNotes, setOfficerNotes] = useState<string>('');
   const [submittedCaseId, setSubmittedCaseId] = useState<string>('SSB-' + Math.floor(1000 + Math.random() * 9000));
-  const [finalDecisionType, setFinalDecisionType] = useState<'APPROVED' | 'ESCALATED'>('APPROVED');
+  const [finalDecisionType, setFinalDecisionType] = useState<'APPROVED' | 'ESCALATED'>('ESCALATED');
 
   function getPresetDocs(scenario: 'clean' | 'discrepancy' | 'tampered'): VerificationDocument[] {
     if (scenario === 'clean') {
@@ -216,46 +221,85 @@ export default function OfficerVerifyPage() {
       ];
     }
 
-    // Tampered scenario
+    // Tampered scenario: 4 Fake / Tampered Documents with low scores and low field extraction confidences
     return [
       {
         id: 'doc-1',
         docType: 'PASSPORT',
-        fileName: 'passport_suspicious_forgery.jpg',
+        fileName: 'fake_passport_meera_sharma.jpg',
         fileSize: '3.4 MB',
         sha256: 'e94f0a3b5c7d9e1f234567890123456789012345bcdef678901bcdef1234567',
-        tamperScore: 34.5,
+        tamperScore: 26.4,
         tamperStatus: 'TAMPERED',
         tamperFindings: [
-          { checkName: 'Typography & Font Glyph Integrity', status: 'ANOMALY', confidence: 94.8, details: 'Font mismatch & irregular character spacing detected in serial number region.' },
-          { checkName: 'Microprint & Hologram Integrity', status: 'SUSPICIOUS', confidence: 89.2, details: 'Micro-text line distortion around state emblem.' },
-          { checkName: 'Photo Cut/Paste Artifact Detection', status: 'SUSPICIOUS', confidence: 86.4, details: 'High-frequency gradient edge discontinuity near portrait perimeter.' },
-          { checkName: 'Metadata Modification Inspection', status: 'ANOMALY', confidence: 92.0, details: 'Software modification tag (Adobe Photoshop CC) embedded in header.' },
+          { checkName: 'Photo Cut/Paste Artifact Detection', status: 'ANOMALY', confidence: 28.5, details: 'Resampling halos and sharp gradient edge discontinuity detected around portrait boundary.' },
+          { checkName: 'MRZ Checksum Digit Validation', status: 'ANOMALY', confidence: 24.0, details: 'Optical check digit failure: Calculated ICAO 9303 checksum mismatch on line 2.' },
+          { checkName: 'Microprint & Hologram Integrity', status: 'ANOMALY', confidence: 31.2, details: 'Micro-text line distortion around state emblem; simulated UV fluorescent fibers absent.' },
+          { checkName: 'Typography & Glyph Kerning Inspection', status: 'ANOMALY', confidence: 29.0, details: 'Non-ICAO font typeface and altered kerning detected in legal surname container.' },
         ],
         fields: [
-          { label: 'Full Legal Name', value: 'VIKRAM MALHOTRA', confidence: 88.5 },
-          { label: 'Date of Birth', value: '08/11/1988', confidence: 76.2 },
-          { label: 'Nationality', value: 'INDIAN', confidence: 91.0 },
-          { label: 'Passport Number', value: 'Z7829103', confidence: 64.1 },
-          { label: 'Date of Expiry', value: '18/09/2028', confidence: 71.0 },
+          { label: 'Full Legal Name', value: 'SHARMA MEERA', confidence: 34.0 },
+          { label: 'Date of Birth', value: '15/05/1990', confidence: 28.0 },
+          { label: 'Passport Number', value: 'N1234567', confidence: 31.5 },
+          { label: 'Nationality', value: 'INDIAN', confidence: 42.0 },
+          { label: 'Date of Expiry', value: '09/10/2033', confidence: 36.0 },
         ],
       },
       {
         id: 'doc-2',
-        docType: 'VISA_STAMP',
-        fileName: 'visa_entry_stamp.jpg',
-        fileSize: '1.2 MB',
-        sha256: 'f05a1b4c6d8e0f234567890abcdef1234567890123456bcdef789012345678',
-        tamperScore: 42.0,
+        docType: 'NATIONAL_ID',
+        fileName: 'fake_national_id_meera.jpg',
+        fileSize: '2.1 MB',
+        sha256: 'd83e9f2a4b6c8d0e123456789012345678901234abcdef567890abcdef123456',
+        tamperScore: 29.0,
         tamperStatus: 'TAMPERED',
         tamperFindings: [
-          { checkName: 'Immigration Stamp Ink & Geometry', status: 'ANOMALY', confidence: 91.5, details: 'Border checkpoint code mismatch with official SSB immigration catalog.' },
-          { checkName: 'Overlay Layer Detection', status: 'SUSPICIOUS', confidence: 84.1, details: 'Digital stamp overlay layer detected.' },
+          { checkName: 'Security Hologram & Guilloche Seal', status: 'ANOMALY', confidence: 27.5, details: 'State emblem security guilloche absent; flat 2D photocopy reproduction.' },
+          { checkName: 'Font Glyph & Kerning Inspection', status: 'ANOMALY', confidence: 32.0, details: 'Mismatched DPI font insertion in demographic data blocks.' },
         ],
         fields: [
-          { label: 'Full Legal Name', value: 'VIKRAM MALHOTRA', confidence: 92.0 },
-          { label: 'Visa Type', value: 'TOURIST MULTI-ENTRY', confidence: 89.0 },
-          { label: 'Valid Until', value: '30/12/2026', confidence: 85.0 },
+          { label: 'Full Legal Name', value: 'MEERA R. SHARMA', confidence: 33.0 },
+          { label: 'Date of Birth', value: '12/08/1988', confidence: 26.0 },
+          { label: 'Nationality ID Number', value: 'IND-8834-1102-9931', confidence: 30.0 },
+          { label: 'Address Region', value: 'MUMBAI, MAHARASHTRA', confidence: 38.0 },
+        ],
+      },
+      {
+        id: 'doc-3',
+        docType: 'VISA_STAMP',
+        fileName: 'fake_tourist_visa_stamp.jpg',
+        fileSize: '1.4 MB',
+        sha256: 'f05a1b4c6d8e0f234567890abcdef1234567890123456bcdef789012345678',
+        tamperScore: 22.5,
+        tamperStatus: 'TAMPERED',
+        tamperFindings: [
+          { checkName: 'Immigration Stamp Ink & Geometry', status: 'ANOMALY', confidence: 25.0, details: 'Invalid border post checkpoint code; ink colorimetry does not match official SSB dye.' },
+          { checkName: 'Digital Overlay Layer Detection', status: 'ANOMALY', confidence: 21.0, details: 'Digital stamp overlay detected via Error Level Analysis (ELA 78%).' },
+        ],
+        fields: [
+          { label: 'Full Legal Name', value: 'MIRA SHARMA', confidence: 31.0 },
+          { label: 'Visa Type', value: 'TOURIST MULTI-ENTRY', confidence: 39.0 },
+          { label: 'Visa Number', value: 'V-99210-FAKE', confidence: 23.0 },
+          { label: 'Valid Until', value: '30/12/2026', confidence: 35.0 },
+        ],
+      },
+      {
+        id: 'doc-4',
+        docType: 'DOB_PROOF',
+        fileName: 'fake_dob_certificate.jpg',
+        fileSize: '1.6 MB',
+        sha256: 'a12b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b',
+        tamperScore: 28.0,
+        tamperStatus: 'TAMPERED',
+        tamperFindings: [
+          { checkName: 'Physical Erasure & Overwriting Test', status: 'ANOMALY', confidence: 26.5, details: 'Chemical/digital erasure detected underneath altered date of birth numerals.' },
+          { checkName: 'Municipal Seal Verification', status: 'ANOMALY', confidence: 29.0, details: 'Counterfeit municipal registrar stamp; registration sequence invalid.' },
+        ],
+        fields: [
+          { label: 'Full Legal Name', value: 'MEERA SHARMA', confidence: 37.0 },
+          { label: 'Date of Birth', value: '20/01/1992', confidence: 25.0 },
+          { label: 'Certificate Number', value: 'REG-2023-DEL-0091', confidence: 32.0 },
+          { label: 'Issuing Authority', value: 'MUNICIPAL CORP (COUNTERFEIT)', confidence: 22.0 },
         ],
       },
     ];
@@ -278,8 +322,10 @@ export default function OfficerVerifyPage() {
       ];
     }
     return [
-      { field: 'Full Legal Name', docAValue: 'VIKRAM MALHOTRA', docBValue: 'VIKRAM MALHOTRA', status: 'MATCH', confidence: 91.0, notes: 'Name strings align.' },
-      { field: 'Document Serial Number', docAValue: 'Z7829103', docBValue: 'STAMP-REF-9921', status: 'VARIATION', confidence: 72.0, notes: 'Low extraction confidence on serial glyphs.' },
+      { field: 'Date of Birth Conflict', docAValue: '15/05/1990 (Passport)', docBValue: '12/08/1988 (Nat ID) · 20/01/1992 (DOB Proof)', status: 'MISMATCH', confidence: 24.5, notes: 'Critical Conflict: 3 conflicting birth dates across 3 credentials (delta of 3.5 years).' },
+      { field: 'Full Legal Name', docAValue: 'SHARMA MEERA (Passport)', docBValue: 'MEERA R. SHARMA (Nat ID) · MIRA SHARMA (Visa)', status: 'MISMATCH', confidence: 29.0, notes: 'Altered surname ordering and fraudulent middle initial variant.' },
+      { field: 'Document Origin & Jurisdiction', docAValue: 'DELHI (Passport)', docBValue: 'MUMBAI (Nat ID) · UNKNOWN POST (Visa)', status: 'MISMATCH', confidence: 26.0, notes: 'Incompatible regional issuing authorities and missing registry records.' },
+      { field: 'MRZ Checksum & Serial Ledger', docAValue: 'N1234567 (Checksum Fail)', docBValue: 'V-99210-FAKE (Unverified Entry)', status: 'MISMATCH', confidence: 21.0, notes: 'Passport check digit failure; Visa serial does not link to authentic ICAO immigration ledger.' },
     ];
   }
 
@@ -299,8 +345,8 @@ export default function OfficerVerifyPage() {
       setFaceScore(88.2);
       setFaceMatch(true);
     } else {
-      setCrossDocScore(68);
-      setFaceScore(41.5);
+      setCrossDocScore(26);
+      setFaceScore(34.6);
       setFaceMatch(false);
     }
     setRetryCount(0);
@@ -308,14 +354,11 @@ export default function OfficerVerifyPage() {
 
   // Combined Multi-Factor Risk Score Calculation
   const avgTamperScore = Math.round(docs.reduce((sum, d) => sum + d.tamperScore, 0) / (docs.length || 1));
-  // Weight Cross-Doc heavily (50%), Tamper (30%), Face (20%)
-  // When cross-doc is 44%, tamper is ~94%, face is ~88%:
-  // Consistency index = (44 * 0.50) + (94 * 0.30) + (88 * 0.20) = 22 + 28.2 + 17.6 = ~44%
-  // Resulting combined risk score = 100 - combinedVerificationScore = ~56 (between 50 and 65, Medium Risk)
   const combinedVerificationScore = Math.round(
     crossDocScore * 0.50 + avgTamperScore * 0.30 + faceScore * 0.20
   );
-  const combinedRiskScore = Math.min(65, Math.max(52, 100 - combinedVerificationScore));
+  // High risk score for fake / tampered credentials demo
+  const combinedRiskScore = Math.min(92, Math.max(86, 100 - combinedVerificationScore));
   const isScoreClean = combinedRiskScore <= 30;
 
   // Handle Retry
@@ -455,15 +498,6 @@ export default function OfficerVerifyPage() {
                     if (files && files.length > 0) {
                       const newDocsList: VerificationDocument[] = [];
                       Array.from(files).forEach((file, fileIdx) => {
-                        const reader = new FileReader();
-                        reader.onload = () => {
-                          const url = reader.result as string;
-                          if (fileIdx === 0 && !uploadedDocPreview) {
-                            setUploadedDocPreview(url);
-                          }
-                        };
-                        reader.readAsDataURL(file);
-
                         const totalExisting = docs.length + fileIdx;
                         const docType: SupportedDocType =
                           totalExisting === 0
@@ -482,25 +516,19 @@ export default function OfficerVerifyPage() {
                           sha256: Array.from(crypto.getRandomValues(new Uint8Array(32)))
                             .map((b) => b.toString(16).padStart(2, '0'))
                             .join(''),
-                          tamperScore: 94.2,
-                          tamperStatus: 'AUTHENTIC',
+                          tamperScore: Number((23 + Math.random() * 8).toFixed(1)),
+                          tamperStatus: 'TAMPERED',
                           tamperFindings: [
-                            { checkName: 'Typography & Layout Integrity', status: 'AUTHENTIC', confidence: 95.0, details: 'Standard layout geometry.' },
-                            { checkName: 'Microprint & Hologram Integrity', status: 'AUTHENTIC', confidence: 93.8, details: 'Standard security seals present.' },
+                            { checkName: 'Photo Cut-and-Paste Edge Artifacts', status: 'ANOMALY', confidence: 28.5, details: 'Resampling halos and gradient edge discontinuity detected around portrait boundary.' },
+                            { checkName: 'MRZ Checksum Digit Validation', status: 'ANOMALY', confidence: 24.0, details: 'Optical check digit failure: Calculated ICAO 9303 checksum mismatch.' },
+                            { checkName: 'Microprint & Hologram Integrity', status: 'ANOMALY', confidence: 31.2, details: 'Micro-text distortion and missing UV fluorescent fibers.' },
                           ],
-                          fields:
-                            totalExisting === 0
-                              ? [
-                                  { label: 'Full Legal Name', value: 'ARJUN VERMA', confidence: 98.2 },
-                                  { label: 'Date of Birth', value: '24/09/1991', confidence: 97.5 },
-                                  { label: 'Nationality', value: 'INDIAN', confidence: 99.0 },
-                                  { label: 'Passport Number', value: 'P9876543', confidence: 96.8 },
-                                ]
-                              : [
-                                  { label: 'Full Legal Name', value: 'ARJUN V. SHARMA', confidence: 94.1 },
-                                  { label: 'Date of Birth', value: '14/06/1993', confidence: 95.2 },
-                                  { label: 'Nationality ID Number', value: 'IND-4501-8821-9932', confidence: 96.0 },
-                                ],
+                          fields: [
+                            { label: 'Full Legal Name', value: totalExisting === 0 ? 'SHARMA MEERA' : totalExisting === 1 ? 'MEERA R. SHARMA' : 'MIRA SHARMA', confidence: 34.0 },
+                            { label: 'Date of Birth', value: totalExisting === 0 ? '15/05/1990' : totalExisting === 1 ? '12/08/1988' : '20/01/1992', confidence: 27.5 },
+                            { label: 'Document Number', value: totalExisting === 0 ? 'N1234567' : totalExisting === 1 ? 'IND-8834-1102-9931' : 'V-99210-FAKE', confidence: 29.0 },
+                            { label: 'Origin Post', value: totalExisting === 0 ? 'DELHI' : totalExisting === 1 ? 'MUMBAI' : 'UNKNOWN ENTRY POST', confidence: 36.0 },
+                          ],
                         });
                       });
                       setDocs((prev) => [...prev, ...newDocsList]);
@@ -514,30 +542,25 @@ export default function OfficerVerifyPage() {
             {docs.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {docs.map((d, idx) => (
-                  <div key={d.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3 relative group">
+                  <div key={d.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/60 space-y-3 relative group">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold font-heading px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-800 flex items-center gap-1.5">
                         <FileCheck2 size={14} className="text-blue-600" />
                         Doc #{idx + 1}: {d.docType.replace('_', ' ')}
                       </span>
-                      <span className="text-[11px] text-slate-400 font-mono">{d.fileSize}</span>
+                      <span className="text-[11px] text-slate-600 font-medium bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                        Staged for Analysis
+                      </span>
                     </div>
 
-                    {/* Thumbnail / Upload preview if available for doc 1 */}
-                    {idx === 0 && uploadedDocPreview ? (
-                      <div className="h-32 w-full bg-slate-950 rounded-lg overflow-hidden flex items-center justify-center border border-slate-300">
-                        <img src={uploadedDocPreview} alt="Uploaded Doc" className="h-full object-contain" />
-                      </div>
-                    ) : null}
-
-                    <p className="font-mono text-xs text-slate-700 font-semibold">{d.fileName}</p>
+                    <p className="font-mono text-xs text-slate-800 font-semibold">{d.fileName}</p>
                     <p className="text-[10px] font-mono text-slate-400 truncate">SHA-256: {d.sha256.slice(0, 32)}...</p>
 
                     <div className="pt-1 flex items-center justify-between text-[11px]">
-                      <span className="text-emerald-700 font-medium">Ready for Ingestion</span>
+                      <span className="text-slate-500 font-medium">Ready for Ingestion &amp; Verification</span>
                       <button
                         onClick={() => setDocs((prev) => prev.filter((_, i) => i !== idx))}
-                        className="text-rose-600 hover:text-rose-700 font-semibold"
+                        className="text-slate-400 hover:text-rose-600 font-medium transition-colors cursor-pointer"
                       >
                         Remove
                       </button>
@@ -577,14 +600,18 @@ export default function OfficerVerifyPage() {
                         sha256: Array.from(crypto.getRandomValues(new Uint8Array(32)))
                           .map((b) => b.toString(16).padStart(2, '0'))
                           .join(''),
-                        tamperScore: 92.5,
-                        tamperStatus: 'AUTHENTIC',
+                        tamperScore: Number((23 + Math.random() * 8).toFixed(1)),
+                        tamperStatus: 'TAMPERED',
                         tamperFindings: [
-                          { checkName: 'Typography & Layout Integrity', status: 'AUTHENTIC', confidence: 95.0, details: 'Standard layout geometry.' },
+                          { checkName: 'Photo Cut/Paste Artifact Detection', status: 'ANOMALY', confidence: 28.5, details: 'Resampling halos and gradient edge discontinuity detected around portrait boundary.' },
+                          { checkName: 'MRZ Checksum Digit Validation', status: 'ANOMALY', confidence: 24.0, details: 'Optical check digit failure: Calculated ICAO 9303 checksum mismatch.' },
+                          { checkName: 'Microprint & Hologram Integrity', status: 'ANOMALY', confidence: 31.2, details: 'Micro-text distortion and missing UV fluorescent fibers.' },
                         ],
                         fields: [
-                          { label: 'Applicant Name', value: 'ARJUN VERMA', confidence: 96.0 },
-                          { label: 'Date of Birth', value: '24/09/1991', confidence: 95.5 },
+                          { label: 'Full Legal Name', value: totalExisting === 0 ? 'SHARMA MEERA' : totalExisting === 1 ? 'MEERA R. SHARMA' : 'MIRA SHARMA', confidence: 34.0 },
+                          { label: 'Date of Birth', value: totalExisting === 0 ? '15/05/1990' : totalExisting === 1 ? '12/08/1988' : '20/01/1992', confidence: 27.5 },
+                          { label: 'Document Number', value: totalExisting === 0 ? 'N1234567' : totalExisting === 1 ? 'IND-8834-1102-9931' : 'V-99210-FAKE', confidence: 29.0 },
+                          { label: 'Origin Post', value: totalExisting === 0 ? 'DELHI' : totalExisting === 1 ? 'MUMBAI' : 'UNKNOWN ENTRY POST', confidence: 36.0 },
                         ],
                       });
                     });
@@ -609,15 +636,94 @@ export default function OfficerVerifyPage() {
                 icon={<ChevronRight size={16} />}
                 onClick={() => {
                   if (docs.length === 0) {
-                    setDocs(getPresetDocs('discrepancy'));
+                    setDocs(getPresetDocs('tampered'));
                   }
-                  setStep(2);
+                  setIsForensicAnalyzing(true);
+                  setForensicProgress(0);
+                  setForensicStage('Step 1 of 4: Extracting high-resolution optical glyphs and microprint...');
+
+                  let currentProgress = 0;
+                  const duration = 5200; // 5.2 seconds total duration
+                  const intervalTime = 50; // Update every 50ms
+                  const increment = 100 / (duration / intervalTime);
+
+                  const interval = setInterval(() => {
+                    currentProgress += increment;
+                    if (currentProgress >= 100) {
+                      currentProgress = 100;
+                      clearInterval(interval);
+                      setForensicProgress(100);
+                      setForensicStage('Finalizing forensic synthesis report...');
+                      setTimeout(() => {
+                        setIsForensicAnalyzing(false);
+                        setStep(2);
+                      }, 400);
+                    } else {
+                      setForensicProgress(Math.min(99, Math.round(currentProgress)));
+                      if (currentProgress >= 75) {
+                        setForensicStage('Step 4 of 4: Cross-referencing bio-data fields & identity graphs...');
+                      } else if (currentProgress >= 50) {
+                        setForensicStage('Step 3 of 4: Validating ICAO 9303 MRZ checksums & security seals...');
+                      } else if (currentProgress >= 25) {
+                        setForensicStage('Step 2 of 4: Performing Error Level Analysis (ELA) & compression inspection...');
+                      }
+                    }
+                  }, intervalTime);
                 }}
               >
                 Proceed to Multi-Doc Forensics
               </Button>
             </div>
           </div>
+
+          {/* Forensic Neural Processing Overlay Modal (Clean, White Theme, Linear Progress) */}
+          {isForensicAnalyzing && (
+            <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+              <div className="bg-white border border-slate-200/90 rounded-2xl p-7 max-w-md w-full shadow-xl space-y-5 text-slate-900 relative animate-scale-in">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
+                    <ScanLine size={22} className="animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading text-base font-bold text-slate-900">
+                      Forensic Document Analysis
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Analyzing staged credentials against optical &amp; ICAO 9303 standards
+                    </p>
+                  </div>
+                </div>
+
+                {/* Linear Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700">Forensic Analysis Progress</span>
+                    <span className="font-bold text-blue-600 font-mono text-xs">{forensicProgress}%</span>
+                  </div>
+                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/80">
+                    <div
+                      className="h-full bg-blue-600 rounded-full transition-all duration-75 ease-linear"
+                      style={{ width: `${forensicProgress}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Simple & Clean Stage Box */}
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-2">
+                  <div className="flex items-center gap-2 text-blue-700 text-xs font-semibold">
+                    <RefreshCw size={13} className="animate-spin text-blue-600" />
+                    <span>Inspection in Progress</span>
+                  </div>
+                  <p className="text-xs text-slate-700 font-medium leading-relaxed min-h-[34px]">
+                    {forensicStage}
+                  </p>
+                  <div className="flex items-center justify-end text-[11px] text-slate-400 pt-2 border-t border-slate-200/80">
+                    <span>Multi-Document Cross-Check</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -815,7 +921,7 @@ export default function OfficerVerifyPage() {
               <h3 className="font-heading text-sm font-bold text-slate-900">
                 Structured Field Extraction (Clean Format)
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">High-accuracy OCR bio-data without raw text blocks</p>
+              <p className="text-xs text-slate-500 mt-0.5">OCR bio-data extraction with field-level confidence validation</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -831,7 +937,17 @@ export default function OfficerVerifyPage() {
                         <span className="text-slate-500 font-sans">{f.label}</span>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-900">{f.value}</span>
-                          <span className="text-[10px] text-emerald-600 font-bold">({f.confidence}%)</span>
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                              f.confidence >= 80
+                                ? 'text-emerald-700 bg-emerald-50 border border-emerald-200'
+                                : f.confidence >= 60
+                                ? 'text-amber-700 bg-amber-50 border border-amber-200'
+                                : 'text-rose-700 bg-rose-50 border border-rose-200'
+                            }`}
+                          >
+                            {f.confidence}%
+                          </span>
                         </div>
                       </div>
                     ))}
@@ -858,70 +974,53 @@ export default function OfficerVerifyPage() {
       ───────────────────────────────────────────────────────────── */}
       {step === 3 && (
         <div className="space-y-6 animate-fade-in">
+          {/* Top Header matching screenshot */}
           <div className="bg-white border border-slate-200/90 rounded-card p-6 shadow-card space-y-6">
-            <div>
-              <h2 className="font-heading text-base font-bold text-slate-900 flex items-center gap-2">
-                <Camera size={18} className="text-purple-600" />
-                Step 3: 1:1 Live Biometric Facial Match &amp; Liveness
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                ArcFace multi-angle facial recognition against primary document bio-page
-              </p>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0 mt-0.5">
+                <Camera size={22} />
+              </div>
+              <div>
+                <h2 className="font-heading text-lg font-bold text-slate-900">
+                  Step 3: Biometric Face Verification
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Compare live facial capture against reference document portrait using ArcFace neural embeddings
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-center">
-              {/* Photo Comparison Box */}
-              <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-4">
-                <div className="flex items-center justify-center gap-6">
-                  {/* Left: Document Photo */}
-                  <div className="space-y-1.5">
-                    <div className="w-28 h-32 bg-blue-100 rounded-xl border border-blue-200 flex items-center justify-center text-blue-700 font-bold overflow-hidden shadow-2xs">
-                      {uploadedDocPreview ? (
-                        <img src={uploadedDocPreview} alt="Doc Photo" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="flex flex-col items-center">
-                          <User size={36} />
-                          <span className="text-[9px] text-blue-600 mt-1">ICAO Photo</span>
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">Document Bio-Photo</span>
-                  </div>
-
-                  <div className="space-y-1 text-slate-400">
-                    <span className="text-xs font-bold block">1:1 MATCH</span>
-                    <ArrowRight size={20} className="mx-auto text-blue-600" />
-                  </div>
-
-                  {/* Right: Uploaded Subject / Live Face Feed */}
-                  <div className="space-y-1.5">
-                    <div className={`w-28 h-32 rounded-xl border flex items-center justify-center font-bold overflow-hidden shadow-2xs ${
-                      userFaceImage
-                        ? 'border-blue-400 bg-slate-900'
-                        : faceMatch
-                        ? 'bg-emerald-100 border-emerald-200 text-emerald-700'
-                        : 'bg-rose-100 border-rose-200 text-rose-700'
-                    }`}>
-                      {userFaceImage ? (
-                        <img src={userFaceImage} alt="Live Subject" className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="flex flex-col items-center">
-                          <User size={36} />
-                          <span className="text-[9px] mt-1">Live Camera</span>
-                        </div>
-                      )}
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">
-                      {userFaceImage ? 'Uploaded Subject Image' : 'Live Camera Feed'}
-                    </span>
-                  </div>
+            {/* 2-Column Comparison Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+              {/* Left Column: Reference Document Photo (PASSPORT.JPG) */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                    REFERENCE DOCUMENT PHOTO (PASSPORT.JPG)
+                  </span>
+                  <span className="px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-full text-xs font-semibold">
+                    Primary Reference
+                  </span>
                 </div>
 
-                {/* Upload from Laptop Button */}
-                <div className="pt-1 flex items-center justify-center gap-2">
-                  <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:border-blue-500 text-slate-700 rounded-lg text-xs font-semibold shadow-2xs transition-all">
-                    <Upload size={13} className="text-blue-600" />
-                    <span>Upload Subject Photo from Laptop</span>
+                {/* Dark Frame Container for Document */}
+                <div className="bg-slate-950 rounded-2xl p-3 sm:p-4 flex items-center justify-center overflow-hidden border border-slate-900 shadow-inner">
+                  <img
+                    src="/passport.jpg"
+                    alt="Reference Document - Indian Passport"
+                    className="w-full max-w-[440px] rounded-lg object-contain shadow-md"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: Live Camera Capture / Selfie */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                    LIVE CAMERA CAPTURE / SELFIE
+                  </span>
+                  <label className="text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer">
+                    Choose Photo
                     <input
                       type="file"
                       accept="image/*"
@@ -930,96 +1029,200 @@ export default function OfficerVerifyPage() {
                         const file = e.target.files?.[0];
                         if (file) {
                           const reader = new FileReader();
-                          setComparingFace(true);
                           reader.onload = () => {
                             setUserFaceImage(reader.result as string);
-                            setTimeout(() => {
-                              // Perform ArcFace comparison
-                              setFaceScore(94.6);
-                              setFaceMatch(true);
-                              setComparingFace(false);
-                            }, 500);
+                            setBiometricScanned(false);
                           };
                           reader.readAsDataURL(file);
                         }
                       }}
                     />
                   </label>
-                  {userFaceImage && (
-                    <button
-                      onClick={() => {
-                        setUserFaceImage(null);
-                        setFaceScore(88.2);
-                      }}
-                      className="text-xs text-rose-600 hover:underline font-semibold"
-                    >
-                      Reset
-                    </button>
+                </div>
+
+                {/* Central Capture / Upload Area */}
+                <div
+                  onClick={() => {
+                    const inputEl = document.getElementById('camera-selfie-upload') as HTMLInputElement;
+                    if (inputEl) inputEl.click();
+                  }}
+                  className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-100/70 transition-all min-h-[250px] relative overflow-hidden group"
+                >
+                  <input
+                    id="camera-selfie-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setUserFaceImage(reader.result as string);
+                          setBiometricScanned(false);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                  />
+
+                  {userFaceImage ? (
+                    <div className="relative w-36 h-44 rounded-xl overflow-hidden border-2 border-blue-500 shadow-md">
+                      <img src={userFaceImage} alt="Live Subject" className="w-full h-full object-cover" />
+                      <div className="absolute top-2 left-2 bg-emerald-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-2xs">
+                        Subject Acquired
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center space-y-3 select-none">
+                      <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors">
+                        <Camera size={42} strokeWidth={1.5} />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-700">
+                          Click to select or capture live selfie
+                        </p>
+                        <p className="text-xs text-slate-400 mt-1">
+                          (Or click Run Biometric Match below to verify against reference)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Animated Scanning Beam Overlay */}
+                  {comparingFace && (
+                    <div className="absolute inset-0 bg-blue-900/10 backdrop-blur-[1px] flex flex-col items-center justify-center z-10 animate-fade-in">
+                      <div className="w-full h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent absolute top-0 animate-[bounce_1.2s_infinite] shadow-[0_0_12px_#3b82f6]" />
+                      <div className="bg-white/95 px-4 py-2.5 rounded-xl shadow-lg border border-slate-200 flex items-center gap-2.5">
+                        <RefreshCw size={16} className="animate-spin text-blue-600" />
+                        <span className="text-xs font-bold text-slate-800">
+                          Scanning Facial Geometry &amp; Embeddings...
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
 
-                <div className="pt-1">
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-                    comparingFace
-                      ? 'bg-blue-50 text-blue-700 border-blue-200'
-                      : faceMatch
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                      : 'bg-rose-50 text-rose-700 border-rose-200'
-                  }`}>
-                    {comparingFace ? (
-                      <>
-                        <RefreshCw size={14} className="animate-spin text-blue-600" />
-                        <span>COMPARING NEURAL VECTORS...</span>
-                      </>
-                    ) : faceMatch ? (
-                      <>
-                        <CheckCircle2 size={14} />
-                        <span>LIVENESS CONFIRMED (98.4%)</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle size={14} />
-                        <span>LIVENESS SUSPICIOUS</span>
-                      </>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {/* Facial Match Results */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-500 uppercase">Facial Similarity Score</span>
-                    <span className={`font-heading text-2xl font-bold ${faceMatch ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {faceScore}%
-                    </span>
-                  </div>
-                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${faceMatch ? 'bg-emerald-500' : 'bg-rose-500'}`}
-                      style={{ width: `${faceScore}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-xs">
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <span className="text-slate-600">Inter-pupillary Distance &amp; Landmarks</span>
-                    <strong className="text-emerald-700">98.9% Aligned</strong>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <span className="text-slate-600">3D Depth &amp; Liveness Vector</span>
-                    <strong className="text-emerald-700">Passed</strong>
-                  </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-100">
-                    <span className="text-slate-600">Anti-Spoofing Silicon Mask Test</span>
-                    <strong className="text-emerald-700">Clean</strong>
-                  </div>
-                </div>
+                {/* Prominent Blue Action Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setComparingFace(true);
+                    setBiometricScanned(false);
+                    setTimeout(() => {
+                      setComparingFace(false);
+                      setFaceScore(34.6);
+                      setFaceMatch(false);
+                      setBiometricScanned(true);
+                    }, 1400);
+                  }}
+                  disabled={comparingFace}
+                  className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-75 cursor-pointer"
+                >
+                  {comparingFace ? (
+                    <>
+                      <RefreshCw size={17} className="animate-spin" />
+                      <span>Scanning Biometric Vectors...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera size={18} />
+                      <span>Run Biometric Match</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
 
+            {/* Verification Results Panel (Revealed Dynamically After Scanning) */}
+            {biometricScanned && (
+              <div className="pt-4 border-t border-slate-200/80 space-y-5 animate-fade-in">
+                {/* Match Banner: Red / Mismatch Flagged for Fake Credential */}
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-3.5">
+                  <div className="w-9 h-9 rounded-full bg-rose-100 border border-rose-300 flex items-center justify-center text-rose-700 shrink-0 mt-0.5">
+                    <AlertTriangle size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-rose-800">
+                        CRITICAL BIOMETRIC MISMATCH (ArcFace Neural Embeddings)
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-600 text-white">
+                        FAILED (BELOW THRESHOLD)
+                      </span>
+                    </div>
+                    <p className="text-xs text-rose-700 mt-1">
+                      1:1 facial biometric comparison between live subject and reference document (PASSPORT.JPG) failed with only <strong>{faceScore}%</strong> cosine similarity score (Border Control threshold: &gt;75%). Severe cranial geometry asymmetry, facial landmark disruption, and synthetic blending artifacts flagged.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 3 Vector Metrics Breakdown (Low scores for demo) */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="p-3.5 rounded-xl bg-rose-50/50 border border-rose-200/80 space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase text-slate-500">Facial Similarity</span>
+                    <div className="flex items-baseline justify-between">
+                      <span className="font-heading text-xl font-bold text-rose-600">{faceScore}%</span>
+                      <span className="text-[10px] font-semibold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">
+                        Threshold &gt; 75% FAIL
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-rose-500 rounded-full" style={{ width: `${faceScore}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-rose-50/50 border border-rose-200/80 space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase text-slate-500">Landmarks &amp; IPD</span>
+                    <div className="flex items-baseline justify-between">
+                      <span className="font-heading text-xl font-bold text-rose-600">41.2%</span>
+                      <span className="text-[10px] font-semibold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">
+                        24/68 Failed
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-rose-600 font-medium">Severe Craniofacial Asymmetry</p>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-rose-50/50 border border-rose-200/80 space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase text-slate-500">Anti-Spoofing &amp; Deepfake</span>
+                    <div className="flex items-baseline justify-between">
+                      <span className="font-heading text-xl font-bold text-rose-600">0.89 Anomaly</span>
+                      <span className="text-[10px] font-semibold text-rose-700 bg-rose-100 px-1.5 py-0.5 rounded">
+                        HIGH RISK
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-rose-600 font-medium">Cut-and-Paste &amp; Face Swap Detected</p>
+                  </div>
+                </div>
+
+                {/* Keypoint Geometry Table */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700">ArcFace 512-D Geometry Alignment Table</span>
+                    <span className="text-[11px] text-slate-500">ISO/IEC 19794-5 Compliance</span>
+                  </div>
+                  <div className="divide-y divide-slate-100 text-xs">
+                    <div className="grid grid-cols-3 px-4 py-2.5 items-center">
+                      <span className="text-slate-600 font-medium">Bilateral Eye Center Distance</span>
+                      <span className="text-slate-500">Reference: 64.1mm · Live: 58.2mm</span>
+                      <span className="text-right font-semibold text-rose-600">5.9mm Delta (Severe Asymmetry)</span>
+                    </div>
+                    <div className="grid grid-cols-3 px-4 py-2.5 items-center">
+                      <span className="text-slate-600 font-medium">Nose-to-Mouth Triangle Ratio</span>
+                      <span className="text-slate-500">Non-conforming geometric vector</span>
+                      <span className="text-right font-semibold text-rose-600">32.1% Vector Match (MISMATCH)</span>
+                    </div>
+                    <div className="grid grid-cols-3 px-4 py-2.5 items-center">
+                      <span className="text-slate-600 font-medium">Head Pose &amp; Cranial Morphology</span>
+                      <span className="text-slate-500">Warped contours &amp; blending halo</span>
+                      <span className="text-right font-semibold text-rose-600">Synthetic Artifacts Intercepted</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step Navigation Controls */}
             <div className="flex items-center justify-between pt-4 border-t border-slate-100">
               <Button variant="secondary" icon={<ChevronLeft size={16} />} onClick={() => setStep(2)}>
                 Back to Step 2
@@ -1073,7 +1276,7 @@ export default function OfficerVerifyPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
                 <span className="text-[10px] font-bold uppercase text-slate-400">1. Cross-Doc Consistency</span>
-                <p className={`font-heading text-xl font-bold ${crossDocScore >= 70 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                <p className={`font-heading text-xl font-bold ${crossDocScore >= 70 ? 'text-emerald-600' : crossDocScore >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
                   {crossDocScore}%
                 </p>
                 <p className="text-[11px] text-slate-500">{crossDiscrepancies.filter(d => d.status === 'MISMATCH').length} mismatch(es) detected</p>
@@ -1084,7 +1287,7 @@ export default function OfficerVerifyPage() {
                 <p className={`font-heading text-xl font-bold ${avgTamperScore >= 70 ? 'text-emerald-600' : 'text-rose-600'}`}>
                   {avgTamperScore}%
                 </p>
-                <p className="text-[11px] text-slate-500">{avgTamperScore >= 70 ? 'No forgery detected' : 'Microprint/Font anomalies'}</p>
+                <p className="text-[11px] text-slate-500">{avgTamperScore >= 70 ? 'No forgery detected' : 'Severe Microprint/Font anomalies'}</p>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-1">
@@ -1092,7 +1295,7 @@ export default function OfficerVerifyPage() {
                 <p className={`font-heading text-xl font-bold ${faceMatch ? 'text-emerald-600' : 'text-rose-600'}`}>
                   {faceScore}%
                 </p>
-                <p className="text-[11px] text-slate-500">{faceMatch ? 'Biometric match confirmed' : 'Similarity below threshold'}</p>
+                <p className="text-[11px] text-slate-500">{faceMatch ? 'Biometric match confirmed' : 'Critical similarity failure (<75%)'}</p>
               </div>
             </div>
 
@@ -1131,13 +1334,15 @@ export default function OfficerVerifyPage() {
                           combinedRiskScore > 65 ? 'text-rose-900' : 'text-amber-900'
                         }`}>
                           {combinedRiskScore > 65
-                            ? 'High Risk Screening Profile Detected'
+                            ? 'Critical Fraud Threat: Severe Multi-Factor Tampering Detected'
                             : 'Medium Risk Profile: Discrepancies Flagged'}
                         </h4>
                         <p className={`text-xs ${
                           combinedRiskScore > 65 ? 'text-rose-700' : 'text-amber-800'
                         }`}>
-                          Cross-document consistency flagged at {crossDocScore}%. You have {maxRetries - retryCount} retry attempt(s) remaining.
+                          {combinedRiskScore > 65
+                            ? `Multiple fraudulent credentials intercepted across Passport, National ID, Visa & DOB proof. Cross-document consistency is at ${crossDocScore}%, average authenticity is ${avgTamperScore}%, and facial biometric match failed (${faceScore}%).`
+                            : `Cross-document consistency flagged at ${crossDocScore}%. You have ${maxRetries - retryCount} retry attempt(s) remaining.`}
                         </p>
                       </div>
                     </div>
