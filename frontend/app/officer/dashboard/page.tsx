@@ -35,9 +35,7 @@ export default function OfficerDashboard() {
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
       {/* ── 1. Active Shift Terminal Header (Officer Operation Center) ── */}
-      <div className="bg-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-card relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-blue-600/20 to-transparent pointer-events-none" />
-
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 text-white shadow-card relative">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -63,7 +61,7 @@ export default function OfficerDashboard() {
                 variant="primary"
                 size="lg"
                 icon={<ScanLine size={18} />}
-                className="bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg shadow-blue-500/30"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md"
               >
                 Start New Verification
               </Button>
@@ -74,8 +72,8 @@ export default function OfficerDashboard() {
         {/* Live Shift KPI Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800 text-xs">
           <div>
-            <span className="text-slate-400 block text-[11px] uppercase font-bold tracking-wider">Today's Target</span>
-            <p className="text-xl font-bold font-heading text-white mt-0.5">18 / 25 <span className="text-xs text-emerald-400 font-normal font-sans">(72%)</span></p>
+            <span className="text-slate-400 block text-[11px] uppercase font-bold tracking-wider">Total Cases Solved</span>
+            <p className="text-xl font-bold font-heading text-white mt-0.5">{verifiedCount + flaggedCount} <span className="text-xs text-blue-400 font-normal font-sans">Resolved</span></p>
           </div>
           <div>
             <span className="text-slate-400 block text-[11px] uppercase font-bold tracking-wider">Active In Queue</span>
