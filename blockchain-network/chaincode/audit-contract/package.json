@@ -1,0 +1,20 @@
+{
+  "name": "audit-contract",
+  "version": "1.0.0",
+  "description": "Hyperledger Fabric chaincode for immutable case audit trails, document SHA-256 hashes, and face verification proofs",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc -w",
+    "start": "fabric-chaincode-node start"
+  },
+  "dependencies": {
+    "fabric-contract-api": "^2.5.4",
+    "fabric-shim": "^2.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}

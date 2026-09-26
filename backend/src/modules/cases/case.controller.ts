@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient, Role, CaseStatus, RiskLevel } from '@prisma/client';
+import { blockchainAuditService } from '../../blockchain/audit/blockchain-audit.service';
+import { calculateSha256 } from '../../blockchain/hashing/sha256';
 
 const prisma = new PrismaClient();
 
@@ -34,6 +36,19 @@ export class CaseController {
           ? RiskLevel.MEDIUM
           : RiskLevel.LOW);
 
+      const parsedDocs = documents && Array.isArray(documents) && documents.length > 0
+        ? documents.map((d: any) => ({
+            fileName: d.fileName || 'document.jpg',
+            fileUrl: d.fileUrl || '/storage/default.jpg',
+            docType: d.docType || 'UNKNOWN',
+            sha256Hash: d.sha256Hash || calculateSha256(d.fileName + Date.now()),
+            ocrConfidence: d.ocrConfidence !== undefined && d.ocrConfidence !== null ? Number(d.ocrConfidence) : null,
+            ocrData: d.ocrData || null,
+            faceResult: d.faceResult || null,
+            tamperResult: d.tamperResult || null,
+          }))
+        : [];
+
       const created = await prisma.case.create({
         data: {
           title,
@@ -42,46 +57,74 @@ export class CaseController {
           riskScore: riskScore !== undefined ? Number(riskScore) : 10.0,
           officerId: assignedOfficerId,
           status: caseStatus,
-          ...(documents && Array.isArray(documents) && documents.length > 0
+          ...(parsedDocs.length > 0
             ? {
                 documents: {
-                  create: documents.map((d: any) => ({
-                    fileName: d.fileName || 'document.jpg',
-                    fileUrl: d.fileUrl || '/storage/default.jpg',
-                    docType: d.docType || 'UNKNOWN',
-                    sha256Hash: d.sha256Hash || 'pending-hash',
-                    ocrConfidence: d.ocrConfidence !== undefined && d.ocrConfidence !== null ? Number(d.ocrConfidence) : null,
-                    ocrData: d.ocrData || null,
-                    faceResult: d.faceResult || null,
-                    tamperResult: d.tamperResult || null,
-                  })),
+                  create: parsedDocs,
                 },
               }
             : {}),
-          auditLogs: {
-            create: [
-              {
-                action: caseStatus === CaseStatus.FLAGGED ? 'CASE_FLAGGED' : 'CASE_CREATED',
-                actorId: assignedOfficerId,
-                details: {
-                  title,
-                  personName: personName || 'Unknown Subject',
-                  riskScore,
-                  flagReason: flagReason || null,
-                  officerObservations: officerObservations || null,
-                },
-                eventHash: Buffer.from(`${Date.now()}-${assignedOfficerId}`).toString('hex'),
-              },
-            ],
-          },
         },
+        include: {
+          documents: true,
+        },
+      });
+
+      // Anchor genesis audit record onto Hyperledger Fabric blockchain
+      const actionName = caseStatus === CaseStatus.FLAGGED ? 'CASE_FLAGGED' : 'CASE_CREATED';
+      const docHashesForAudit = created.documents.map((d) => ({
+        documentId: d.id,
+        fileName: d.fileName,
+        docType: d.docType,
+        sha256Hash: d.sha256Hash,
+        ocrConfidence: d.ocrConfidence ?? undefined,
+      }));
+
+      const { txResult } = await blockchainAuditService.recordCasePhase({
+        caseId: created.id,
+        action: actionName,
+        phase: 'CASE_CREATION',
+        actorId: assignedOfficerId,
+        actorRole: user?.role || 'OFFICER',
+        documentHashes: docHashesForAudit,
+        details: {
+          title,
+          personName: personName || 'Unknown Subject',
+          riskScore,
+          flagReason: flagReason || null,
+          officerObservations: officerObservations || null,
+        },
+      });
+
+      // Save database audit log with real blockchain TxId and BlockNumber
+      await prisma.auditLog.create({
+        data: {
+          caseId: created.id,
+          action: actionName,
+          actorId: assignedOfficerId,
+          details: {
+            title,
+            personName: personName || 'Unknown Subject',
+            riskScore,
+            flagReason: flagReason || null,
+            officerObservations: officerObservations || null,
+            documentCount: created.documents.length,
+          },
+          eventHash: txResult.eventHash,
+          txId: txResult.txId,
+          blockNumber: txResult.blockNumber,
+        },
+      });
+
+      const fullCase = await prisma.case.findUnique({
+        where: { id: created.id },
         include: {
           documents: true,
           auditLogs: true,
         },
       });
 
-      res.status(201).json(created);
+      res.status(201).json(fullCase);
     } catch (err) {
       if (next) next(err);
       else res.status(500).json({ error: 'Failed to create case.' });
@@ -335,10 +378,14 @@ export class CaseController {
     try {
       const user = req.user!;
       const caseId = req.params.caseId || req.params.id;
+      const { reason, observations } = req.body;
 
-      const found = await prisma.case.findUnique({ where: { id: caseId } });
+      const found = await prisma.case.findUnique({
+        where: { id: caseId },
+        include: { documents: true },
+      });
       if (!found) { res.status(404).json({ error: 'Case not found.' }); return; }
-      if (found.officerId !== user.id) {
+      if (found.officerId !== user.id && user.role !== Role.ADMIN) {
         res.status(403).json({ error: 'Forbidden: You can only flag your own cases.' });
         return;
       }
@@ -347,7 +394,44 @@ export class CaseController {
         where: { id: caseId },
         data: { status: 'FLAGGED' },
       });
-      res.json({ case: updated });
+
+      // Anchor blockchain audit event
+      const docHashes = found.documents.map((d) => ({
+        documentId: d.id,
+        fileName: d.fileName,
+        docType: d.docType,
+        sha256Hash: d.sha256Hash,
+      }));
+
+      const { txResult } = await blockchainAuditService.recordCasePhase({
+        caseId,
+        action: 'CASE_FLAGGED',
+        phase: 'OFFICER_REVIEW',
+        actorId: user.id,
+        actorRole: user.role,
+        documentHashes: docHashes,
+        details: {
+          flagReason: reason || 'Case flagged for supervisor review',
+          observations: observations || null,
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          caseId,
+          action: 'CASE_FLAGGED',
+          actorId: user.id,
+          details: {
+            flagReason: reason || null,
+            observations: observations || null,
+          },
+          eventHash: txResult.eventHash,
+          txId: txResult.txId,
+          blockNumber: txResult.blockNumber,
+        },
+      });
+
+      res.json({ case: updated, blockchainAudit: txResult });
     } catch (err) {
       console.error('[CaseController.flagCase]', err);
       res.status(500).json({ error: 'Failed to flag case.' });
@@ -360,22 +444,67 @@ export class CaseController {
    */
   async makeDecision(req: Request, res: Response): Promise<void> {
     try {
+      const user = req.user;
       const caseId = req.params.caseId || req.params.id;
-      const { decision } = req.body; // "APPROVED" | "REJECTED"
+      const { decision, notes } = req.body; // "APPROVED" | "REJECTED"
 
       if (!['APPROVED', 'REJECTED'].includes(decision)) {
         res.status(400).json({ error: 'Decision must be APPROVED or REJECTED.' });
         return;
       }
 
-      const found = await prisma.case.findUnique({ where: { id: caseId } });
+      const found = await prisma.case.findUnique({
+        where: { id: caseId },
+        include: { documents: true },
+      });
       if (!found) { res.status(404).json({ error: 'Case not found.' }); return; }
 
       const updated = await prisma.case.update({
         where: { id: caseId },
-        data: { status: decision as CaseStatus },
+        data: {
+          status: decision as CaseStatus,
+          reviewedById: user?.id || null,
+        },
       });
-      res.json({ case: updated });
+
+      // Anchor blockchain decision event
+      const docHashes = found.documents.map((d) => ({
+        documentId: d.id,
+        fileName: d.fileName,
+        docType: d.docType,
+        sha256Hash: d.sha256Hash,
+      }));
+
+      const actionName = decision === 'APPROVED' ? 'DECISION_APPROVED' : 'DECISION_REJECTED';
+      const { txResult } = await blockchainAuditService.recordCasePhase({
+        caseId,
+        action: actionName,
+        phase: 'FINAL_SUPERVISORY_DECISION',
+        actorId: user?.id || 'ADMIN',
+        actorRole: user?.role || 'ADMIN',
+        documentHashes: docHashes,
+        details: {
+          decision,
+          notes: notes || null,
+        },
+      });
+
+      await prisma.auditLog.create({
+        data: {
+          caseId,
+          action: actionName,
+          actorId: user?.id || 'ADMIN',
+          details: {
+            decision,
+            notes: notes || null,
+          },
+          eventHash: txResult.eventHash,
+          txId: txResult.txId,
+          blockNumber: txResult.blockNumber,
+        },
+      });
+
+      res.json({ case: updated, blockchainAudit: txResult });
     } catch (err) {
       console.error('[CaseController.makeDecision]', err);
       res.status(500).json({ error: 'Failed to record decision.' });
