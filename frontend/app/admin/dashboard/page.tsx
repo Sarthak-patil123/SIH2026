@@ -23,9 +23,7 @@ export default function AdminDashboard() {
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto space-y-8 animate-fade-in">
       {/* ── 1. Supervisory Command Banner ── */}
-      <div className="bg-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-card relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-purple-600/20 to-transparent pointer-events-none" />
-
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 text-white shadow-card relative">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div className="space-y-2">
             <div className="flex items-center gap-2.5 flex-wrap">
@@ -50,31 +48,11 @@ export default function AdminDashboard() {
                 variant="primary"
                 size="lg"
                 icon={<ShieldAlert size={18} />}
-                className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-lg shadow-purple-600/30"
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md"
               >
                 Review Priority Queue
               </Button>
             </Link>
-          </div>
-        </div>
-
-        {/* Real-time System Metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800 text-xs font-mono">
-          <div>
-            <span className="text-slate-400 block text-[10px] uppercase">ACTIVE CHECKPOINTS</span>
-            <p className="text-lg font-bold text-white mt-0.5">3 Lanes (Alpha, Bravo, Charlie)</p>
-          </div>
-          <div>
-            <span className="text-slate-400 block text-[10px] uppercase">FRAUD INTERCEPTION RATE</span>
-            <p className="text-lg font-bold text-emerald-400 mt-0.5">98.6% Accuracy</p>
-          </div>
-          <div>
-            <span className="text-slate-400 block text-[10px] uppercase">AVG ADJUDICATION TIME</span>
-            <p className="text-lg font-bold text-blue-400 mt-0.5">1.8 Minutes</p>
-          </div>
-          <div>
-            <span className="text-slate-400 block text-[10px] uppercase">BLOCKCHAIN SEAL HEIGHT</span>
-            <p className="text-lg font-bold text-purple-400 mt-0.5">#18,274 Blocks</p>
           </div>
         </div>
       </div>
@@ -84,38 +62,30 @@ export default function AdminDashboard() {
         <StatCard
           title="Total Screenings Processed"
           value={allCases.length}
-          change="+32 today"
-          changeType="positive"
           icon={<FolderOpen size={20} className="text-blue-600" />}
           iconBg="bg-blue-50"
-          subtitle="All border checkpoints"
+          subtitle="All border checkpoints (+32 today)"
         />
         <StatCard
           title="Pending Supervisory Review"
           value={reviewCases.length}
-          change="Requires manual decision"
-          changeType="warning"
           icon={<Clock size={20} className="text-amber-600" />}
           iconBg="bg-amber-50"
-          subtitle="Flagged & escalated dossiers"
+          subtitle="Requires manual decision"
         />
         <StatCard
           title="Active Fraud Anomaly Alerts"
           value={pendingAlerts.length}
-          change="Biometric & Tamper flags"
-          changeType="negative"
           icon={<AlertTriangle size={20} className="text-rose-600" />}
           iconBg="bg-rose-50"
-          subtitle="Critical security triggers"
+          subtitle="Biometric & Tamper flags"
         />
         <StatCard
           title="Total Adjudications Completed"
           value={resolvedCases.length}
-          change="99.4% SLA compliance"
-          changeType="positive"
           icon={<CheckCircle2 size={20} className="text-emerald-600" />}
           iconBg="bg-emerald-50"
-          subtitle="Approved or rejected"
+          subtitle="99.4% SLA compliance"
         />
       </div>
 
@@ -189,7 +159,6 @@ export default function AdminDashboard() {
                   <th className="pb-2 text-center">Screened</th>
                   <th className="pb-2 text-center">Approval Rate</th>
                   <th className="pb-2 text-center">Flags Raised</th>
-                  <th className="pb-2 text-right">Avg Speed</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
@@ -199,7 +168,6 @@ export default function AdminDashboard() {
                   <td className="py-2.5 text-center font-bold">18</td>
                   <td className="py-2.5 text-center text-emerald-600 font-bold">88.8%</td>
                   <td className="py-2.5 text-center text-rose-600 font-bold">3</td>
-                  <td className="py-2.5 text-right">2.1 min</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 font-sans font-bold text-slate-900">Priya Sharma</td>
@@ -207,7 +175,6 @@ export default function AdminDashboard() {
                   <td className="py-2.5 text-center font-bold">14</td>
                   <td className="py-2.5 text-center text-emerald-600 font-bold">92.8%</td>
                   <td className="py-2.5 text-center text-amber-600 font-bold">1</td>
-                  <td className="py-2.5 text-right">2.8 min</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 font-sans font-bold text-slate-900">Amit Patel</td>
@@ -215,7 +182,6 @@ export default function AdminDashboard() {
                   <td className="py-2.5 text-center font-bold">12</td>
                   <td className="py-2.5 text-center text-emerald-600 font-bold">83.3%</td>
                   <td className="py-2.5 text-center text-rose-600 font-bold">2</td>
-                  <td className="py-2.5 text-right">2.4 min</td>
                 </tr>
               </tbody>
             </table>

@@ -412,6 +412,130 @@ export default function ReportsView({ userRole }: { userRole: 'OFFICER' | 'ADMIN
                 </table>
               </div>
 
+              {/* Document Fields Extraction & OCR Recognition Accuracy */}
+              <div className="space-y-3">
+                <h3 className="font-heading text-sm font-bold text-slate-900 uppercase tracking-wider border-b pb-1">
+                  3. Critical Document Bio-Data Fields &amp; Extraction Accuracies
+                </h3>
+                <p className="text-xs text-slate-600">
+                  Granular audit of neural OCR field recognition and cross-validation verification across primary identity documents:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Passport Fields */}
+                  <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                    <div className="bg-slate-100 px-3 py-2 font-bold text-slate-800 border-b flex justify-between">
+                      <span>Passport Fields (ICAO 9303 MRZ)</span>
+                      <span className="text-emerald-700 font-mono">98.2% Avg</span>
+                    </div>
+                    <div className="divide-y divide-slate-100 p-2 font-mono">
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Full Legal Name</span>
+                        <span className="font-bold text-emerald-700">99.4% (Verified)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Passport Number &amp; Checksum</span>
+                        <span className="font-bold text-emerald-700">99.1% (Valid Check Digit)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Date of Birth (DOB)</span>
+                        <span className="font-bold text-emerald-700">98.7% (Parsed)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Nationality Code (IND)</span>
+                        <span className="font-bold text-emerald-700">99.9% (Matched)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Expiry Date &amp; Validity</span>
+                        <span className="font-bold text-emerald-700">97.6% (Unexpired)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* National ID Fields */}
+                  <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                    <div className="bg-slate-100 px-3 py-2 font-bold text-slate-800 border-b flex justify-between">
+                      <span>National ID Fields</span>
+                      <span className="text-emerald-700 font-mono">96.8% Avg</span>
+                    </div>
+                    <div className="divide-y divide-slate-100 p-2 font-mono">
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Applicant Name</span>
+                        <span className="font-bold text-emerald-700">98.5% (Verified)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">National ID Identifier</span>
+                        <span className="font-bold text-emerald-700">97.9% (Checksum Pass)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Date of Birth (DOB)</span>
+                        <span className="font-bold text-amber-700">94.2% (Cross-Doc Variation)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Gender &amp; Demographics</span>
+                        <span className="font-bold text-emerald-700">99.2% (Match)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Residential State / Region</span>
+                        <span className="font-bold text-emerald-700">96.1% (Consistent)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Visa Stamp Fields */}
+                  <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                    <div className="bg-slate-100 px-3 py-2 font-bold text-slate-800 border-b flex justify-between">
+                      <span>Visa Stamp &amp; Permit Fields</span>
+                      <span className="text-blue-700 font-mono">95.4% Avg</span>
+                    </div>
+                    <div className="divide-y divide-slate-100 p-2 font-mono">
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Bearer Name</span>
+                        <span className="font-bold text-emerald-700">97.2% (Match)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Visa Number &amp; Class</span>
+                        <span className="font-bold text-emerald-700">96.8% (Tourist Multi)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Entry Port / Checkpoint Code</span>
+                        <span className="font-bold text-rose-600">88.5% (Flagged Incongruity)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Permitted Stay Period</span>
+                        <span className="font-bold text-emerald-700">98.0% (Valid)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Driving License & Supporting Proofs */}
+                  <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+                    <div className="bg-slate-100 px-3 py-2 font-bold text-slate-800 border-b flex justify-between">
+                      <span>Driving License &amp; Auxiliary Proofs</span>
+                      <span className="text-emerald-700 font-mono">96.1% Avg</span>
+                    </div>
+                    <div className="divide-y divide-slate-100 p-2 font-mono">
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Holder Full Name</span>
+                        <span className="font-bold text-emerald-700">97.9% (Matched)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Licence / Proof Number</span>
+                        <span className="font-bold text-emerald-700">95.8% (Format Check)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Date of Birth (Secondary Proof)</span>
+                        <span className="font-bold text-emerald-700">96.5% (Cross-Validated)</span>
+                      </div>
+                      <div className="flex justify-between py-1.5 px-2">
+                        <span className="text-slate-600 font-sans">Issuing Regional Authority</span>
+                        <span className="font-bold text-emerald-700">94.8% (Verified)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Signature & Cryptographic Seal */}
               <div className="pt-8 border-t-2 border-slate-900 grid grid-cols-2 gap-8 text-xs">
                 <div className="space-y-1">
